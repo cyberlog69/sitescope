@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SiteScope — Instant Website Checker</title>
+  <meta name="description" content="Paste any URL and instantly get a live preview and description of any website with SiteScope." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Background orbs -->
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+          <path d="M11 8a3 3 0 0 1 3 3"/>
+        </svg>
+      </div>
+      <span class="logo-text">SiteScope</span>
+    </div>
+    <div class="header-badge">Free &middot; Instant &middot; No Signup</div>
+  </header>
+
+  <!-- Hero -->
+  <main class="main">
+    <section class="hero">
+      <div class="hero-tag">&#128269; Website Intelligence Tool</div>
+      <h1 class="hero-title">
+        Check Any Website<br />
+        <span class="gradient-text">Instantly.</span>
+      </h1>
+      <p class="hero-subtitle">
+        Paste a URL below and get a live preview, metadata, and a quick summary of any website in seconds.
+      </p>
+    </section>
+
+    <!-- Input Card -->
+    <div class="input-card" id="inputCard">
+      <div class="input-card-inner">
+        <div class="input-label">Enter a website URL</div>
+        <div class="input-row">
+          <div class="url-input-wrap">
+            <span class="input-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+            </span>
+            <input
+              type="url"
+              id="urlInput"
+              class="url-input"
+              placeholder="https://example.com"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button class="clear-btn" id="clearBtn" aria-label="Clear input" title="Clear">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <button class="check-btn" id="checkBtn">
+            <span class="btn-text" id="btnText">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+                <polyline points="9 11 12 14 22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+              Check Site
+            </span>
+            <span class="btn-loader hidden" id="btnLoader">
+              <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+              Checking&hellip;
+            </span>
+          </button>
+        </div>
+        <div class="quick-links">
+          <span class="quick-label">Try:</span>
+          <button class="quick-btn" data-url="https://github.com">github.com</button>
+          <button class="quick-btn" data-url="https://wikipedia.org">wikipedia.org</button>
+          <button class="quick-btn" data-url="https://vercel.com">vercel.com</button>
+          <button class="quick-btn" data-url="https://stripe.com">stripe.com</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Banner -->
+    <div class="error-banner hidden" id="errorBanner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span id="errorMsg">Please enter a valid URL.</span>
+    </div>
+
+    <!-- Results Section -->
+    <section class="results hidden" id="results">
+
+      <!-- Info Bar -->
+      <div class="result-info-bar">
+        <div class="result-url-pill" id="resultUrlPill">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="resultUrlText"></span>
+        </div>
+        <button class="open-btn" id="openBtn" title="Open in new tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          Open Site
+        </button>
+      </div>
+
+      <div class="results-grid">
+
+        <!-- Preview Panel -->
+        <div class="panel preview-panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+              Live Preview
+            </div>
+            <div class="panel-tabs">
+              <button class="tab-btn active" id="tabScreenshot" data-tab="screenshot">Screenshot</button>
+              <button class="tab-btn" id="tabLive" data-tab="live">Live Frame</button>
+            </div>
+          </div>
+
+          <!-- Screenshot view -->
+          <div class="preview-view" id="screenshotView">
+            <div class="screenshot-container">
+              <div class="browser-chrome">
+                <div class="browser-dots">
+                  <span class="dot dot-red"></span>
+                  <span class="dot dot-yellow"></span>
+                  <span class="dot dot-green"></span>
+                </div>
+                <div class="browser-address-bar" id="browserAddress"></div>
+                <div class="browser-actions">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.02"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="screenshot-wrap" id="screenshotWrap">
+                <div class="screenshot-loading" id="screenshotLoading">
+                  <div class="skeleton-lines">
+                    <div class="sk-line sk-w-60"></div>
+                    <div class="sk-line sk-w-80"></div>
+                    <div class="sk-line sk-w-40"></div>
+                    <div class="sk-gap"></div>
+                    <div class="sk-line sk-w-100"></div>
+                    <div class="sk-line sk-w-90"></div>
+                    <div class="sk-line sk-w-70"></div>
+                  </div>
+                </div>
+                <img class="screenshot-img hidden" id="screenshotImg" alt="Website screenshot" />
+                <div class="screenshot-error hidden" id="screenshotError">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/><path d="m8 21 4-4 4 4"/><path d="M10 12l2-2 2 2"/>
+                  </svg>
+                  <p>Screenshot unavailable</p>
+                  <small>Try the Live Frame tab</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live iframe view -->
+          <div class="preview-view hidden" id="liveView">
+            <div class="iframe-wrap">
+              <div class="iframe-notice">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                Some sites block embedding &mdash; use Screenshot if blank.
+              </div>
+              <div class="iframe-chrome">
+                <div class="browser-dots">
+                  <span class="dot dot-red"></span>
+                  <span class="dot dot-yellow"></span>
+                  <span class="dot dot-green"></span>
+                </div>
+                <div class="browser-address-bar" id="iframeAddress"></div>
+              </div>
+              <iframe id="siteFrame" class="site-iframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" title="Website Preview"></iframe>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="panel info-panel">
+
+          <!-- Site Identity -->
+          <div class="info-section site-identity">
+            <div class="site-favicon-wrap">
+              <img class="site-favicon hidden" id="siteFavicon" alt="favicon" />
+              <div class="site-favicon-fallback" id="faviconFallback">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                  <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+              </div>
+            </div>
+            <div class="site-identity-text">
+              <div class="site-title" id="siteTitle">Loading&hellip;</div>
+              <div class="site-domain" id="siteDomain"></div>
+            </div>
+          </div>
+
+          <!-- Site Category -->
+          <div class="info-section category-section" id="categorySection">
+            <div class="info-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M4 6h16M4 12h16M4 18h7"/>
+              </svg>
+              Site Category
+            </div>
+            <div class="category-display" id="categoryDisplay">
+              <span class="category-badge category-loading" id="categoryBadge">
+                <span class="cat-icon" id="catIcon">&#x2026;</span>
+                <span class="cat-label" id="catLabel">Detecting&hellip;</span>
+              </span>
+              <p class="cat-description" id="catDescription"></p>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="info-section">
+            <div class="info-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+              </svg>
+              Description
+            </div>
+            <div class="info-value description-value" id="siteDescription">Fetching site information&hellip;</div>
+          </div>
+
+          <!-- Metadata Grid -->
+          <div class="meta-grid">
+            <div class="meta-item">
+              <div class="meta-label">Status</div>
+              <div class="meta-value" id="metaStatus">
+                <span class="badge badge-loading">Checking&hellip;</span>
+              </div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Author</div>
+              <div class="meta-value" id="metaAuthor">&mdash;</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Language</div>
+              <div class="meta-value" id="metaLang">&mdash;</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Protocol</div>
+              <div class="meta-value" id="metaProtocol">&mdash;</div>
+            </div>
+          </div>
+
+          <!-- OG Image -->
+          <div class="info-section og-section hidden" id="ogSection">
+            <div class="info-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+              </svg>
+              Social Preview Image
+            </div>
+            <img class="og-image" id="ogImage" alt="Open Graph preview" />
+          </div>
+
+          <!-- Keywords -->
+          <div class="info-section hidden" id="keywordsSection">
+            <div class="info-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                <line x1="7" y1="7" x2="7.01" y2="7"/>
+              </svg>
+              Keywords / Tags
+            </div>
+            <div class="tags-wrap" id="tagsWrap"></div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>Built with SiteScope &middot; Preview powered by <a href="https://microlink.io" target="_blank" rel="noopener">Microlink</a></p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

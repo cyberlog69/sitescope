@@ -1,0 +1,12 @@
+# Byte-order-mark and OS-generated junk
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.lnk
+
+# Editor folders
+.vscode/
+.idea/
+
+# Logs
+*.log
