@@ -969,3 +969,295 @@ function renderCategory(url, title, description) {
 
   catDescription.textContent = `${cat.description}  \u00B7  ${confLabel}`;
 }
+
+// ════════════════════════════════════════════════════════════
+// ── BULK CHECK MODULE ────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+
+// ── Bulk DOM refs ────────────────────────────────────────────
+const modeSingle       = document.getElementById('modeSingle');
+const modeBulk         = document.getElementById('modeBulk');
+const singlePanel      = document.getElementById('singlePanel');
+const bulkPanel        = document.getElementById('bulkPanel');
+const bulkInput        = document.getElementById('bulkInput');
+const bulkCount        = document.getElementById('bulkCount');
+const bulkClearBtn     = document.getElementById('bulkClearBtn');
+const bulkRunBtn       = document.getElementById('bulkRunBtn');
+const bulkBtnText      = document.getElementById('bulkBtnText');
+const bulkBtnLoader    = document.getElementById('bulkBtnLoader');
+
+const bulkResults      = document.getElementById('bulkResults');
+const bulkProgressWrap = document.getElementById('bulkProgressWrap');
+const bulkProgressLabel= document.getElementById('bulkProgressLabel');
+const bulkProgressFill = document.getElementById('bulkProgressFill');
+const bulkStopBtn      = document.getElementById('bulkStopBtn');
+const bulkSummary      = document.getElementById('bulkSummary');
+const sumTotal         = document.getElementById('sumTotal');
+const sumOk            = document.getElementById('sumOk');
+const sumErr           = document.getElementById('sumErr');
+const sumTime          = document.getElementById('sumTime');
+const exportCsvBtn     = document.getElementById('exportCsvBtn');
+const bulkTableBody    = document.getElementById('bulkTableBody');
+
+// ── Bulk state ───────────────────────────────────────────────
+const MAX_BULK   = 25;
+const DELAY_MS   = 600;
+let bulkRunning  = false;
+let bulkAbort    = false;
+let bulkData     = [];
+
+// ── Mode toggle ──────────────────────────────────────────────
+modeSingle.addEventListener('click', () => setMode('single'));
+modeBulk.addEventListener('click',   () => setMode('bulk'));
+
+function setMode(mode) {
+  if (mode === 'single') {
+    modeSingle.classList.add('active');
+    modeBulk.classList.remove('active');
+    show(singlePanel);
+    hide(bulkPanel);
+    hide(bulkResults);
+  } else {
+    modeBulk.classList.add('active');
+    modeSingle.classList.remove('active');
+    hide(singlePanel);
+    show(bulkPanel);
+    hide(results);
+  }
+}
+
+// ── Bulk textarea counter ─────────────────────────────────────
+bulkInput.addEventListener('input', updateBulkCount);
+
+function updateBulkCount() {
+  const urls = parseBulkUrls(bulkInput.value);
+  const n = Math.min(urls.length, MAX_BULK);
+  bulkCount.textContent = n;
+  bulkCount.style.color = n >= MAX_BULK ? 'var(--red)' : '';
+}
+
+function parseBulkUrls(text) {
+  return text
+    .split(/[\n,]+/)
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(s => normalizeUrl(s))
+    .filter(Boolean)
+    .slice(0, MAX_BULK);
+}
+
+// ── Clear bulk input ─────────────────────────────────────────
+bulkClearBtn.addEventListener('click', () => {
+  bulkInput.value = '';
+  updateBulkCount();
+});
+
+// ── Stop button ──────────────────────────────────────────────
+bulkStopBtn.addEventListener('click', () => {
+  bulkAbort = true;
+  bulkStopBtn.disabled = true;
+  bulkProgressLabel.textContent = 'Stopping\u2026';
+});
+
+// ── Run bulk check ───────────────────────────────────────────
+bulkRunBtn.addEventListener('click', startBulkCheck);
+
+async function startBulkCheck() {
+  if (bulkRunning) return;
+
+  const urls = parseBulkUrls(bulkInput.value);
+  if (!urls.length) {
+    bulkInput.focus();
+    bulkInput.style.borderColor = 'var(--red)';
+    setTimeout(() => { bulkInput.style.borderColor = ''; }, 1500);
+    return;
+  }
+
+  bulkRunning = true;
+  bulkAbort   = false;
+  bulkData    = [];
+
+  hide(bulkBtnText); show(bulkBtnLoader);
+  bulkRunBtn.disabled = true;
+
+  show(bulkResults);
+  hide(bulkSummary);
+  bulkTableBody.innerHTML = '';
+  bulkStopBtn.disabled = false;
+
+  // Pre-populate skeleton rows
+  urls.forEach((url, i) => {
+    bulkTableBody.appendChild(makeSkeletonRow(i + 1, url));
+  });
+
+  const startTime = Date.now();
+  let okCount  = 0;
+  let errCount = 0;
+
+  for (let i = 0; i < urls.length; i++) {
+    if (bulkAbort) break;
+
+    const url = urls[i];
+    const pct = Math.round((i / urls.length) * 100);
+
+    bulkProgressFill.style.width = pct + '%';
+    bulkProgressLabel.textContent = `Checking ${i + 1} of ${urls.length}: ${getDomain(url)}`;
+
+    const rowEl = document.getElementById(`bulk-row-${i}`);
+    if (rowEl) rowEl.classList.add('bulk-row-checking');
+
+    let result = null;
+    try {
+      result = await fetchSiteData(url);
+    } catch(e) {
+      const { category } = classifySite(url, getDomain(url), '');
+      result = { ok: false, url, title: getDomain(url), desc: 'Error fetching data.', category, lang: null,
+                 favicon: `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=32` };
+    }
+
+    result.index = i + 1;
+    bulkData.push(result);
+    if (result.ok) okCount++; else errCount++;
+
+    if (rowEl) rowEl.replaceWith(makeResultRow(result));
+
+    if (i < urls.length - 1 && !bulkAbort) await sleep(DELAY_MS);
+  }
+
+  bulkProgressFill.style.width = '100%';
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  const done    = bulkAbort ? `Stopped after ${bulkData.length}` : `Done \u2014 all ${urls.length}`;
+  bulkProgressLabel.textContent = `${done} URLs checked in ${elapsed}s`;
+
+  sumTotal.textContent = bulkData.length;
+  sumOk.textContent    = okCount;
+  sumErr.textContent   = errCount;
+  sumTime.textContent  = elapsed + 's';
+  show(bulkSummary);
+
+  bulkRunning = false;
+  bulkAbort   = false;
+  show(bulkBtnText); hide(bulkBtnLoader);
+  bulkRunBtn.disabled = false;
+  bulkStopBtn.disabled = true;
+}
+
+// ── Fetch one site (no screenshot in bulk mode) ───────────────
+async function fetchSiteData(url) {
+  const apiUrl = `https://api.microlink.io/?url=${encodeURIComponent(url)}&meta=true&video=false`;
+  const res    = await fetch(apiUrl, { headers: { Accept: 'application/json' } });
+  const json   = await res.json();
+
+  if (json.status === 'success' || json.status === 'partial') {
+    const d = json.data;
+    const title = d.title || d.publisher || getDomain(url);
+    const desc  = d.description || '';
+    const lang  = d.lang || null;
+    const { category } = classifySite(url, title, desc);
+    return { ok: true, url, title, desc, lang, category,
+             favicon: `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=32` };
+  }
+  const { category } = classifySite(url, getDomain(url), '');
+  return { ok: false, url, title: getDomain(url), desc: 'Could not fetch metadata.', lang: null, category,
+           favicon: `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=32` };
+}
+
+// ── Skeleton row ─────────────────────────────────────────────
+function makeSkeletonRow(num, url) {
+  const tr = document.createElement('tr');
+  tr.id = `bulk-row-${num - 1}`;
+  tr.className = 'sk-row';
+  tr.innerHTML = `
+    <td><span class="row-num">${num}</span></td>
+    <td><div class="sk-cell" style="width:28px;height:28px;border-radius:6px"></div></td>
+    <td>
+      <div class="sk-cell" style="width:200px;margin-bottom:6px"></div>
+      <div class="sk-cell" style="width:130px"></div>
+    </td>
+    <td><div class="sk-cell" style="width:110px"></div></td>
+    <td><div class="sk-cell" style="width:70px"></div></td>
+    <td><div class="sk-cell" style="width:220px"></div></td>
+    <td><div class="sk-cell" style="width:90px"></div></td>
+  `;
+  return tr;
+}
+
+// ── Completed result row ─────────────────────────────────────
+function makeResultRow(r) {
+  const tr = document.createElement('tr');
+
+  const statusHtml = r.ok
+    ? `<span class="badge badge-ok" style="font-size:0.72rem;padding:3px 8px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><polyline points="20 6 9 17 4 12"/></svg>
+        OK</span>`
+    : `<span class="badge badge-err" style="font-size:0.72rem;padding:3px 8px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Failed</span>`;
+
+  const cat = r.category;
+  const catHtml = cat
+    ? `<span class="category-badge ${cat.cssClass}" style="padding:4px 10px;font-size:0.72rem;animation:none">${cat.emoji} ${cat.label}</span>`
+    : `<span style="color:var(--text-dim);font-size:0.78rem">&mdash;</span>`;
+
+  tr.innerHTML = `
+    <td><span class="row-num">${r.index}</span></td>
+    <td><img class="row-favicon" src="${escapeHtml(r.favicon)}" alt="" onerror="this.style.display='none'"/></td>
+    <td class="row-url-cell">
+      <span class="row-url" title="${escapeHtml(r.url)}">${escapeHtml(r.url)}</span>
+      <span class="row-title" title="${escapeHtml(r.title)}">${escapeHtml(r.title)}</span>
+    </td>
+    <td>${catHtml}</td>
+    <td>${statusHtml}</td>
+    <td><span class="row-desc" title="${escapeHtml(r.desc)}">${r.desc ? escapeHtml(r.desc) : '&mdash;'}</span></td>
+    <td>
+      <div class="row-actions">
+        <a class="row-action-btn" href="${escapeHtml(r.url)}" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Open
+        </a>
+        <button class="row-action-btn inspect-btn" onclick="inspectFromBulk('${escapeHtml(r.url)}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Inspect
+        </button>
+      </div>
+    </td>
+  `;
+  return tr;
+}
+
+// ── Inspect single site from bulk table ─────────────────────
+function inspectFromBulk(url) {
+  setMode('single');
+  urlInput.value = url;
+  clearBtn.classList.add('visible');
+  checkSite(url);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Export to CSV ────────────────────────────────────────────
+exportCsvBtn.addEventListener('click', () => {
+  if (!bulkData.length) return;
+
+  const header = ['#','URL','Title','Category','Status','Language','Description'];
+  const rows = bulkData.map(r => [
+    r.index, r.url, r.title,
+    r.category ? r.category.label : 'Unknown',
+    r.ok ? 'Reachable' : 'Failed',
+    r.lang || '',
+    r.desc
+  ]);
+
+  const csv = [header, ...rows]
+    .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+    .join('\r\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `sitescope-bulk-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+// ── Sleep helper ─────────────────────────────────────────────
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
