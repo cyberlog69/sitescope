@@ -758,7 +758,171 @@ body {
 .cat-portal        { background: rgba(14,165,233,0.12);  border-color: rgba(14,165,233,0.35); color: #7dd3fc; }
 .cat-unknown       { background: rgba(255,255,255,0.04); border-color: var(--border);         color: var(--text-muted); }
 
+/* ─── Security Scanner ─────────────────────────────────────── */
+
+.security-section { border-top: 1px solid var(--border); }
+
+.sec-scanning-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--accent-2);
+  background: rgba(108,99,255,0.1);
+  border: 1px solid rgba(108,99,255,0.25);
+  border-radius: 20px;
+  padding: 2px 8px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.sec-placeholder { animation: shimmer-anim 1.5s infinite; }
+
+/* Threat level hero badge */
+.sec-threat-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.sec-threat-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  background: currentColor;
+}
+.sec-threat-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.sec-threat-info { flex: 1; min-width: 0; }
+.sec-threat-level {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  display: block;
+}
+.sec-threat-sub {
+  font-size: 0.72rem;
+  opacity: 0.75;
+  display: block;
+  margin-top: 2px;
+}
+.sec-risk-pill {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  padding: 4px 10px;
+  flex-shrink: 0;
+  letter-spacing: -0.5px;
+}
+
+/* Threat level colour schemes */
+.sec-safe    { border-color: rgba(34,197,94,0.4);   color: #86efac; }
+.sec-low     { border-color: rgba(234,179,8,0.4);   color: #fde047; }
+.sec-medium  { border-color: rgba(249,115,22,0.4);  color: #fdba74; }
+.sec-high    { border-color: rgba(239,68,68,0.4);   color: #fca5a5; }
+.sec-critical{ border-color: rgba(220,38,38,0.6);   color: #f87171;
+               box-shadow: 0 0 20px rgba(220,38,38,0.15); animation: sec-pulse 2s infinite; }
+@keyframes sec-pulse {
+  0%,100% { box-shadow: 0 0 12px rgba(220,38,38,0.15); }
+  50%      { box-shadow: 0 0 28px rgba(220,38,38,0.35); }
+}
+
+/* Risk score bar */
+.sec-score-wrap { margin-bottom: 12px; }
+.sec-score-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-bottom: 5px;
+}
+.sec-score-track {
+  height: 5px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.sec-score-fill {
+  height: 100%;
+  border-radius: 20px;
+  transition: width 0.6s ease;
+}
+.sec-fill-safe     { background: linear-gradient(90deg,#16a34a,#22c55e); }
+.sec-fill-low      { background: linear-gradient(90deg,#ca8a04,#eab308); }
+.sec-fill-medium   { background: linear-gradient(90deg,#ea580c,#f97316); }
+.sec-fill-high     { background: linear-gradient(90deg,#dc2626,#ef4444); }
+.sec-fill-critical { background: linear-gradient(90deg,#7f1d1d,#dc2626); box-shadow: 0 0 6px rgba(220,38,38,0.5); }
+
+/* DB check badge */
+.sec-db-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+}
+.sec-db-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sec-db-dot-clean    { background: var(--green); box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+.sec-db-dot-malware  { background: var(--red);   box-shadow: 0 0 6px rgba(239,68,68,0.5); animation: sec-pulse 1.5s infinite; }
+.sec-db-dot-unknown  { background: var(--text-dim); }
+
+/* Findings list */
+.sec-findings { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.sec-finding {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+.sec-finding-icon { flex-shrink: 0; margin-top: 1px; }
+.sec-finding-icon svg { display: block; }
+.sec-finding.good   .sec-finding-icon { color: var(--green); }
+.sec-finding.warn   .sec-finding-icon { color: var(--yellow); }
+.sec-finding.danger .sec-finding-icon { color: var(--red); }
+.sec-finding.info   .sec-finding-icon { color: var(--accent-2); }
+
+/* Bulk table threat cell */
+.threat-badge-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.thr-safe     { background: rgba(34,197,94,0.1);  border-color: rgba(34,197,94,0.3);  color: #86efac; }
+.thr-low      { background: rgba(234,179,8,0.1);  border-color: rgba(234,179,8,0.3);  color: #fde047; }
+.thr-medium   { background: rgba(249,115,22,0.1); border-color: rgba(249,115,22,0.3); color: #fdba74; }
+.thr-high     { background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.3);  color: #fca5a5; }
+.thr-critical { background: rgba(220,38,38,0.15); border-color: rgba(220,38,38,0.5);  color: #f87171; }
+
 /* ─── Bulk Check ───────────────────────────────────────────── */
+
 
 /* Mode toggle */
 .mode-toggle {
