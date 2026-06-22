@@ -121,23 +121,37 @@ function resetResults() {
   catDescription.textContent = '';
   // Reset security
   resetSecurityPanel();
+  // Reset sandbox
+  resetSandboxPanel();
   // Switch to screenshot tab
   activateTab('screenshot');
 }
 
 // ── Tab Switching ───────────────────────────────────────────
+const tabSandbox   = document.getElementById('tabSandbox');
+const sandboxView  = document.getElementById('sandboxView');
+
 function activateTab(tab) {
+  // Reset all tabs
+  tabScreenshot.classList.remove('active');
+  tabSandbox.classList.remove('active');
+  tabLive.classList.remove('active');
+  hide(screenshotView);
+  hide(sandboxView);
+  hide(liveView);
+
   if (tab === 'screenshot') {
     tabScreenshot.classList.add('active');
-    tabLive.classList.remove('active');
     show(screenshotView);
-    hide(liveView);
+  } else if (tab === 'sandbox') {
+    tabSandbox.classList.add('active');
+    show(sandboxView);
+    // Load sandbox lazily on first click
+    if (currentUrl) loadSandbox(currentUrl);
   } else {
+    // live (unsafe)
     tabLive.classList.add('active');
-    tabScreenshot.classList.remove('active');
-    hide(screenshotView);
     show(liveView);
-    // Load iframe lazily
     if (currentUrl && siteFrame.src !== currentUrl) {
       siteFrame.src = currentUrl;
       iframeAddress.textContent = currentUrl;
@@ -146,6 +160,7 @@ function activateTab(tab) {
 }
 
 tabScreenshot.addEventListener('click', () => activateTab('screenshot'));
+tabSandbox.addEventListener('click',    () => activateTab('sandbox'));
 tabLive.addEventListener('click',       () => activateTab('live'));
 
 // ── Input Clear ─────────────────────────────────────────────
@@ -1614,4 +1629,267 @@ function renderSecurityReport(report, stage) {
     <!-- Findings -->
     <ul class="sec-findings">${findingsHtml}</ul>
   `;
+}
+
+
+// ════════════════════════════════════════════════════════════
+// ── SANDBOX CONTAINER MODULE ─────────────────────────────────
+//
+//  How it works:
+//  1. Fetch raw HTML via allorigins.win proxy (bypasses CORS)
+//  2. Parse & sanitize in a DOMParser:
+//       • Remove all <script> tags
+//       • Remove inline event handlers (onclick, onload, etc.)
+//       • Remove <iframe>, <object>, <embed>, <applet>
+//       • Block <meta http-equiv="refresh"> redirects
+//       • Neutralise javascript: href/src values
+//       • Remove known tracker pixel patterns
+//       • Disable all <form> submissions
+//       • Remove <base> and inject our own (for relative URLs)
+//       • Inject strict CSP <meta> (script-src 'none')
+//  3. Serialize sanitized DOM → Blob URL
+//  4. Load Blob into a maximally-restricted iframe:
+//       sandbox="allow-same-origin"  (CSS/images load, NO scripts)
+//       referrerpolicy="no-referrer" (no referrer leaks)
+//       allow="camera 'none'; mic 'none'; payment 'none'; ..."
+//  5. Revoke Blob URL after load (GC friendly)
+//  6. Update the status header with exact counts of what was blocked
+// ════════════════════════════════════════════════════════════
+
+// ── Sandbox DOM refs ─────────────────────────────────────────
+const sandboxFrame      = document.getElementById('sandboxFrame');
+const sandboxLoadingEl  = document.getElementById('sandboxLoading');
+const sandboxErrorEl    = document.getElementById('sandboxError');
+const sandboxErrMsg     = document.getElementById('sandboxErrMsg');
+const sandboxStatusSub  = document.getElementById('sandboxStatusSub');
+const sandboxLiveBadge  = document.getElementById('sandboxLiveBadge');
+
+// Block-count badges
+const sbScripts   = document.getElementById('sb-scripts');
+const sbForms     = document.getElementById('sb-forms');
+const sbIframes   = document.getElementById('sb-iframes');
+const sbRedirects = document.getElementById('sb-redirects');
+const sbTracking  = document.getElementById('sb-tracking');
+const sbHandlers  = document.getElementById('sb-handlers');
+
+// ── State ────────────────────────────────────────────────────
+let sandboxUrl      = '';   // URL currently loaded in sandbox
+let sandboxBlobUrl  = '';   // current blob URL (for revocation)
+let sandboxLoaded   = false;
+
+// ── Tracker domain patterns (pixel trackers, analytics) ──────
+const TRACKER_DOMAINS = [
+  'google-analytics.com','googletagmanager.com','doubleclick.net',
+  'facebook.com/tr','facebook.net','fbcdn.net','connect.facebook',
+  'analytics.yahoo.com','bat.bing.com','scorecardresearch.com',
+  'quantserve.com','hotjar.com','mixpanel.com','segment.io',
+  'segment.com','amplitude.com','intercom.io','hubspot.com',
+  'marketo.net','pardot.com','eloqua.com','mautic','matomo',
+  'piwik','newrelic.com','datadog','sentry.io','logrocket.com',
+  'fullstory.com','heap.io','crazyegg.com','clicktale','pingdom',
+  'cloudflare-static','cdn.cookielaw'
+];
+
+// ── Event handler attributes to strip ───────────────────────
+const DANGER_ATTRS = [
+  'onabort','onblur','oncanplay','oncanplaythrough','onchange','onclick',
+  'oncontextmenu','ondblclick','ondrag','ondragend','ondragenter',
+  'ondragleave','ondragover','ondragstart','ondrop','ondurationchange',
+  'onemptied','onended','onerror','onfocus','oninput','oninvalid',
+  'onkeydown','onkeypress','onkeyup','onload','onloadeddata',
+  'onloadedmetadata','onloadstart','onmousedown','onmouseenter',
+  'onmouseleave','onmousemove','onmouseout','onmouseover','onmouseup',
+  'onmousewheel','onpause','onplay','onplaying','onprogress',
+  'onratechange','onreset','onresize','onscroll','onseeked','onseeking',
+  'onselect','onshow','onstalled','onsubmit','onsuspend','ontimeupdate',
+  'onunload','onbeforeunload','onvolumechange','onwaiting','onpaste',
+  'oncopy','oncut','onpointerdown','onpointermove','onpointerup',
+  'onpointercancel','onwheel','ontouchstart','ontouchmove','ontouchend'
+];
+
+// ── Reset sandbox panel to skeleton state ────────────────────
+function resetSandboxPanel() {
+  sandboxUrl    = '';
+  sandboxLoaded = false;
+  if (sandboxBlobUrl) { URL.revokeObjectURL(sandboxBlobUrl); sandboxBlobUrl = ''; }
+  sandboxFrame.src = '';
+  sandboxFrame.classList.add('hidden');
+  sandboxLoadingEl.classList.remove('hidden');
+  sandboxErrorEl.classList.add('hidden');
+  sandboxStatusSub.textContent = 'Ready — click Sandbox tab to load';
+  sandboxLiveBadge.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Standby`;
+  sandboxLiveBadge.className = 'sandbox-live-badge';
+  [sbScripts,sbForms,sbIframes,sbRedirects,sbTracking,sbHandlers].forEach(el => {
+    el.className = 'sblock sblock-loading';
+    el.innerHTML = el.innerHTML; // force shimmer reset
+  });
+}
+
+// ── HTML Sanitizer ───────────────────────────────────────────
+function sanitizeForSandbox(rawHtml, baseUrl) {
+  const parser = new DOMParser();
+  const doc    = parser.parseFromString(rawHtml, 'text/html');
+
+  const stats = { scripts: 0, forms: 0, iframes: 0, redirects: 0, trackers: 0, handlers: 0 };
+
+  // 1 — Remove all script elements
+  doc.querySelectorAll('script, noscript').forEach(el => { stats.scripts++; el.remove(); });
+
+  // 2 — Remove embedded frame/plugin elements
+  doc.querySelectorAll('iframe, frame, frameset, object, embed, applet').forEach(el => {
+    stats.iframes++; el.remove();
+  });
+
+  // 3 — Block meta redirects and X-Frame-Options (can't affect iframe CSP but cleans it)
+  doc.querySelectorAll('meta').forEach(el => {
+    const equiv = (el.getAttribute('http-equiv') || '').toLowerCase();
+    if (equiv === 'refresh' || equiv === 'x-frame-options' || equiv === 'content-security-policy') {
+      stats.redirects++; el.remove();
+    }
+  });
+
+  // 4 — Remove existing base tags (we inject our own)
+  doc.querySelectorAll('base').forEach(el => el.remove());
+
+  // 5 — Remove known tracker scripts/pixels by src/href patterns
+  doc.querySelectorAll('[src],[href],[action],[data-src]').forEach(el => {
+    const attrs = ['src','href','action','data-src'];
+    attrs.forEach(attr => {
+      const val = el.getAttribute(attr) || '';
+      const isTracker = TRACKER_DOMAINS.some(t => val.includes(t));
+      if (isTracker) { stats.trackers++; el.remove(); }
+    });
+  });
+
+  // 6 — Strip all event handler attributes
+  doc.querySelectorAll('*').forEach(el => {
+    DANGER_ATTRS.forEach(attr => {
+      if (el.hasAttribute(attr)) { el.removeAttribute(attr); stats.handlers++; }
+    });
+
+    // Neutralise javascript: URLs
+    ['href','src','action','formaction','data'].forEach(attr => {
+      const val = (el.getAttribute(attr) || '').trim().toLowerCase();
+      if (val.startsWith('javascript:') || val.startsWith('vbscript:') || val.startsWith('data:text/html')) {
+        el.setAttribute(attr, '#');
+      }
+    });
+  });
+
+  // 7 — Disable all forms
+  doc.querySelectorAll('form').forEach(form => {
+    stats.forms++;
+    form.setAttribute('action', 'javascript:void(0)');
+    form.setAttribute('method', 'get');
+    // Disable all submit buttons inside
+    form.querySelectorAll('[type="submit"], button').forEach(btn => btn.setAttribute('disabled', 'true'));
+  });
+
+  // 8 — Remove link preloads/prefetches that could leak info
+  doc.querySelectorAll('link[rel="prefetch"], link[rel="prerender"], link[rel="dns-prefetch"]').forEach(el => el.remove());
+
+  // 9 — Inject our base tag (resolves relative URLs)
+  const base    = doc.createElement('base');
+  base.href     = baseUrl;
+  base.target   = '_blank'; // all links would open in new tab (blocked by sandbox anyway)
+  if (doc.head.firstChild) doc.head.insertBefore(base, doc.head.firstChild);
+  else doc.head.appendChild(base);
+
+  // 10 — Inject strict CSP meta (belt-and-suspenders on top of iframe sandbox)
+  const csp = doc.createElement('meta');
+  csp.setAttribute('http-equiv', 'Content-Security-Policy');
+  csp.setAttribute('content',
+    "default-src * 'unsafe-inline' data: blob:; " +
+    "script-src 'none'; " +
+    "form-action 'none'; " +
+    "frame-src 'none'; " +
+    "object-src 'none';"
+  );
+  doc.head.insertBefore(csp, doc.head.firstChild);
+
+  return { html: doc.documentElement.outerHTML, stats };
+}
+
+// ── Update the status block badges ──────────────────────────
+function updateSandboxBlocks(stats) {
+  function setBlock(el, label, svgInner, count) {
+    el.className = 'sblock sblock-blocked';
+    el.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">${svgInner}</svg>
+      ${label}
+      <span class="sblock-count">${count > 0 ? count : '✓'}</span>
+    `;
+  }
+
+  setBlock(sbScripts,   'Scripts',   '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',           stats.scripts);
+  setBlock(sbForms,     'Forms',     '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/>',     stats.forms);
+  setBlock(sbIframes,   'Iframes',   '<rect x="2" y="3" width="20" height="14" rx="2"/>',                                 stats.iframes);
+  setBlock(sbRedirects, 'Redirects', '<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>',          stats.redirects);
+  setBlock(sbTracking,  'Trackers',  '<circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 1 0 20A10 10 0 0 1 12 2"/>',        stats.trackers);
+  setBlock(sbHandlers,  'Events',    '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>',                          stats.handlers);
+}
+
+// ── Main sandbox loader ──────────────────────────────────────
+async function loadSandbox(url) {
+  // Avoid reloading same URL
+  if (sandboxLoaded && sandboxUrl === url) return;
+
+  sandboxUrl    = url;
+  sandboxLoaded = false;
+
+  // Reset visual state
+  sandboxFrame.classList.add('hidden');
+  sandboxLoadingEl.classList.remove('hidden');
+  sandboxErrorEl.classList.add('hidden');
+  sandboxStatusSub.textContent = 'Fetching page through proxy\u2026';
+  sandboxLiveBadge.innerHTML   = `<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Fetching`;
+  sandboxLiveBadge.className   = 'sandbox-live-badge';
+
+  try {
+    // Fetch via allorigins.win (free CORS proxy, no key needed)
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res  = await fetch(proxyUrl, { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
+    const json = await res.json();
+
+    if (!json.contents) throw new Error('Empty response from proxy');
+
+    sandboxStatusSub.textContent = 'Sanitizing — stripping scripts & trackers\u2026';
+
+    // Sanitize
+    const { html, stats } = sanitizeForSandbox(json.contents, url);
+
+    // Create Blob
+    if (sandboxBlobUrl) URL.revokeObjectURL(sandboxBlobUrl);
+    const blob      = new Blob([html], { type: 'text/html;charset=utf-8' });
+    sandboxBlobUrl  = URL.createObjectURL(blob);
+
+    // Load into iframe
+    sandboxFrame.onload = () => {
+      // Revoke blob after load to free memory
+      setTimeout(() => { URL.revokeObjectURL(sandboxBlobUrl); sandboxBlobUrl = ''; }, 3000);
+      sandboxLoaded = true;
+    };
+    sandboxFrame.src = sandboxBlobUrl;
+    sandboxFrame.classList.remove('hidden');
+    sandboxLoadingEl.classList.add('hidden');
+
+    // Update status header
+    const total = stats.scripts + stats.trackers + stats.handlers + stats.iframes + stats.forms + stats.redirects;
+    sandboxStatusSub.textContent = `\u2705 Fully isolated \u2014 ${total} threat${total !== 1 ? 's' : ''} blocked`;
+    sandboxLiveBadge.innerHTML   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><polyline points="20 6 9 17 4 12"/></svg> Isolated`;
+    sandboxLiveBadge.className   = 'sandbox-live-badge active';
+
+    // Update block count badges
+    updateSandboxBlocks(stats);
+
+  } catch (err) {
+    sandboxLoadingEl.classList.add('hidden');
+    sandboxErrorEl.classList.remove('hidden');
+    const msg = err.message || 'Unknown error';
+    sandboxErrMsg.textContent = `Sandbox failed: ${msg}`;
+    sandboxStatusSub.textContent = 'Could not load sandbox preview';
+    sandboxLiveBadge.innerHTML   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Failed`;
+    console.warn('[Sandbox] Failed to load:', err);
+  }
 }
