@@ -134,13 +134,41 @@ Check up to 25 URLs in one run.
 
 Just open `index.html` in any modern browser — **no server, no install, no signup needed**.
 
-```
+### Local Hosting (Optional)
+If you prefer to run it via a local development server, we've provided a simple batch script:
+1. Double click `start-local.bat` (or run `python -m http.server 8000` manually).
+2. Open your browser to `http://localhost:8000`.
+
+Alternatively, you can use Node.js: `npx serve`.
+
+```text
 Website Checker/
-├── index.html   ← App structure & all UI
-├── style.css    ← Dark glassmorphism design system (v4)
-├── app.js       ← All logic: classifier, email validator, security scanner, sandbox
+├── index.html       ← App structure & all UI
+├── style.css        ← Dark glassmorphism design system (v4)
+├── app.js           ← All logic: classifier, email validator, security scanner, sandbox
+├── start-local.bat  ← Local Python HTTP server script
 └── README.md
 ```
+
+---
+
+## 🌍 Internet Hosting & Deployment
+
+Because SiteScope is a 100% static application (HTML, CSS, JS) with no backend database, it is extremely simple to deploy globally for free.
+
+### GitHub Pages (Recommended)
+Since the code is already on GitHub, this is the easiest zero-cost option:
+1. Go to your repository settings on GitHub.
+2. Click on **Pages** in the left sidebar.
+3. Under "Build and deployment", select `Deploy from a branch`.
+4. Choose the `master` branch and `/ (root)` folder, then click **Save**.
+5. Your site will be live globally within 2 minutes!
+
+### Vercel or Netlify
+For a more advanced CDN, PR previews, and custom domain linking:
+1. Sign up to [Vercel](https://vercel.com/) or [Netlify](https://netlify.com/) with your GitHub account.
+2. Import the `cyberlog69/sitescope` repository.
+3. Click **Deploy**. The platform will instantly serve your site globally for free.
 
 ---
 
