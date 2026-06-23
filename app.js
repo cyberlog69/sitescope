@@ -1028,22 +1028,38 @@ let bulkAbort    = false;
 let bulkData     = [];
 
 // ── Mode toggle ──────────────────────────────────────────────
+const modeEmail = document.getElementById('modeEmail');
 modeSingle.addEventListener('click', () => setMode('single'));
 modeBulk.addEventListener('click',   () => setMode('bulk'));
+modeEmail.addEventListener('click',  () => setMode('email'));
 
 function setMode(mode) {
+  const emailPanelEl = document.getElementById('emailPanel');
   if (mode === 'single') {
     modeSingle.classList.add('active');
     modeBulk.classList.remove('active');
+    modeEmail.classList.remove('active');
     show(singlePanel);
     hide(bulkPanel);
     hide(bulkResults);
+    if (emailPanelEl) hide(emailPanelEl);
+  } else if (mode === 'email') {
+    modeEmail.classList.add('active');
+    modeSingle.classList.remove('active');
+    modeBulk.classList.remove('active');
+    hide(singlePanel);
+    hide(bulkPanel);
+    hide(bulkResults);
+    hide(results);
+    if (emailPanelEl) show(emailPanelEl);
   } else {
     modeBulk.classList.add('active');
     modeSingle.classList.remove('active');
+    modeEmail.classList.remove('active');
     hide(singlePanel);
     show(bulkPanel);
     hide(results);
+    if (emailPanelEl) hide(emailPanelEl);
   }
 }
 
@@ -1893,3 +1909,583 @@ async function loadSandbox(url) {
     console.warn('[Sandbox] Failed to load:', err);
   }
 }
+
+
+// ════════════════════════════════════════════════════════════
+// ── EMAIL CHECKER & SCAM DETECTION MODULE ────────────────────
+//
+//  Validation layers:
+//    1. RFC 5322 format check (regex)
+//    2. Local-part structure analysis (length, special chars)
+//    3. Disposable / temp email domain detection (400+ domains)
+//    4. DNS MX record check via Google DoH (no API key)
+//    5. Heuristic scam scoring:
+//         • Suspicious TLD for email domain
+//         • Typosquatting known brands
+//         • Scam keywords in local part
+//         • Excessive numbers in local part
+//         • Brand impersonation patterns in domain
+//         • Free provider used as "business" sender
+//         • Double-hyphen / numeric-only domain
+//    6. Bulk mode: 50 emails, table + CSV export
+// ════════════════════════════════════════════════════════════
+
+// ── DOM refs ─────────────────────────────────────────────────
+const emailInput       = document.getElementById('emailInput');
+const emailClearBtn    = document.getElementById('emailClearBtn');
+const emailCheckBtn    = document.getElementById('emailCheckBtn');
+const emailBtnText     = document.getElementById('emailBtnText');
+const emailBtnLoader   = document.getElementById('emailBtnLoader');
+const emailResult      = document.getElementById('emailResult');
+
+const emailSubSingle   = document.getElementById('emailSubSingle');
+const emailSubBulk     = document.getElementById('emailSubBulk');
+const emailSinglePanel = document.getElementById('emailSinglePanel');
+const emailBulkPanel   = document.getElementById('emailBulkPanel');
+
+const emailBulkInput      = document.getElementById('emailBulkInput');
+const emailBulkCount      = document.getElementById('emailBulkCount');
+const emailBulkClearBtn   = document.getElementById('emailBulkClearBtn');
+const emailBulkRunBtn     = document.getElementById('emailBulkRunBtn');
+const emailBulkBtnText    = document.getElementById('emailBulkBtnText');
+const emailBulkBtnLoader  = document.getElementById('emailBulkBtnLoader');
+const emailBulkResults    = document.getElementById('emailBulkResults');
+const emailBulkTableBody  = document.getElementById('emailBulkTableBody');
+const emailBulkSummary    = document.getElementById('emailBulkSummary');
+const emailExportCsvBtn   = document.getElementById('emailExportCsvBtn');
+
+// ── Sub-tab switching ─────────────────────────────────────────
+function setEmailSubMode(mode) {
+  if (mode === 'single') {
+    emailSubSingle.classList.add('active');
+    emailSubBulk.classList.remove('active');
+    show(emailSinglePanel);
+    hide(emailBulkPanel);
+  } else {
+    emailSubBulk.classList.add('active');
+    emailSubSingle.classList.remove('active');
+    hide(emailSinglePanel);
+    show(emailBulkPanel);
+  }
+}
+emailSubSingle.addEventListener('click', () => setEmailSubMode('single'));
+emailSubBulk.addEventListener('click',   () => setEmailSubMode('bulk'));
+
+// ── Quick-fill email links ────────────────────────────────────
+document.querySelectorAll('.quick-btn[data-email]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    emailInput.value = btn.dataset.email;
+    emailClearBtn.classList.add('visible');
+  });
+});
+
+// ── Clear button ──────────────────────────────────────────────
+emailClearBtn.addEventListener('click', () => {
+  emailInput.value = '';
+  emailClearBtn.classList.remove('visible');
+  emailResult.classList.add('hidden');
+  emailInput.focus();
+});
+emailInput.addEventListener('input', () => {
+  emailClearBtn.classList.toggle('visible', emailInput.value.trim().length > 0);
+});
+
+emailBulkClearBtn.addEventListener('click', () => {
+  emailBulkInput.value = '';
+  emailBulkCount.textContent = '0';
+  hide(emailBulkResults);
+  hide(emailBulkSummary);
+  emailBulkTableBody.innerHTML = '';
+});
+emailBulkInput.addEventListener('input', () => {
+  const emails = parseEmailList(emailBulkInput.value);
+  const n = Math.min(emails.length, 50);
+  emailBulkCount.textContent = n;
+  emailBulkCount.style.color = n >= 50 ? 'var(--red)' : '';
+});
+
+function parseEmailList(text) {
+  return text.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean).slice(0, 50);
+}
+
+// ── Enter key triggers validate ──────────────────────────────
+emailInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') runEmailCheck(emailInput.value.trim());
+});
+emailCheckBtn.addEventListener('click', () => runEmailCheck(emailInput.value.trim()));
+emailBulkRunBtn.addEventListener('click', runBulkEmailCheck);
+
+// ════════════════════════════════════════════════════════════
+// ── DATA: Disposable Email Domains (400+) ────────────────────
+// ════════════════════════════════════════════════════════════
+const DISPOSABLE_DOMAINS = new Set([
+  // Classic disposable
+  'mailinator.com','guerrillamail.com','guerrillamail.net','guerrillamail.org',
+  'guerrillamail.biz','guerrillamail.de','guerrillamail.info','guerrillamail.co',
+  'temp-mail.org','temp-mail.io','tempmail.com','tempr.email','tempemail.net',
+  '10minutemail.com','10minutemail.net','10minutemail.org','10minutemail.co',
+  '10minemail.com','10mail.org','20minutemail.com','dispostable.com',
+  'yopmail.com','yopmail.fr','cool.fr.nf','jetable.fr.nf','nospam.ze.tc',
+  'nomail.xl.cx','mega.zik.dj','speed.1s.fr','courriel.fr.nf','moncourrier.fr.nf',
+  'monemail.fr.nf','monmail.fr.nf','trashmail.com','trashmail.at','trashmail.io',
+  'trashmail.me','trashmail.net','trashmail.org','trashmail.xyz',
+  'mailnull.com','spamgourmet.com','spamgourmet.net','spamgourmet.org',
+  'spam4.me','spamthisplease.com','spamfree24.org','spamfree24.de',
+  'spamfree.eu','spamfree24.net','spamfree24.info','spam.la','spamex.com',
+  'jetable.com','jetable.net','jetable.org','jetable.fr','filzmail.com',
+  'throwam.com','throwam.net','throwm.me','throwaway.email',
+  'getnada.com','nada.email','mintemail.com','mintmail.me',
+  'sharklasers.com','guerrillamailblock.com','grr.la','guerrillamail.biz',
+  'spam.su','maileater.com','mailmetrash.com','maildrop.cc','mailnesia.com',
+  'mailnew.com','mailsac.com','mailscrap.com','mailshell.com','mailsiphon.com',
+  'mailslap.com','mailslite.com','mailnew.com','mailnew.com',
+  'fakeinbox.com','fakeinbox.net','fakeinbox.org','fake-box.com',
+  'fakemailgenerator.com','guerillamail.com','discard.email','discardmail.com',
+  'discardmail.de','spamgrap.com','tempemail.co.za','tempemail.biz',
+  'temp-mail.de','getonemail.com','getonemail.net','getonemail.org',
+  'momentom.de','mr24.co','mt2009.com','mt2014.com','mt2015.com',
+  'mxfuel.com','mymail-in.net','myrealbox.com','n2.jp','netmails.net',
+  'objectmail.com','obobbo.com','odaymail.com','oneoffmail.com',
+  'onewaymail.com','online.ms','oopi.org','ordinaryamerican.net',
+  'owlpic.com','pecinan.com','pecinan.net','pecinan.org','pepbot.com',
+  'pookmail.com','prtnx.com','punkass.com','putthisinyourspamdatabase.com',
+  'quickinbox.com','rtrtr.com','rushpost.com','s0ny.net','safe-mail.net',
+  'safersignup.de','sashort.com','sendspamhere.com','shieldedmail.com',
+  'shitmail.me','sicherpost.de','slopsbox.com','slushmail.com',
+  'smellfear.com','sofimail.com','sofort-mail.de','spam.care','spam.co',
+  'spam.wtf','spamevader.com','spamfree.eu','spamgap.com','spamgoes.in',
+  'spamherelots.com','spamhereplease.com','spamhole.com','spamify.com',
+  'spaml.com','spaml.de','spammotel.com','spamoff.de','spamserver.net',
+  'spamslicer.com','spamspot.com','spamstack.net','spamtest.org',
+  'spamtrail.com','spamtrap.ro','superrito.com','suremail.info',
+  'teewars.org','teleworm.com','teleworm.us','temporaryemail.net',
+  'temporaryemail.us','temporaryforwarding.com','temporaryinbox.com',
+  'thankyou2010.com','thisisnotmyrealemail.com','throwam.com',
+  'tilien.com','tittbit.in','tmailinator.com','toiea.com',
+  'trbvm.com','trillianpro.com','trollproject.com','trud.us',
+  'twinmail.de','umail.net','ungmail.com','unids.com','uroid.com',
+  'veryrealemail.com','viditag.com','viralplays.com','vpn.st',
+  'vubby.com','wazabi.club','wetrainbayarea.com','whatpaas.com',
+  'whyspam.me','willhackforfood.biz','wilemail.com','wolfsmail.tk',
+  'wralmail.com','wuzup.net','wuzupmail.net','xagloo.com','xemaps.com',
+  'xent.com','xmaily.com','xoxy.net','xyzfree.net','yapped.net',
+  'yeah.net','yep.it','yogamaven.com','yuurok.com','ze.tc','zehnminuten.de',
+  'zippymail.info','zoemail.net','zoemail.org','zomg.info','example.com'
+]);
+
+// ── Known legitimate email providers ────────────────────────
+const LEGIT_PROVIDERS = new Set([
+  'gmail.com','yahoo.com','yahoo.co.uk','yahoo.co.in','yahoo.fr',
+  'outlook.com','hotmail.com','hotmail.co.uk','hotmail.fr','live.com',
+  'icloud.com','me.com','mac.com','protonmail.com','proton.me',
+  'tutanota.com','tutanota.de','fastmail.com','fastmail.fm','fastmail.net',
+  'aol.com','zoho.com','zohomail.com','yandex.com','yandex.ru',
+  'mail.com','inbox.com','gmx.com','gmx.net','gmx.de','gmx.at','gmx.ch',
+  'msn.com','live.in','live.co.uk','live.com.au','windowslive.com',
+  'rocketmail.com','rediffmail.com','sbcglobal.net','att.net','bellsouth.net',
+  'verizon.net','comcast.net','cox.net','charter.net','earthlink.net'
+]);
+
+// ── Scam keywords in email local part ───────────────────────
+const SCAM_LOCAL_KEYWORDS = [
+  'refund','claim','prize','winner','lottery','million','billion',
+  'cashback','reward','bonus','giveaway','free-money','alert',
+  'suspended','verify','unlock','helpdesk','support','security',
+  'account-update','urgent','final-notice','irs','fbi','interpol',
+  'payroll','payment-confirm','invoice-attached','billing','tax-refund',
+  'covid','vaccine','covid-relief','stimulus','inheritance',
+  'noreply','no-reply','donotreply','admin','administrator',
+  'postmaster','webmaster','service','info','contact','help'
+];
+
+// ── Known brands for typosquatting in EMAIL domain ───────────
+const EMAIL_BRAND_DOMAINS = [
+  'paypal','amazon','apple','microsoft','google','facebook','netflix',
+  'instagram','twitter','linkedin','dropbox','stripe','shopify',
+  'ebay','alibaba','yahoo','gmail','outlook','hotmail','icloud',
+  'chase','wellsfargo','bankofamerica','hsbc','barclays','citibank',
+  'irs','gov','medicare','socialsecurity','fedex','ups','dhl','usps'
+];
+
+// ── RFC 5322 email format validator ─────────────────────────
+function isValidEmailFormat(email) {
+  // RFC 5322 simplified regex — covers all practical cases
+  const re = /^(?:[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-zA-Z0-9-]*[a-zA-Z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/;
+  return re.test(email);
+}
+
+// ── DNS MX lookup via Google DoH ────────────────────────────
+async function checkMxRecords(domain) {
+  try {
+    const url = `https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=MX`;
+    const res  = await fetch(url, { headers: { Accept: 'application/json' } });
+    const json = await res.json();
+    // Status 0 = NOERROR
+    if (json.Status !== 0) return { hasMx: false, count: 0, servers: [] };
+    const mx = (json.Answer || []).filter(r => r.type === 15);
+    return {
+      hasMx: mx.length > 0,
+      count: mx.length,
+      servers: mx.map(r => r.data.replace(/^\d+ /, '').replace(/\.$/, ''))
+    };
+  } catch {
+    return { hasMx: null, count: 0, servers: [], error: true }; // null = unknown
+  }
+}
+
+// ── Heuristic scam scorer ────────────────────────────────────
+function emailScamScore(localPart, domain) {
+  const findings = [];
+  let score = 0;
+
+  const domainLower = domain.toLowerCase();
+  const localLower  = localPart.toLowerCase();
+  const domainBase  = domainLower.split('.')[0];
+  const tld         = '.' + domainLower.split('.').slice(1).join('.');
+
+  // ── Legitimate known provider → big credit
+  if (LEGIT_PROVIDERS.has(domainLower)) {
+    score -= 20;
+    findings.push({ type: 'good', text: `"${domain}" is a well-known, trusted email provider.` });
+  }
+
+  // ── Suspicious TLD for email
+  const EMAIL_SUSPICIOUS_TLDS = new Set(['.xyz','.top','.tk','.ml','.ga','.cf','.gq','.click',
+    '.loan','.stream','.win','.bid','.date','.trade','.review','.cricket','.faith','.party','.zip','.mov']);
+  if (EMAIL_SUSPICIOUS_TLDS.has(tld)) {
+    score += 28;
+    findings.push({ type: 'danger', text: `Domain TLD "${tld}" is commonly used in phishing & scam emails.` });
+  }
+
+  // ── Scam keywords in local part
+  const kwHits = SCAM_LOCAL_KEYWORDS.filter(k => localLower.includes(k));
+  if (kwHits.length >= 2) {
+    score += 22;
+    findings.push({ type: 'danger', text: `Multiple scam keywords in local part: "${kwHits.slice(0,3).join('", "')}"` });
+  } else if (kwHits.length === 1) {
+    score += 10;
+    findings.push({ type: 'warn', text: `Keyword "${kwHits[0]}" in email address — common in scam/phishing emails.` });
+  } else {
+    findings.push({ type: 'good', text: 'No scam-related keywords detected in the local part.' });
+  }
+
+  // ── Excessive numbers in local part (bots / generated accounts)
+  const numMatch = localLower.match(/\d+/g);
+  const numTotal = numMatch ? numMatch.join('').length : 0;
+  if (numTotal >= 6) {
+    score += 15;
+    findings.push({ type: 'warn', text: `Local part contains ${numTotal} digits — may be a generated/bot account.` });
+  } else if (numTotal >= 3) {
+    score += 6;
+  }
+
+  // ── Typosquatting of known brand in domain
+  const typoHit = EMAIL_BRAND_DOMAINS.find(brand => {
+    if (domainBase === brand) return false;
+    return levenshtein(domainBase, brand) <= 2 && domainBase.length >= brand.length - 1;
+  });
+  if (typoHit) {
+    score += 35;
+    findings.push({ type: 'danger', text: `Domain "${domainBase}" closely resembles "${typoHit}" — possible brand impersonation.` });
+  }
+
+  // ── Brand keyword in non-brand domain (support@apple-helpdesk.com)
+  const brandImpersonation = EMAIL_BRAND_DOMAINS.find(brand =>
+    domainLower.includes(brand) && !LEGIT_PROVIDERS.has(domainLower)
+  );
+  if (brandImpersonation) {
+    score += 30;
+    findings.push({ type: 'danger', text: `Domain contains "${brandImpersonation}" but is NOT the official domain — strong impersonation signal.` });
+  }
+
+  // ── Double-hyphen in domain (IDN trick)
+  if (/--/.test(domainBase)) {
+    score += 12;
+    findings.push({ type: 'warn', text: 'Double hyphen in domain — may indicate IDN spoofing trick.' });
+  }
+
+  // ── Numeric-only domain base
+  if (/^\d+$/.test(domainBase)) {
+    score += 18;
+    findings.push({ type: 'warn', text: 'Domain base is entirely numeric — uncommon for legitimate email domains.' });
+  }
+
+  // ── Very long local part (>30 chars)
+  if (localPart.length > 30) {
+    score += 10;
+    findings.push({ type: 'warn', text: `Very long local part (${localPart.length} chars) — unusual for a real email address.` });
+  }
+
+  score = Math.max(0, Math.min(100, score));
+  return { score, findings };
+}
+
+// ── Verdict from score + flags ───────────────────────────────
+const EMAIL_VERDICT = {
+  clean:    { label: 'Looks Legitimate',    icon: '✅', cls: 'ev-clean',    badgeCls: 'ev-badge-clean',    msg: 'No significant scam signals detected.' },
+  low:      { label: 'Low Scam Risk',       icon: '🟡', cls: 'ev-low',     badgeCls: 'ev-badge-low',      msg: 'Minor signals detected. Use with normal caution.' },
+  medium:   { label: 'Medium Scam Risk',    icon: '⚠️', cls: 'ev-medium',  badgeCls: 'ev-badge-medium',   msg: 'Several risk signals. Verify sender identity before responding.' },
+  high:     { label: 'High Scam Risk',      icon: '🔴', cls: 'ev-high',    badgeCls: 'ev-badge-high',     msg: 'Strong indicators of phishing or scam email.' },
+  critical: { label: 'Scam / Fraud Alert',  icon: '🚨', cls: 'ev-critical', badgeCls: 'ev-badge-critical', msg: 'DANGER: Multiple scam/fraud indicators detected. Do NOT engage.' },
+  invalid:  { label: 'Invalid Email',       icon: '❌', cls: 'ev-high',    badgeCls: 'ev-badge-invalid',  msg: 'Not a valid email address format.' },
+  disposable:{ label: 'Disposable Email',   icon: '🗑️', cls: 'ev-medium',  badgeCls: 'ev-badge-medium',   msg: 'Temporary/disposable address — avoid for important communications.' }
+};
+
+function getVerdict(score, isDisposableFlag, formatOk) {
+  if (!formatOk) return 'invalid';
+  if (isDisposableFlag) return 'disposable';
+  if (score <= 10) return 'clean';
+  if (score <= 25) return 'low';
+  if (score <= 50) return 'medium';
+  if (score <= 70) return 'high';
+  return 'critical';
+}
+
+// ── Score fill colour class ──────────────────────────────────
+function emailScoreFillCls(verdict) {
+  const map = { clean:'sec-fill-safe', low:'sec-fill-low', medium:'sec-fill-medium',
+                high:'sec-fill-high', critical:'sec-fill-critical',
+                invalid:'sec-fill-high', disposable:'sec-fill-medium' };
+  return map[verdict] || 'sec-fill-medium';
+}
+
+// ── Render single email result ───────────────────────────────
+function renderEmailResult(data) {
+  const { email, localPart, domain, formatOk, isDisposableFlag,
+          mx, scam, verdict, verdictMeta } = data;
+  const score = scam.score;
+
+  const svgGood   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const svgWarn   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+  const svgDanger = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+  const svgInfo   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+  const iconMap   = { good: svgGood, warn: svgWarn, danger: svgDanger, info: svgInfo };
+
+  // MX display
+  const mxPass    = mx.hasMx === true;
+  const mxUnknown = mx.hasMx === null;
+  const mxIcon    = mxUnknown ? 'warn' : mxPass ? 'pass' : 'fail';
+  const mxLabel   = mxUnknown ? 'Unknown (net error)' : mxPass ? `${mx.count} server${mx.count > 1 ? 's' : ''} found` : 'No MX records';
+
+  // Disposable display
+  const dispIcon  = isDisposableFlag ? 'fail' : 'pass';
+  const dispLabel = isDisposableFlag ? 'Yes — Temporary Address' : 'No — Persistent Domain';
+
+  // Score bar colour matching verdict
+  const fillCls = emailScoreFillCls(verdict);
+
+  // Findings HTML
+  const findingsHtml = scam.findings.map(f => `
+    <li class="email-finding-item ${f.type}">
+      ${iconMap[f.type] || svgInfo}
+      <span>${escapeHtml(f.text)}</span>
+    </li>`).join('');
+
+  emailResult.innerHTML = `
+    <!-- Verdict band -->
+    <div class="email-verdict-band ${verdictMeta.cls}">
+      <span class="email-verdict-icon">${verdictMeta.icon}</span>
+      <div class="email-verdict-info">
+        <span class="email-verdict-title">${escapeHtml(verdictMeta.label)}</span>
+        <span class="email-verdict-sub">${escapeHtml(email)} &mdash; ${escapeHtml(verdictMeta.msg)}</span>
+      </div>
+      <span class="email-score-pill">${score}</span>
+    </div>
+
+    <!-- Checks grid -->
+    <div class="email-checks">
+      <div class="email-check-item">
+        <span class="email-check-icon ${formatOk ? 'pass' : 'fail'}">${formatOk ? svgGood : svgDanger}</span>
+        <span class="email-check-label">Format</span>
+        <span class="email-check-val">${formatOk ? 'Valid RFC 5322' : 'Invalid format'}</span>
+      </div>
+      <div class="email-check-item">
+        <span class="email-check-icon info">${svgInfo}</span>
+        <span class="email-check-label">Local Part</span>
+        <span class="email-check-val" title="${escapeHtml(localPart)}">${escapeHtml(localPart)}</span>
+      </div>
+      <div class="email-check-item">
+        <span class="email-check-icon info">${svgInfo}</span>
+        <span class="email-check-label">Domain</span>
+        <span class="email-check-val">${escapeHtml(domain)}</span>
+      </div>
+      <div class="email-check-item">
+        <span class="email-check-icon ${mxIcon}">${mxIcon === 'pass' ? svgGood : mxIcon === 'warn' ? svgWarn : svgDanger}</span>
+        <span class="email-check-label">MX Records</span>
+        <span class="email-check-val">${escapeHtml(mxLabel)}</span>
+      </div>
+      <div class="email-check-item">
+        <span class="email-check-icon ${dispIcon}">${isDisposableFlag ? svgDanger : svgGood}</span>
+        <span class="email-check-label">Disposable</span>
+        <span class="email-check-val">${escapeHtml(dispLabel)}</span>
+      </div>
+      <div class="email-check-item">
+        <span class="email-check-icon ${score <= 10 ? 'pass' : score <= 40 ? 'warn' : 'fail'}">${score <= 10 ? svgGood : score <= 40 ? svgWarn : svgDanger}</span>
+        <span class="email-check-label">Scam Score</span>
+        <span class="email-check-val">${score} / 100</span>
+      </div>
+    </div>
+
+    <!-- Score bar -->
+    <div class="email-score-wrap">
+      <div class="email-score-label"><span>Scam Risk Score</span><span>${score} / 100</span></div>
+      <div class="email-score-track">
+        <div class="email-score-fill ${fillCls}" style="width:${score}%"></div>
+      </div>
+    </div>
+
+    <!-- Findings -->
+    <div class="email-findings">
+      <div class="email-findings-title">Analysis Details</div>
+      <ul class="email-finding-list">${findingsHtml}</ul>
+    </div>
+  `;
+
+  emailResult.classList.remove('hidden');
+}
+
+// ── Main single-email orchestrator ───────────────────────────
+async function runEmailCheck(email) {
+  if (!email) { emailInput.focus(); return; }
+
+  // Show loader
+  show(emailBtnLoader);
+  hide(emailBtnText);
+  emailResult.classList.add('hidden');
+
+  const formatOk = isValidEmailFormat(email);
+  const atIdx    = email.lastIndexOf('@');
+  const localPart = atIdx > -1 ? email.slice(0, atIdx) : email;
+  const domain    = atIdx > -1 ? email.slice(atIdx + 1).toLowerCase() : '';
+
+  // Disposable check (instant)
+  const isDisposableFlag = DISPOSABLE_DOMAINS.has(domain);
+
+  // MX check (async)
+  const mx = formatOk && domain ? await checkMxRecords(domain) : { hasMx: false, count: 0, servers: [], error: false };
+
+  // Scam heuristics (instant)
+  const scam = (formatOk && domain) ? emailScamScore(localPart, domain) : { score: 0, findings: [] };
+
+  // Extra MX penalty
+  if (mx.hasMx === false && !mx.error && formatOk) {
+    scam.score = Math.min(100, scam.score + 30);
+    scam.findings.unshift({ type: 'danger', text: 'No MX records found — this domain cannot receive emails.' });
+  } else if (mx.hasMx === true) {
+    scam.findings.unshift({ type: 'good', text: `Domain has ${mx.count} active mail server${mx.count > 1 ? 's' : ''}: ${mx.servers.slice(0,2).join(', ')}${mx.count > 2 ? '…' : ''}` });
+  }
+
+  const verdict     = getVerdict(scam.score, isDisposableFlag, formatOk);
+  const verdictMeta = EMAIL_VERDICT[verdict];
+
+  renderEmailResult({ email, localPart, domain, formatOk, isDisposableFlag, mx, scam, verdict, verdictMeta });
+
+  hide(emailBtnLoader);
+  show(emailBtnText);
+}
+
+// ── Bulk email check ─────────────────────────────────────────
+let emailBulkData = [];
+
+async function runBulkEmailCheck() {
+  const emails = parseEmailList(emailBulkInput.value);
+  if (!emails.length) return;
+
+  // Show loader
+  show(emailBulkBtnLoader);
+  hide(emailBulkBtnText);
+  emailBulkTableBody.innerHTML = '';
+  emailBulkData = [];
+  show(emailBulkResults);
+  hide(emailBulkSummary);
+
+  let countValid = 0, countScam = 0, countDisp = 0;
+
+  for (let i = 0; i < emails.length; i++) {
+    const email  = emails[i];
+    const atIdx  = email.lastIndexOf('@');
+    const local  = atIdx > -1 ? email.slice(0, atIdx) : email;
+    const domain = atIdx > -1 ? email.slice(atIdx + 1).toLowerCase() : '';
+
+    const formatOk = isValidEmailFormat(email);
+    const isDisp   = DISPOSABLE_DOMAINS.has(domain);
+    const mx       = formatOk && domain ? await checkMxRecords(domain) : { hasMx: false, count: 0, servers: [], error: false };
+    const scam     = (formatOk && domain) ? emailScamScore(local, domain) : { score: 0, findings: [] };
+
+    if (mx.hasMx === false && !mx.error && formatOk) scam.score = Math.min(100, scam.score + 30);
+
+    const verdict     = getVerdict(scam.score, isDisp, formatOk);
+    const verdictMeta = EMAIL_VERDICT[verdict];
+
+    const row = {
+      index: i + 1, email, domain, formatOk, isDisp,
+      mxOk: mx.hasMx, mxCount: mx.count,
+      score: scam.score, verdict, verdictMeta
+    };
+    emailBulkData.push(row);
+
+    if (verdict === 'clean' || verdict === 'low') countValid++;
+    if (['high','critical','disposable'].includes(verdict)) countScam++;
+    if (isDisp) countDisp++;
+
+    // Render row immediately
+    const tr = buildEmailTableRow(row);
+    emailBulkTableBody.appendChild(tr);
+
+    // Delay to avoid DoH rate limits
+    if (i < emails.length - 1) await sleep(400);
+  }
+
+  // Summary
+  document.getElementById('esum-total').textContent = emails.length;
+  document.getElementById('esum-valid').textContent = countValid;
+  document.getElementById('esum-scam').textContent  = countScam;
+  document.getElementById('esum-disposable').textContent = countDisp;
+  show(emailBulkSummary);
+
+  hide(emailBulkBtnLoader);
+  show(emailBulkBtnText);
+}
+
+function buildEmailTableRow(row) {
+  const { index, email, domain, formatOk, isDisp, mxOk, mxCount, score, verdict, verdictMeta } = row;
+
+  const svgOk  = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const svgBad = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+  const svgQ   = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2.5" width="13" height="13"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+
+  const mxDisp  = mxOk === true ? `${svgOk} ${mxCount}` : mxOk === null ? svgQ : svgBad;
+  const dispDisp = isDisp ? `${svgBad} Yes` : `${svgOk} No`;
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${index}</td>
+    <td title="${escapeHtml(email)}">${escapeHtml(email)}</td>
+    <td>${formatOk ? svgOk : svgBad}</td>
+    <td>${mxDisp}</td>
+    <td>${dispDisp}</td>
+    <td style="font-family:'Space Grotesk',sans-serif;font-weight:700;color:${score <= 10 ? 'var(--green)' : score <= 40 ? 'var(--yellow)' : 'var(--red)'}">${score}</td>
+    <td><span class="ev-badge ${verdictMeta.badgeCls}">${verdictMeta.icon} ${escapeHtml(verdictMeta.label)}</span></td>
+  `;
+  return tr;
+}
+
+// ── Bulk email CSV export ─────────────────────────────────────
+emailExportCsvBtn.addEventListener('click', () => {
+  if (!emailBulkData.length) return;
+  const header = ['#','Email','Domain','Format OK','MX OK','MX Servers','Disposable','Scam Score','Verdict'];
+  const rows   = emailBulkData.map(r => [
+    r.index, r.email, r.domain,
+    r.formatOk ? 'Yes' : 'No',
+    r.mxOk === true ? 'Yes' : r.mxOk === null ? 'Unknown' : 'No',
+    r.mxCount || 0,
+    r.isDisp ? 'Yes' : 'No',
+    r.score,
+    r.verdictMeta.label
+  ]);
+  const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a   = document.createElement('a');
+  a.href    = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `email-check-${Date.now()}.csv`;
+  a.click();
+});

@@ -758,7 +758,202 @@ body {
 .cat-portal        { background: rgba(14,165,233,0.12);  border-color: rgba(14,165,233,0.35); color: #7dd3fc; }
 .cat-unknown       { background: rgba(255,255,255,0.04); border-color: var(--border);         color: var(--text-muted); }
 
+/* ─── Email Checker ─────────────────────────────────────────── */
+
+/* Sub-tabs (Single / Bulk) inside email panel */
+.email-sub-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+}
+.email-sub-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 7px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.email-sub-btn:hover { background: var(--surface-hover); color: var(--text); }
+.email-sub-btn.active {
+  background: var(--surface-hover);
+  color: var(--text);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+}
+
+/* Email result card */
+.email-result {
+  margin-top: 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  overflow: hidden;
+  animation: fadeInUp 0.3s ease;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Verdict hero band */
+.email-verdict-band {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.email-verdict-band::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background: currentColor;
+}
+.email-verdict-icon { font-size: 2rem; flex-shrink: 0; line-height: 1; }
+.email-verdict-info { flex: 1; min-width: 0; }
+.email-verdict-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  display: block;
+}
+.email-verdict-sub {
+  font-size: 0.72rem;
+  opacity: 0.7;
+  display: block;
+  margin-top: 2px;
+}
+.email-score-pill {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  padding: 4px 12px;
+  flex-shrink: 0;
+}
+
+/* Verdict colours */
+.ev-clean    { border-color: rgba(34,197,94,0.4);   color: #86efac; }
+.ev-low      { border-color: rgba(234,179,8,0.4);   color: #fde047; }
+.ev-medium   { border-color: rgba(249,115,22,0.4);  color: #fdba74; }
+.ev-high     { border-color: rgba(239,68,68,0.4);   color: #fca5a5; }
+.ev-critical { border-color: rgba(220,38,38,0.6);   color: #f87171;
+               animation: sec-pulse 2s infinite; }
+
+/* Checks grid */
+.email-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1px;
+  background: var(--border);
+}
+.email-check-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  background: var(--surface);
+  font-size: 0.8rem;
+}
+.email-check-icon { flex-shrink: 0; }
+.email-check-icon.pass { color: var(--green); }
+.email-check-icon.fail { color: var(--red); }
+.email-check-icon.warn { color: var(--yellow); }
+.email-check-icon.info { color: var(--accent-2); }
+.email-check-label { color: var(--text-muted); flex: 1; }
+.email-check-val {
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--text);
+  text-align: right;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Score bar */
+.email-score-wrap { padding: 12px 18px; border-top: 1px solid var(--border); }
+.email-score-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-bottom: 5px;
+}
+.email-score-track {
+  height: 5px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.email-score-fill { height: 100%; border-radius: 20px; transition: width 0.6s ease; }
+
+/* Scam findings list */
+.email-findings { padding: 12px 18px; border-top: 1px solid var(--border); }
+.email-findings-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.email-finding-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.email-finding-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.email-finding-item.good   { --fi-c: var(--green); }
+.email-finding-item.warn   { --fi-c: var(--yellow); }
+.email-finding-item.danger { --fi-c: var(--red); }
+.email-finding-item.info   { --fi-c: var(--accent-2); }
+.email-finding-item svg { stroke: var(--fi-c); flex-shrink: 0; margin-top: 2px; }
+
+/* Bulk email table verdict badges */
+.ev-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.ev-badge-clean    { background: rgba(34,197,94,0.1);  border-color: rgba(34,197,94,0.3);  color: #86efac; }
+.ev-badge-low      { background: rgba(234,179,8,0.1);  border-color: rgba(234,179,8,0.3);  color: #fde047; }
+.ev-badge-medium   { background: rgba(249,115,22,0.1); border-color: rgba(249,115,22,0.3); color: #fdba74; }
+.ev-badge-high     { background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.3);  color: #fca5a5; }
+.ev-badge-critical { background: rgba(220,38,38,0.12); border-color: rgba(220,38,38,0.5);  color: #f87171; }
+.ev-badge-invalid  { background: rgba(255,255,255,0.04); border-color: var(--border);       color: var(--text-dim); }
+
+/* Bulk email results */
+.email-bulk-results { margin-top: 14px; }
+
 /* ─── Sandbox Container ────────────────────────────────────── */
+
 
 /* Unsafe Live tab tint */
 .tab-btn-unsafe { color: var(--yellow) !important; }
