@@ -479,53 +479,75 @@ const CATEGORIES = [
   // ── 4. Healthcare & Medical ────────────────────────────────
   {
     id: 'healthcare', label: 'Healthcare & Medical', emoji: '\uD83C\uDFE5', cssClass: 'cat-healthcare',
-    description: 'A medical, health, insurance, or healthcare provider resource.',
+    description: 'A medical, health, or healthcare information resource.',
     tlds: [],
     domains: [
-      // Reference/info
       'webmd.com','healthline.com','mayoclinic.org','nih.gov','cdc.gov',
       'medscape.com','drugs.com','rxlist.com','medlineplus.gov','who.int',
-      'clevelandclinic.org','hopkinsmedicine.org',
-      // Insurance / payer
+      'clevelandclinic.org','hopkinsmedicine.org'
+    ],
+    subdomainKw: [
+      'health','medical','med','clinical','care','hospital','pharmacy','wellness','clinic'
+    ],
+    keywords: [
+      {w:'electronic health record',s:28},{w:'medical records',s:24},
+      {w:'telehealth',s:22},{w:'clinical data',s:22},
+      {w:'physician',s:18},{w:'pharmacist',s:18},{w:'diagnosis',s:16},
+      {w:'prescription',s:16},{w:'therapy',s:12},{w:'vaccination',s:16},
+      {w:'pharmaceutical',s:18},{w:'pediatric',s:16},{w:'surgery',s:14},
+      {w:'radiology',s:18},{w:'oncology',s:18},{w:'pathology',s:18},
+      {w:'cardiology',s:18},{w:'orthopedic',s:18},
+      {w:'healthcare',s:14},{w:'medical',s:10},{w:'hospital',s:12},
+      {w:'clinic',s:12},{w:'health',s:8},{w:'patient',s:8},
+      {w:'doctor',s:10},{w:'nurse',s:10},{w:'wellness',s:8},{w:'treatment',s:8}
+    ],
+    negativeKw: ['game','video game','shop','cart','social network','tweet','movie','music','recipe'],
+    minScore: 0, requireDomain: false
+  },
+
+  // ── 4b. Health Insurance & Payer ───────────────────────────
+  {
+    id: 'insurance', label: 'Health Insurance & Payer', emoji: '\uD83D\uDEE1\uFE0F', cssClass: 'cat-insurance',
+    description: 'A health insurance company, payer, or benefits portal.',
+    tlds: [],
+    domains: [
       'aetna.com','cigna.com','uhc.com','bcbs.com','humana.com','anthem.com',
-      'centene.com','molina.com','oscar.com','ambetter.com',
-      // Provider data / credentialing
+      'centene.com','molina.com','oscar.com','ambetter.com'
+    ],
+    subdomainKw: [
+      'insurance','payer','claims','healthplan','benefits','member'
+    ],
+    keywords: [
+      {w:'health insurance',s:28},{w:'insurance coverage',s:28},{w:'payer network',s:30},
+      {w:'insurance company',s:26},{w:'member portal',s:28},{w:'benefits portal',s:26},
+      {w:'health plan',s:26},{w:'formulary',s:24},{w:'prior authorization',s:22},
+      {w:'insurance',s:16},{w:'payer',s:18},{w:'claims',s:16}
+    ],
+    negativeKw: ['game','video game','shop','cart','social network','tweet','movie','music','recipe'],
+    minScore: 0, requireDomain: false
+  },
+
+  // ── 4c. Provider Portal & Credentialing ────────────────────
+  {
+    id: 'provider', label: 'Provider Portal', emoji: '\uD83E\uDE7A', cssClass: 'cat-provider',
+    description: 'A healthcare provider, practice management, or credentialing portal.',
+    tlds: [],
+    domains: [
       'caqh.org','availity.com','athenahealth.com','epic.com',
       'eclinicalworks.com','nextgen.com','kareo.com','practicefusion.com',
       'changehealthcare.com','emdeon.com','trizetto.com','optum.com',
       'zelis.com','navicure.com','waystar.com'
     ],
-    // Key: these subdomain tokens are VERY strong for provider portals
     subdomainKw: [
-      'health','medical','med','clinical','care','provider','patient',
-      'hospital','pharmacy','wellness','caqh','proview','credentialing',
-      'payer','claims','ehr','emr','insurance','nonprod','sit','uat',
-      'prod','healthplan','rx','clinic'
+      'provider','caqh','proview','credentialing','ehr','emr','nonprod','sit','uat',
+      'prod','rx'
     ],
     keywords: [
-      // ── Very strong multi-word phrases (high specificity)
-      {w:'provider credentialing',s:32},{w:'credentialing portal',s:32},
-      {w:'provider portal',s:30},{w:'patient portal',s:30},{w:'member portal',s:28},
-      {w:'health insurance',s:26},{w:'insurance coverage',s:26},{w:'payer network',s:28},
-      {w:'network provider',s:26},{w:'insurance company',s:24},
-      {w:'prior authorization',s:28},{w:'claims processing',s:28},
-      {w:'electronic health record',s:28},{w:'healthcare network',s:26},
-      {w:'benefits portal',s:26},{w:'care management',s:24},
-      {w:'healthcare provider',s:24},{w:'medical records',s:24},
-      {w:'health plan',s:22},{w:'telehealth',s:22},
-      {w:'clinical data',s:22},{w:'formulary',s:22},
-      // ── Strong single-domain terms
-      {w:'physician',s:18},{w:'pharmacist',s:18},{w:'credentialing',s:22},
-      {w:'diagnosis',s:16},{w:'prescription',s:16},{w:'therapy',s:12},
-      {w:'vaccination',s:16},{w:'pharmaceutical',s:18},{w:'pediatric',s:16},
-      {w:'surgery',s:14},{w:'radiology',s:18},{w:'oncology',s:18},
-      {w:'pathology',s:18},{w:'cardiology',s:18},{w:'orthopedic',s:18},
-      // ── Generic but contributing
-      {w:'healthcare',s:14},{w:'medical',s:10},{w:'hospital',s:12},
-      {w:'clinic',s:12},{w:'health',s:8},{w:'patient',s:8},
-      {w:'provider',s:10},{w:'doctor',s:10},{w:'nurse',s:10},
-      {w:'insurance',s:8},{w:'wellness',s:8},{w:'treatment',s:8},
-      {w:'payer',s:16},{w:'claims',s:12}
+      {w:'provider credentialing',s:34},{w:'credentialing portal',s:34},
+      {w:'provider portal',s:32},{w:'network provider',s:28},
+      {w:'claims processing',s:28},{w:'healthcare network',s:26},
+      {w:'care management',s:24},{w:'healthcare provider',s:24},
+      {w:'credentialing',s:24},{w:'provider',s:14}
     ],
     negativeKw: ['game','video game','shop','cart','social network','tweet','movie','music','recipe'],
     minScore: 0, requireDomain: false
