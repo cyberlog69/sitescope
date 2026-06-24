@@ -10,3 +10,10 @@ Desktop.ini
 
 # Logs
 *.log
+
+# Node & Build
+node_modules/
+dist/
+scratch/
+patch_*.js
+patch_*.cjs

@@ -1,0 +1,27 @@
+{
+  "name": "website-checker",
+  "version": "1.0.0",
+  "description": "> Paste any URL and get a live preview, metadata, category classification, security threat analysis, and a fully isolated sandbox. Now featuring a dark cosmic glassmorphic UI, bulk checking, and a comprehensive email validator. No signup required.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cyberlog69/sitescope.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/cyberlog69/sitescope/issues"
+  },
+  "homepage": "https://github.com/cyberlog69/sitescope#readme",
+  "devDependencies": {
+    "vite": "^8.1.0"
+  }
+}

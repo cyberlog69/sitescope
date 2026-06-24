@@ -1,3 +1,4 @@
+import { fetchWhois, fetchHttpHeaders } from './intel.js';
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js
    Fetches metadata + screenshot via Microlink API (free tier)
@@ -276,7 +277,14 @@ async function checkSite(url) {
       // Category — run BEFORE description fallback so we also use URL signals
       renderCategory(url, title, desc || '');
       // Security scan (async, updates panel when done)
-      scanSecurity(url);
+      scanSecurity(url).then(threatLevel => {
+        if (typeof saveCloudHistory === 'function') saveCloudHistory(url, title, `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=32`, threatLevel);
+      });
+      if (typeof fetchIpIntel === 'function') fetchIpIntel(getDomain(url));
+      document.getElementById('advancedIntelPanel').style.display = 'block';
+      fetchWhois(getDomain(url));
+      fetchHttpHeaders(getDomain(url));
+      if (typeof renderQrCode === 'function') renderQrCode(url);
 
       // Status badge
       metaStatus.innerHTML = `<span class="badge badge-ok">
@@ -1199,6 +1207,7 @@ async function startBulkCheck() {
   show(bulkBtnText); hide(bulkBtnLoader);
   bulkRunBtn.disabled = false;
   bulkStopBtn.disabled = true;
+  if (window.updateBulkTableFilters) window.updateBulkTableFilters();
 }
 
 // ── Fetch one site (no screenshot in bulk mode) ───────────────
@@ -1524,6 +1533,7 @@ function heuristicScan(url) {
 
 // ── Levenshtein distance (for typosquatting detection) ───────
 function levenshtein(a, b) {
+  if (Math.abs(a.length - b.length) > 2) return 99; // Early exit
   const dp = Array.from({ length: a.length + 1 }, (_, i) =>
     Array.from({ length: b.length + 1 }, (_, j) => i === 0 ? j : j === 0 ? i : 0)
   );
@@ -1609,6 +1619,7 @@ async function scanSecurity(url) {
 
   renderSecurityReport(merged, 'done');
   hide(secScanningBadge);
+  return finalLevel;
 }
 
 // ── Render security panel ────────────────────────────────────
@@ -1801,13 +1812,29 @@ function sanitizeForSandbox(rawHtml, baseUrl) {
     });
   });
 
+  // Extracted links array
+  const extractedLinks = [];
+  doc.querySelectorAll('a[href]').forEach(a => {
+    const href = a.getAttribute('href');
+    if (href && !href.startsWith('javascript:')) {
+      try {
+        const u = new URL(href, baseUrl);
+        extractedLinks.push({ text: a.textContent.trim().substring(0, 50) || href.substring(0, 50), url: u.href });
+      } catch (e) {}
+    }
+  });
+
   // 6 — Strip all event handler attributes
-  doc.querySelectorAll('*').forEach(el => {
+  const elementsWithHandlers = doc.querySelectorAll(DANGER_ATTRS.map(a => '[' + a + ']').join(','));
+  elementsWithHandlers.forEach(el => {
     DANGER_ATTRS.forEach(attr => {
       if (el.hasAttribute(attr)) { el.removeAttribute(attr); stats.handlers++; }
     });
+  });
 
-    // Neutralise javascript: URLs
+  // Neutralise javascript: URLs
+  const elementsWithUrls = doc.querySelectorAll('[href^="javascript:" i], [src^="javascript:" i], [action^="javascript:" i], [formaction^="javascript:" i], [data^="javascript:" i], [href^="vbscript:" i], [src^="vbscript:" i], [href^="data:text/html" i]');
+  elementsWithUrls.forEach(el => {
     ['href','src','action','formaction','data'].forEach(attr => {
       const val = (el.getAttribute(attr) || '').trim().toLowerCase();
       if (val.startsWith('javascript:') || val.startsWith('vbscript:') || val.startsWith('data:text/html')) {
@@ -1847,7 +1874,7 @@ function sanitizeForSandbox(rawHtml, baseUrl) {
   );
   doc.head.insertBefore(csp, doc.head.firstChild);
 
-  return { html: doc.documentElement.outerHTML, stats };
+  return { html: doc.documentElement.outerHTML, stats, links: extractedLinks };
 }
 
 // ── Update the status block badges ──────────────────────────
@@ -1897,7 +1924,8 @@ async function loadSandbox(url) {
     sandboxStatusSub.textContent = 'Sanitizing — stripping scripts & trackers\u2026';
 
     // Sanitize
-    const { html, stats } = sanitizeForSandbox(json.contents, url);
+    const { html, stats, links } = sanitizeForSandbox(json.contents, url);
+    if (typeof renderExtractedLinks === 'function') renderExtractedLinks(links, url);
 
     // Create Blob
     if (sandboxBlobUrl) URL.revokeObjectURL(sandboxBlobUrl);
@@ -2516,3 +2544,240 @@ emailExportCsvBtn.addEventListener('click', () => {
   a.click();
   URL.revokeObjectURL(blobUrl);
 });
+
+// ════════════════════════════════════════════════════════════
+// ── ADDED FEATURES (HISTORY, IP INTEL, QR, LINKS, BULK) ─────
+// ════════════════════════════════════════════════════════════
+
+const HISTORY_API_URL = 'https://kvdb.io/bucket/sitescope_v4_history/history';
+
+async function fetchCloudHistory() {
+  try {
+    const res = await fetch(HISTORY_API_URL);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+async function saveCloudHistory(url, title, favicon, threatLevel) {
+  try {
+    let history = await fetchCloudHistory();
+    if (!Array.isArray(history)) history = [];
+    history = history.filter(item => item.url !== url);
+    history.unshift({
+      url,
+      title: title || url,
+      favicon: favicon || '',
+      threat: threatLevel,
+      time: new Date().toISOString()
+    });
+    history = history.slice(0, 50);
+
+    await fetch(HISTORY_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(history)
+    });
+    renderCloudHistory();
+  } catch (e) {
+    console.error('History save error', e);
+  }
+}
+
+async function clearCloudHistory() {
+  try {
+    await fetch(HISTORY_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify([])
+    });
+    renderCloudHistory();
+  } catch (e) {
+    console.error('History clear error', e);
+  }
+}
+
+function renderCloudHistory() {
+  const historyList = document.getElementById('historyList');
+  if (!historyList) return;
+  historyList.innerHTML = '<div class="history-loading">Loading...</div>';
+  fetchCloudHistory().then(data => {
+    if (!data || !data.length) {
+      historyList.innerHTML = '<div class="history-loading">No history found.</div>';
+      return;
+    }
+    historyList.innerHTML = data.map(item => {
+      const date = new Date(item.time).toLocaleString();
+      const threatColor = item.threat === 'safe' ? '#22c55e' : (item.threat === 'critical' ? '#ef4444' : (item.threat === 'low' ? '#fde047' : '#f59e0b'));
+      return `
+        <div class="history-item" onclick="document.getElementById('urlInput').value='${escapeHtml(item.url)}'; document.getElementById('checkBtn').click();">
+          <img class="history-favicon" src="${escapeHtml(item.favicon)}" onerror="this.style.display='none'" />
+          <div class="history-url">${escapeHtml(item.title)}</div>
+          <div class="history-threat" style="color:${threatColor}">${escapeHtml(item.threat)}</div>
+          <div class="history-time">${date}</div>
+        </div>
+      `;
+    }).join('');
+  });
+}
+
+function renderQrCode(url) {
+  const qrImage = document.getElementById('qrImage');
+  const showQrBtn = document.getElementById('showQrBtn');
+  if (!qrImage || !showQrBtn) return;
+  qrImage.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url);
+  document.getElementById('qrUrlText').textContent = url;
+  showQrBtn.classList.remove('hidden');
+}
+
+async function fetchIpIntel(domain) {
+  const ipEl = document.getElementById('intelIp');
+  const locEl = document.getElementById('intelLoc');
+  if (!ipEl || !locEl) return;
+  try {
+    ipEl.textContent = 'Fetching...';
+    locEl.textContent = '...';
+    document.getElementById('intelGrid').classList.remove('hidden');
+    const res = await fetch('https://dns.google/resolve?name=' + encodeURIComponent(domain));
+    const data = await res.json();
+    if (data.Answer && data.Answer.length > 0) {
+      const ip = data.Answer.find(a => a.type === 1); // A record
+      if (ip) {
+        ipEl.textContent = ip.data;
+        locEl.textContent = 'DNS Resolved';
+        return;
+      }
+    }
+    ipEl.textContent = 'No A record';
+    locEl.textContent = 'Unknown';
+  } catch {
+    ipEl.textContent = 'Unavailable';
+    locEl.textContent = 'Unavailable';
+  }
+}
+
+function renderExtractedLinks(links, baseUrl) {
+  const panel = document.getElementById('linkExtractorPanel');
+  const countSpan = document.getElementById('linkExtCount');
+  const list = document.getElementById('linkExtList');
+  if (!panel) return;
+  
+  if (!links || links.length === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+  
+  panel.style.display = 'block';
+  const unique = [];
+  const seen = new Set();
+  for (let l of links) {
+    if (!seen.has(l.url)) {
+      seen.add(l.url);
+      unique.push(l);
+    }
+  }
+  
+  countSpan.textContent = unique.length;
+  try {
+    const baseHost = new URL(baseUrl).hostname;
+    list.innerHTML = unique.map(l => {
+      const isExternal = new URL(l.url).hostname !== baseHost;
+      const badge = isExternal ? '<span class="link-ext-badge link-ext-external">EXT</span>' : '<span class="link-ext-badge link-ext-internal">INT</span>';
+      return '<div class="link-item">' + badge + '<a href="' + escapeHtml(l.url) + '" target="_blank">' + escapeHtml(l.text || l.url) + '</a></div>';
+    }).join('');
+  } catch (e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const historyBtn = document.getElementById('historyBtn');
+  const historyDropdown = document.getElementById('historyDropdown');
+  const historyClearBtn = document.getElementById('historyClearBtn');
+  const showQrBtn = document.getElementById('showQrBtn');
+  const qrModal = document.getElementById('qrModal');
+  const qrCloseBtn = document.getElementById('qrCloseBtn');
+  const linkExtHeader = document.getElementById('linkExtHeader');
+  const linkExtList = document.getElementById('linkExtList');
+
+  if (historyBtn) {
+    historyBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      historyDropdown.classList.toggle('hidden');
+      if (!historyDropdown.classList.contains('hidden')) renderCloudHistory();
+    });
+    document.addEventListener('click', () => historyDropdown.classList.add('hidden'));
+    historyDropdown.addEventListener('click', (e) => e.stopPropagation());
+  }
+
+  if (historyClearBtn) historyClearBtn.addEventListener('click', clearCloudHistory);
+
+  if (showQrBtn) showQrBtn.addEventListener('click', () => qrModal.classList.remove('hidden'));
+  if (qrCloseBtn) qrCloseBtn.addEventListener('click', () => qrModal.classList.add('hidden'));
+  
+  if (linkExtHeader) linkExtHeader.addEventListener('click', () => linkExtList.classList.toggle('hidden'));
+
+  // Bulk Table Filter/Sort
+  const bulkFilterInput = document.getElementById('bulkFilterInput');
+  const bulkFilterThreat = document.getElementById('bulkFilterThreat');
+  const headers = document.querySelectorAll('.bulk-table th.sortable');
+  let sortCol = 'id';
+  let sortAsc = true;
+
+  function renderBulkTable() {
+    if (typeof bulkData === 'undefined') return;
+    const filterText = (bulkFilterInput && bulkFilterInput.value || '').toLowerCase();
+    const threatFilter = bulkFilterThreat ? bulkFilterThreat.value : 'all';
+    
+    let filtered = bulkData.filter(r => {
+      if (filterText && !r.url.toLowerCase().includes(filterText) && !r.title.toLowerCase().includes(filterText) && !(r.category && r.category.label.toLowerCase().includes(filterText))) return false;
+      if (threatFilter === 'safe' && r.threat && r.threat.level !== 'safe') return false;
+      if (threatFilter === 'risk' && (!r.threat || !['high', 'critical'].includes(r.threat.level))) return false;
+      return true;
+    });
+
+    filtered.sort((a, b) => {
+      let valA, valB;
+      if (sortCol === 'id') { valA = a.index; valB = b.index; }
+      else if (sortCol === 'url') { valA = a.url; valB = b.url; }
+      else if (sortCol === 'category') { valA = a.category ? a.category.label : ''; valB = b.category ? b.category.label : ''; }
+      else if (sortCol === 'status') { valA = a.ok ? 1 : 0; valB = b.ok ? 1 : 0; }
+      else if (sortCol === 'threats') { valA = a.threat ? a.threat.score : 0; valB = b.threat ? b.threat.score : 0; }
+      
+      if (valA < valB) return sortAsc ? -1 : 1;
+      if (valA > valB) return sortAsc ? 1 : -1;
+      return 0;
+    });
+
+    const tbody = document.getElementById('bulkTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    filtered.forEach(r => {
+      if (typeof makeResultRow === 'function') tbody.appendChild(makeResultRow(r));
+    });
+  }
+
+  if (bulkFilterInput) bulkFilterInput.addEventListener('input', renderBulkTable);
+  if (bulkFilterThreat) bulkFilterThreat.addEventListener('change', renderBulkTable);
+  
+  headers.forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.getAttribute('data-sort');
+      if (sortCol === col) sortAsc = !sortAsc;
+      else { sortCol = col; sortAsc = true; }
+      headers.forEach(h => { h.classList.remove('sort-asc', 'sort-desc'); });
+      th.classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
+      renderBulkTable();
+    });
+  });
+  
+  window.updateBulkTableFilters = renderBulkTable;
+});
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => {
+      console.log('SW registration failed: ', err);
+    });
+  });
+}
