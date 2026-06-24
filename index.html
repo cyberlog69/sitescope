@@ -5,13 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SiteScope v4 — Premium Website Intelligence</title>
   <meta name="description" content="Paste any URL and instantly get a live preview, security scan, and metadata of any website." />
+
+  <!-- Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline';
+    style-src 'self' https://fonts.googleapis.com 'unsafe-inline';
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data: blob: https:;
+    connect-src 'self' https://api.microlink.io https://api.allorigins.win https://urlhaus-api.abuse.ch https://dns.google https://www.google.com;
+    frame-src blob:;
+    object-src 'none';
+    base-uri 'self';
+    form-action 'none';
+  " />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   
   <!-- Vercel Speed Insights -->
-  <script type="module">
+  <script type="module" crossorigin="anonymous">
     import { injectSpeedInsights } from 'https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs';
     injectSpeedInsights();
   </script>

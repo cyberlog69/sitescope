@@ -1278,17 +1278,19 @@ function makeResultRow(r) {
     <td><span class="row-desc" title="${escapeHtml(r.desc)}">${r.desc ? escapeHtml(r.desc) : '&mdash;'}</span></td>
     <td>
       <div class="row-actions">
-        <a class="row-action-btn" href="${escapeHtml(r.url)}" target="_blank" rel="noopener">
+        <a class="row-action-btn" href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           Open
         </a>
-        <button class="row-action-btn inspect-btn" onclick="inspectFromBulk('${escapeHtml(r.url)}')">
+        <button class="row-action-btn inspect-btn" data-url="${escapeHtml(r.url)}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           Inspect
         </button>
       </div>
     </td>
   `;
+  // Safe event delegation — avoids inline onclick XSS
+  tr.querySelector('.inspect-btn').addEventListener('click', () => inspectFromBulk(r.url));
   return tr;
 }
 
@@ -1817,7 +1819,7 @@ function sanitizeForSandbox(rawHtml, baseUrl) {
   // 7 — Disable all forms
   doc.querySelectorAll('form').forEach(form => {
     stats.forms++;
-    form.setAttribute('action', 'javascript:void(0)');
+    form.setAttribute('action', 'about:blank');
     form.setAttribute('method', 'get');
     // Disable all submit buttons inside
     form.querySelectorAll('[type="submit"], button').forEach(btn => btn.setAttribute('disabled', 'true'));
@@ -2506,8 +2508,11 @@ emailExportCsvBtn.addEventListener('click', () => {
     r.verdictMeta.label
   ]);
   const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const blobUrl = URL.createObjectURL(blob);
   const a   = document.createElement('a');
-  a.href    = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.href    = blobUrl;
   a.download = `email-check-${Date.now()}.csv`;
   a.click();
+  URL.revokeObjectURL(blobUrl);
 });
