@@ -1,10 +1,10 @@
-# 🔍 SiteScope v4 — Instant Website Intelligence & Email Tool
+# 🔍 SiteScope v4 — Instant Website Intelligence & Security Sandbox
 
-> Paste any URL and get a live preview, metadata, category classification, security threat analysis, and a fully isolated sandbox. Now featuring a dark cosmic glassmorphic UI, bulk checking, and a comprehensive email validator. No signup required.
+> A blazing-fast, installable Progressive Web App (PWA) that provides live website previews, metadata extraction, category classification, deep security threat analysis, and a fully isolated sandbox. Now powered by a modern Vite build system with cloud history and advanced network intelligence. No signup required.
 
 ![SiteScope](https://img.shields.io/badge/SiteScope-v4.0-7c3aed?style=for-the-badge&logo=googlechrome&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)
-![No Build](https://img.shields.io/badge/No%20Build%20Required-✓-06b6d4?style=for-the-badge)
+![PWA Ready](https://img.shields.io/badge/PWA-Ready-06b6d4?style=for-the-badge)
 ![No Signup](https://img.shields.io/badge/No%20Signup-✓-ec4899?style=for-the-badge)
 
 ---
@@ -13,162 +13,104 @@
 
 | Feature | Description |
 |---|---|
-| 🎨 **SiteScope v4 Redesign** | New dark cosmic theme, glassmorphic panels, animated gradient mesh, and neon accents. |
-| 📧 **Email & Scam Validator** | Complete RFC 5322 validation, MX lookup, 400+ disposable domain checks, and heuristic scam scoring. |
-| 🖼️ **Screenshot Preview** | Server-rendered screenshot via Microlink API. |
-| 🛡️ **Isolated Sandbox** | Sanitized HTML rendered safely — scripts & trackers stripped. |
-| ⚠️ **Live Frame** | Raw iframe (full JS, clearly marked as unprotected). |
-| 🏷️ **Site Category Engine** | AI-style classification into 18+ precision categories (now including dedicated Provider and Insurance portals). |
-| 🔐 **Security Scanner** | 2-stage threat detection: heuristics + URLhaus malware DB. |
-| 📋 **Bulk Check** | Check up to 25 URLs at once with live progress. |
-| 📊 **CSV Export** | Download full bulk results as a `.csv` file. |
-
----
-
-## 📧 Email Validator & Scam Checker *(New)*
-
-Verify email addresses instantly without sending a message. The tool checks for formatting, deliverability, and flags potential scam or throwaway addresses.
-
-1. **RFC 5322 Syntax Check**: Strict regex validation for correct formatting.
-2. **Disposable/Temporary Domain Check**: Flags over 400 known disposable email providers (Mailinator, 10minutemail, etc.).
-3. **MX Record Lookup**: Verifies that the domain has valid mail servers configured (via Google DNS over HTTPS).
-4. **Heuristic Scam Scoring**: 
-   - Flags suspicious usernames (`admin`, `billing`, `support`, `noreply`).
-   - Penalizes long strings of numbers or high-entropy random characters in the local part.
-   - Outputs a clear Risk Score (🟢 Safe, 🟡 Low, 🟠 Medium, 🔴 High).
+| 🎨 **Cosmic UI** | Dark cosmic theme, glassmorphic panels, animated gradient mesh, and neon accents with GPU-accelerated rendering. |
+| 📱 **PWA Ready** | Installable as a standalone app on desktop and mobile. Uses a Service Worker for offline UI caching and instantaneous load times. |
+| ☁️ **Cloud History** | Recent scans are pushed to a lightweight cloud endpoint (kvdb.io) and synchronized across your session. |
+| 🛡️ **Isolated Sandbox** | Sanitized HTML rendered safely — scripts, trackers, and malicious embedded elements stripped natively. |
+| 🔗 **Link Extractor** | Automatically plucks and lists all hyperlinks found on the target page during the sandbox phase. |
+| 🌐 **Advanced Intel** | Real-time WHOIS domain lookups, IP & Location mapping (via Google DNS), and HTTP Security Header analysis. |
+| 📧 **Email Validator** | Complete RFC 5322 validation, MX lookup, 400+ disposable domain checks, and heuristic scam scoring. |
+| 🔐 **Security Scanner** | 2-stage threat detection: blazing-fast local heuristics + URLhaus malware DB integration. |
+| 📋 **Bulk Check** | Check up to 25 URLs at once with live progress. Filter by threat level, sort columns, and export to CSV. |
+| 📱 **QR Generator** | One-click dynamic QR code generation for the scanned target URL. |
 
 ---
 
 ## 🛡️ Isolated Sandbox Container
 
-The Sandbox tab is the safest way to visually inspect any website. Instead of loading the raw site (which runs JavaScript and can track you), SiteScope:
+The Sandbox tab is the safest way to visually inspect any website without running its JavaScript or allowing trackers. SiteScope:
 
-1. **Fetches** the page HTML through a free CORS proxy (`allorigins.win`) — your browser never contacts the target site directly.
-2. **Sanitizes** the HTML through a 10-layer protection pipeline.
+1. **Fetches** the page HTML through a CORS proxy (`allorigins.win`).
+2. **Sanitizes** the HTML through a highly-optimized 10-layer DOM protection pipeline.
 3. **Renders** only the cleaned HTML in a maximally-restricted `<iframe>`.
 
-### 10-Layer Sanitization Pipeline
+---
 
-| Layer | What's Removed / Blocked |
-|:---:|---|
-| 1 | All `<script>` and `<noscript>` tags |
-| 2 | Embedded frames: `<iframe>`, `<frame>`, `<object>`, `<embed>`, `<applet>` |
-| 3 | Meta redirect tags (`<meta http-equiv="refresh">`) |
-| 4 | Existing `<base>` tags (replaced with our own for correct asset resolution) |
-| 5 | 30+ known tracker & analytics domains (Google Analytics, Facebook Pixel, etc.) |
-| 6 | 50+ inline event handlers (`onclick`, `onload`, `onerror`, `onmouseover`, etc.) |
-| 7 | `javascript:` and `vbscript:` URL schemes |
-| 8 | All `<form>` submissions (action set to void, submit buttons disabled) |
-| 9 | A safe `<base href="...">` injected to resolve relative URLs correctly |
-| 10 | Strict CSP `<meta>` tag injected (`script-src 'none'`, `form-action 'none'`) |
+## 🧠 Advanced Network Intelligence
+
+Every site check automatically pulls multi-layered intelligence directly from the source:
+- **IP & DNS Resolution:** Natively resolves the site's A-records using Google DoH.
+- **WHOIS Lookups:** Pulls domain registration details (Registrar, Creation Date) via the NetworkCalc API.
+- **HTTP Headers:** Analyzes and highlights critical security headers (e.g., `Strict-Transport-Security`, `Content-Security-Policy`) using the HackerTarget API.
 
 ---
 
-## 🔐 Security Scanner
+## 📧 Email Validator & Scam Checker
 
-Every site check automatically triggers a 2-stage security scan.
-
-### Stage 1 — Heuristic Analysis *(instant, client-side)*
-Scores based on factors like: HTTP vs HTTPS, raw IP addresses, suspicious TLDs (`.tk`, `.xyz`), Punycode (homograph attacks), excessively long URLs, phishing keywords in the path, executable extensions, and typosquatting against major brands.
-
-### Stage 2 — URLhaus Threat Database *(async, free, no API key)*
-Checks the URL against [URLhaus by abuse.ch](https://urlhaus.abuse.ch/) — a continuously updated database of active malware and phishing URLs.
+Verify email addresses instantly without sending a message:
+1. **Syntax Check**: Strict regex validation for correct formatting.
+2. **Disposable Check**: Flags over 400 known disposable email providers (Mailinator, 10minutemail, etc.).
+3. **MX Lookup**: Verifies that the domain has valid mail servers configured.
+4. **Heuristic Scam Scoring**: Flags suspicious usernames (`admin`, `support`), high-entropy strings, and outputs a Risk Score.
 
 ---
 
-## 🏷️ Precision Site Classification Engine
+## 🛠️ Architecture & Tech Stack
 
-Classifies any website using a 7-layer scoring system based on TLDs, known domains, subdomain tokens, and weighted keywords. **Updated in v4** to highly distinguish between general healthcare, insurance providers, and B2B medical portals.
-
-### Categories
-
-| Emoji | Category | Example Sites |
-|:---:|---|---|
-| 🏛️ | Government | whitehouse.gov, europa.eu |
-| 🎖️ | Military / Defense | army.mil, nato.int |
-| 🎓 | Education | coursera.org, mit.edu |
-| 🏥 | Healthcare & Medical | webmd.com, mayoclinic.org |
-| 🛡️ | Health Insurance & Payer | aetna.com, cigna.com, bcbs.com |
-| 🪪 | Provider Portal | caqh.org, availity.com, epic.com |
-| 🏢 | Business / Enterprise Portal | salesforce.com, workday.com |
-| 💰 | Finance & Banking | bloomberg.com, stripe.com |
-| 🛒 | E-Commerce / Shopping | amazon.com, shopify.com |
-| 📱 | Social Media | twitter.com, instagram.com |
-| 💻 | Technology & Software | github.com, vercel.com |
-| 📰 | News & Media | bbc.com, reuters.com |
-| 🎮 | Gaming | steampowered.com, epicgames.com |
-| 🎬 | Entertainment & Streaming | netflix.com, spotify.com |
-| 📚 | Reference & Encyclopedia | wikipedia.org, britannica.com |
-| 🎨 | Design & Creative | figma.com, dribbble.com |
-| ✈️ | Travel & Tourism | booking.com, airbnb.com |
-| 🍕 | Food & Lifestyle | allrecipes.com, doordash.com |
-
----
-
-## 📋 Bulk Check Mode
-
-Check up to 25 URLs in one run.
-
-1. Click **Bulk Check** in the mode toggle.
-2. Paste up to 25 URLs (one per line or comma-separated).
-3. Click **Run Bulk Check** (results fill in live row by row).
-4. Click **Export CSV** to download results.
-5. Click **Inspect** on any row to run a full single-site analysis on it.
-
----
-
-## 🛠️ Tech Stack
+SiteScope has evolved into a fully modular application powered by **Vite**.
 
 | Tool | Purpose |
 |---|---|
-| HTML + Vanilla CSS & JS | Core app — zero dependencies, no build step |
-| [Microlink API](https://microlink.io) | Screenshots & metadata (free tier) |
-| [allorigins.win](https://allorigins.win) | CORS proxy for sandbox HTML fetching (free) |
-| [URLhaus API](https://urlhaus.abuse.ch) | Malware / phishing URL database (free) |
-| [Google DoH](https://dns.google/resolve) | DNS over HTTPS for MX Record lookups |
-| Google Fonts | Inter + Space Grotesk |
+| **Vite** | Lightning-fast build system, module bundler, and HMR engine |
+| **ES Modules** | Clean, split architecture (`src/main.js`, `src/intel.js`, etc.) |
+| **Service Worker** | Caches UI shell assets for immediate offline loading (`public/sw.js`) |
+| **kvdb.io** | Cloud endpoint for stateless, cross-session history |
+| **Microlink API** | Screenshots & metadata (free tier) |
+| **allorigins.win** | CORS proxy for sandbox HTML fetching (free) |
+| **URLhaus API** | Malware / phishing URL database (free) |
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started (Development)
 
-Just open `index.html` in any modern browser — **no server, no install, no signup needed**.
+SiteScope now uses a modern build process. To run the app locally:
 
-### Local Hosting (Optional)
-If you prefer to run it via a local development server, we've provided a simple batch script:
-1. Double click `start-local.bat` (or run `python -m http.server 8000` manually).
-2. Open your browser to `http://localhost:8000`.
-
-Alternatively, you can use Node.js: `npx serve`.
-
-```text
-Website Checker/
-├── index.html       ← App structure & all UI
-├── style.css        ← Dark glassmorphism design system (v4)
-├── app.js           ← All logic: classifier, email validator, security scanner, sandbox
-├── start-local.bat  ← Local Python HTTP server script
-└── README.md
-```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/cyberlog69/sitescope.git
+   cd sitescope
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the local development server (with Hot Module Replacement):
+   ```bash
+   npm run dev
+   ```
+4. Build for production:
+   ```bash
+   npm run build
+   ```
+   *(This will create a highly optimized, minified bundle in the `dist/` directory).*
 
 ---
 
 ## 🌍 Internet Hosting & Deployment
 
-Because SiteScope is a 100% static application (HTML, CSS, JS) with no backend database, it is extremely simple to deploy globally for free.
+Because SiteScope is completely decoupled from any proprietary backend, it is incredibly simple to deploy globally for free.
 
-### GitHub Pages (Recommended)
-Since the code is already on GitHub, this is the easiest zero-cost option:
-1. Go to your repository settings on GitHub.
-2. Click on **Pages** in the left sidebar.
-3. Under "Build and deployment", select `Deploy from a branch`.
-4. Choose the `master` branch and `/ (root)` folder, then click **Save**.
-5. Your site will be live globally within 2 minutes!
-
-### Vercel or Netlify
-For a more advanced CDN, PR previews, and custom domain linking:
+### Vercel or Netlify (Recommended)
+This is the easiest way to deploy a Vite app:
 1. Sign up to [Vercel](https://vercel.com/) or [Netlify](https://netlify.com/) with your GitHub account.
 2. Import the `cyberlog69/sitescope` repository.
-3. Click **Deploy**. The platform will instantly serve your site globally for free.
+3. The platform will automatically detect Vite and run `npm run build`.
+4. Click **Deploy**. Your PWA is now live globally!
+
+### GitHub Pages
+1. Go to your repository settings on GitHub.
+2. Under "Pages", set the source to GitHub Actions.
+3. Use a basic Vite/Node.js workflow to build and deploy your `dist/` folder.
 
 ---
 
@@ -176,11 +118,11 @@ For a more advanced CDN, PR previews, and custom domain linking:
 
 | Limitation | Details |
 |---|---|
-| Sandbox proxy | `allorigins.win` is a free service — may be slow or rate-limited for some sites |
-| Screenshot availability | Microlink free tier may not capture all sites |
-| URLhaus DB | Checks active/recent threats; historical or new threats may not appear |
-| Bulk rate limit | 600ms delay between requests to respect Microlink's free tier |
-| DNS Lookups | MX record queries rely on Google's public DoH API |
+| Sandbox Proxy | `allorigins.win` is a free service — may be slow or rate-limited for some sites. |
+| Screenshot Availability | Microlink free tier may not capture all sites perfectly. |
+| URLhaus DB | Checks active/recent threats; historical or brand-new zero-day threats may not appear. |
+| Bulk Rate Limit | 600ms delay between requests to respect free-tier API limits. |
+| Cloud History | History is stored in a public KV bucket; do not enter sensitive private URLs. |
 
 ---
 
