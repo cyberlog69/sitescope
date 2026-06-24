@@ -76,7 +76,7 @@ body {
     radial-gradient(ellipse 60% 50% at 90% 20%,  rgba(6,182,212,0.12)  0%, transparent 60%),
     radial-gradient(ellipse 70% 60% at 50% 100%, rgba(236,72,153,0.08) 0%, transparent 60%);
   will-change: transform;
-  animation: meshFloat 16s ease-in-out infinite alternate;
+  /* Removed animation to fix 100% CPU usage with backdrop-filter */
 }
 @keyframes meshFloat {
   0%   { transform: scale(1)   rotate(0deg); }
@@ -95,22 +95,16 @@ body {
   mask-image: radial-gradient(ellipse 80% 80% at center, black 40%, transparent 100%);
 }
 
-/* Floating orbs */
+/* Floating orbs - Replaced blur filter with radial-gradients for huge performance gain */
 .orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  animation: orbFloat 14s ease-in-out infinite;
-  will-change: transform;
   transform: translateZ(0);
 }
-.orb-1 { width:700px;height:700px;background:rgba(124,58,237,0.15);top:-200px;left:-200px;animation-delay:0s; }
-.orb-2 { width:500px;height:500px;background:rgba(6,182,212,0.1); top:30%;right:-150px;animation-delay:-5s; }
-.orb-3 { width:400px;height:400px;background:rgba(236,72,153,0.08);bottom:-100px;left:25%;animation-delay:-10s; }
-@keyframes orbFloat {
-  0%,100% { transform: translateY(0)    scale(1); }
-  50%     { transform: translateY(-40px) scale(1.06); }
-}
+.orb-1 { width:700px;height:700px;background:radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%);top:-200px;left:-200px; }
+.orb-2 { width:500px;height:500px;background:radial-gradient(circle, rgba(6,182,212,0.1) 0%, transparent 70%); top:30%;right:-150px; }
+.orb-3 { width:400px;height:400px;background:radial-gradient(circle, rgba(236,72,153,0.08) 0%, transparent 70%);bottom:-100px;left:25%; }
+/* Animations disabled to prevent 100% CPU lockup when combined with glassmorphism */
 
 /* ─── Header ────────────────────────────────────────────────── */
 .header {
