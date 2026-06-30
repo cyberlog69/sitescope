@@ -23,6 +23,7 @@
 | 🔐 **Security Scanner** | 2-stage threat detection: blazing-fast local heuristics + URLhaus malware DB integration. |
 | 📋 **Bulk Check** | Check up to 25 URLs at once with live progress. Filter by threat level, sort columns, and export to CSV. |
 | 📱 **QR Generator** | One-click dynamic QR code generation for the scanned target URL. |
+| ⚡ **Zero-CPU Rendering** | CSS glassmorphism and background meshes have been heavily optimized (using native radial gradients instead of expensive CSS blur filters) to prevent composite explosion and CPU lockup. |
 
 ---
 
@@ -61,7 +62,7 @@ SiteScope has evolved into a fully modular application powered by **Vite**.
 
 | Tool | Purpose |
 |---|---|
-| **Vite** | Lightning-fast build system, module bundler, and HMR engine |
+| **Vite** | Lightning-fast build system, module bundler, and HMR engine (Audited: 0 vulnerabilities) |
 | **ES Modules** | Clean, split architecture (`src/main.js`, `src/intel.js`, etc.) |
 | **Service Worker** | Caches UI shell assets for immediate offline loading (`public/sw.js`) |
 | **kvdb.io** | Cloud endpoint for stateless, cross-session history |
