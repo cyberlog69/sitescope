@@ -428,177 +428,185 @@ const CATEGORIES = [
 
   // ── 1. Government ─────────────────────────────────────────
   {
-    id: 'government', label: 'Government', emoji: '\uD83C\uDFDB\uFE0F', cssClass: 'cat-government',
+    id: 'government', label: 'Government', emoji: '🏛️', cssClass: 'cat-government',
     description: 'An official government or public-sector website.',
     tlds: ['.gov','.gov.uk','.gov.in','.gov.au','.gc.ca','.gob.mx','.gouv.fr',
-           '.gov.za','.gov.sg','.govt.nz','.gov.ng','.gov.pk'],
+           '.gov.za','.gov.sg','.govt.nz','.gov.ng','.gov.pk','.gov.br','.gov.ph',
+           '.gov.eg','.gov.tr','.gov.my','.gov.ae','.gov.kw','.gov.sa'],
     domains: ['whitehouse.gov','irs.gov','usa.gov','europa.eu','un.org',
-              'nato.int','data.gov','congress.gov','senate.gov','who.int'],
-    subdomainKw: ['gov','govt','government','federal','state','municipal','city','county'],
+              'nato.int','data.gov','congress.gov','senate.gov','who.int',
+              'worldbank.org','imf.org','icao.int','oecd.org','wto.org'],
+    subdomainKw: ['gov','govt','government','federal','state','municipal','city','county','ministry'],
     keywords: [
-      {w:'federal government',s:22},{w:'official government',s:22},{w:'government portal',s:24},
-      {w:'ministry',s:14},{w:'parliament',s:16},{w:'senate',s:14},{w:'congress',s:14},
-      {w:'legislation',s:14},{w:'public service',s:16},{w:'civil service',s:14},
-      {w:'state agency',s:18},{w:'national authority',s:20},{w:'municipal',s:10},
-      {w:'government',s:12},{w:'official',s:8},{w:'prefecture',s:14},{w:'governor',s:12}
+      {w:'federal government',s:24},{w:'official government',s:24},{w:'government portal',s:26},
+      {w:'ministry of',s:20},{w:'parliament',s:18},{w:'senate',s:16},{w:'congress',s:16},
+      {w:'legislation',s:16},{w:'public service',s:18},{w:'civil service',s:16},
+      {w:'state agency',s:20},{w:'national authority',s:22},{w:'municipal',s:12},
+      {w:'government',s:12},{w:'official',s:8},{w:'prefecture',s:16},{w:'governor',s:14},
+      {w:'public sector',s:18},{w:'department of',s:14},{w:'bureau of',s:14}
     ],
-    negativeKw: ['shop','buy','cart','game','movie','social media','tweet','recipe'],
+    negativeKw: ['shop','buy','cart','game','movie','social media','tweet','recipe','stream'],
     minScore: 0, requireDomain: false
   },
 
   // ── 2. Military / Defense ──────────────────────────────────
   {
-    id: 'military', label: 'Military / Defense', emoji: '\uD83C\uDF96\uFE0F', cssClass: 'cat-military',
+    id: 'military', label: 'Military / Defense', emoji: '🎖️', cssClass: 'cat-military',
     description: 'A military, defense, or armed-forces organization.',
     tlds: ['.mil'],
-    domains: ['nato.int','army.mil','navy.mil','af.mil','marines.mil','defense.gov','dod.gov'],
+    domains: ['nato.int','army.mil','navy.mil','af.mil','marines.mil','defense.gov','dod.gov',
+              'mod.uk','army.mod.uk','raf.mod.uk'],
     subdomainKw: ['mil','army','navy','airforce','defense','military'],
     keywords: [
-      {w:'armed forces',s:22},{w:'defense department',s:22},{w:'military base',s:22},
-      {w:'military',s:18},{w:'pentagon',s:18},{w:'veteran',s:14},{w:'troops',s:14},
-      {w:'soldier',s:12},{w:'marine corps',s:18},{w:'naval',s:14},{w:'brigade',s:12}
+      {w:'armed forces',s:26},{w:'defense department',s:24},{w:'military base',s:24},
+      {w:'military',s:20},{w:'pentagon',s:20},{w:'veteran',s:16},{w:'troops',s:16},
+      {w:'soldier',s:14},{w:'marine corps',s:20},{w:'naval',s:16},{w:'brigade',s:14},
+      {w:'air force',s:18},{w:'defense contractor',s:22},{w:'national guard',s:20}
     ],
-    negativeKw: ['shop','game','social','news','recipe','movie'],
-    minScore: 0, requireDomain: false
+    negativeKw: ['shop','game','social','news','recipe','movie','stream'],
+    minScore: 20, requireDomain: false
   },
 
   // ── 3. Education ──────────────────────────────────────────
   {
-    id: 'education', label: 'Education', emoji: '\uD83C\uDF93', cssClass: 'cat-education',
+    id: 'education', label: 'Education', emoji: '🎓', cssClass: 'cat-education',
     description: 'A school, university, or educational platform.',
-    tlds: ['.edu','.ac.uk','.ac.in','.edu.au','.sch.uk','.edu.pk','.edu.sg'],
+    tlds: ['.edu','.ac.uk','.ac.in','.edu.au','.sch.uk','.edu.pk','.edu.sg','.edu.ph','.edu.ng'],
     domains: ['coursera.org','udemy.com','khanacademy.org','edx.org','duolingo.com',
               'chegg.com','quizlet.com','skillshare.com','pluralsight.com',
               'mit.edu','harvard.edu','stanford.edu','oxford.ac.uk','cambridge.org',
-              'codecademy.com','brilliant.org','futurelearn.com'],
-    subdomainKw: ['learn','lms','elearning','campus','student','academic','courses','school','edu'],
+              'codecademy.com','brilliant.org','futurelearn.com','teachable.com',
+              'udacity.com','masterclass.com','rosettastone.com',
+              'babbel.com','lynda.com','alison.com','open.edu'],
+    subdomainKw: ['learn','lms','elearning','campus','student','academic','courses','school','edu','library'],
     keywords: [
-      {w:'online learning platform',s:26},{w:'student portal',s:24},{w:'learning management system',s:28},
-      {w:'university',s:16},{w:'college',s:14},{w:'e-learning',s:18},
-      {w:'online course',s:20},{w:'lecture',s:12},{w:'faculty',s:14},
-      {w:'curriculum',s:14},{w:'degree program',s:18},{w:'diploma',s:12},
-      {w:'tutorial',s:10},{w:'classroom',s:12},{w:'professor',s:14},
-      {w:'scholarship',s:14},{w:'campus',s:10},{w:'education',s:12},{w:'school',s:8}
+      {w:'online learning platform',s:28},{w:'student portal',s:26},{w:'learning management system',s:30},
+      {w:'university',s:18},{w:'college',s:16},{w:'e-learning',s:20},
+      {w:'online course',s:22},{w:'lecture',s:14},{w:'faculty',s:16},
+      {w:'curriculum',s:16},{w:'degree program',s:20},{w:'diploma',s:14},
+      {w:'tutorial',s:12},{w:'classroom',s:14},{w:'professor',s:16},
+      {w:'scholarship',s:16},{w:'campus',s:12},{w:'education',s:12},{w:'school',s:8},
+      {w:'enrollment',s:16},{w:'syllabus',s:18},{w:'academic calendar',s:18}
     ],
-    negativeKw: ['shop','buy','cart','social media','game','news','hospital'],
+    negativeKw: ['shop','buy','cart','social media','game','news','hospital','insurance'],
     minScore: 0, requireDomain: false
   },
 
   // ── 4. Healthcare & Medical ────────────────────────────────
   {
-    id: 'healthcare', label: 'Healthcare & Medical', emoji: '\uD83C\uDFE5', cssClass: 'cat-healthcare',
+    id: 'healthcare', label: 'Healthcare & Medical', emoji: '🏥', cssClass: 'cat-healthcare',
     description: 'A medical, health, or healthcare information resource.',
     tlds: [],
     domains: [
       'webmd.com','healthline.com','mayoclinic.org','nih.gov','cdc.gov',
       'medscape.com','drugs.com','rxlist.com','medlineplus.gov','who.int',
-      'clevelandclinic.org','hopkinsmedicine.org'
+      'clevelandclinic.org','hopkinsmedicine.org','nhs.uk','medicalxpress.com',
+      'health.harvard.edu','medicalnewstoday.com','verywellhealth.com',
+      'everydayhealth.com','medicinenet.com','emedicinehealth.com'
     ],
-    subdomainKw: [
-      'health','medical','med','clinical','care','hospital','pharmacy','wellness','clinic'
-    ],
+    subdomainKw: ['health','medical','med','clinical','care','hospital','pharmacy','wellness','clinic','patient'],
     keywords: [
-      {w:'electronic health record',s:28},{w:'medical records',s:24},
-      {w:'telehealth',s:22},{w:'clinical data',s:22},
-      {w:'physician',s:18},{w:'pharmacist',s:18},{w:'diagnosis',s:16},
-      {w:'prescription',s:16},{w:'therapy',s:12},{w:'vaccination',s:16},
-      {w:'pharmaceutical',s:18},{w:'pediatric',s:16},{w:'surgery',s:14},
-      {w:'radiology',s:18},{w:'oncology',s:18},{w:'pathology',s:18},
-      {w:'cardiology',s:18},{w:'orthopedic',s:18},
-      {w:'healthcare',s:14},{w:'medical',s:10},{w:'hospital',s:12},
+      {w:'electronic health record',s:30},{w:'medical records',s:26},
+      {w:'telehealth',s:24},{w:'clinical data',s:24},
+      {w:'physician',s:20},{w:'pharmacist',s:20},{w:'diagnosis',s:18},
+      {w:'prescription',s:18},{w:'therapy',s:14},{w:'vaccination',s:18},
+      {w:'pharmaceutical',s:20},{w:'pediatric',s:18},{w:'surgery',s:16},
+      {w:'radiology',s:20},{w:'oncology',s:20},{w:'pathology',s:20},
+      {w:'cardiology',s:20},{w:'orthopedic',s:20},{w:'neurology',s:20},
+      {w:'healthcare',s:14},{w:'medical',s:10},{w:'hospital',s:14},
       {w:'clinic',s:12},{w:'health',s:8},{w:'patient',s:8},
-      {w:'doctor',s:10},{w:'nurse',s:10},{w:'wellness',s:8},{w:'treatment',s:8}
+      {w:'doctor',s:10},{w:'nurse',s:10},{w:'wellness',s:8},{w:'treatment',s:10},
+      {w:'symptom',s:14},{w:'medical condition',s:20},{w:'drug interaction',s:22}
     ],
-    negativeKw: ['game','video game','shop','cart','social network','tweet','movie','music','recipe'],
+    negativeKw: ['game','video game','shop','cart','social network','tweet','movie','music','recipe','insurance company','payer'],
     minScore: 0, requireDomain: false
   },
 
   // ── 4b. Health Insurance & Payer ───────────────────────────
   {
-    id: 'insurance', label: 'Health Insurance & Payer', emoji: '\uD83D\uDEE1\uFE0F', cssClass: 'cat-insurance',
+    id: 'insurance', label: 'Health Insurance & Payer', emoji: '🛡️', cssClass: 'cat-insurance',
     description: 'A health insurance company, payer, or benefits portal.',
     tlds: [],
     domains: [
-      'aetna.com','cigna.com','uhc.com','bcbs.com','humana.com','anthem.com',
-      'centene.com','molina.com','oscar.com','ambetter.com'
+      'aetna.com','cigna.com','uhc.com','unitedhealthcare.com','bcbs.com','humana.com','anthem.com',
+      'centene.com','molina.com','oscar.com','ambetter.com','magellanhealth.com',
+      'carefirst.com','highmark.com','kaiserpermanente.org','healthnet.com','geisinger.org'
     ],
-    subdomainKw: [
-      'insurance','payer','claims','healthplan','benefits','member'
-    ],
+    subdomainKw: ['insurance','payer','claims','healthplan','benefits','member','enrollment','coverage'],
     keywords: [
-      {w:'health insurance',s:28},{w:'insurance coverage',s:28},{w:'payer network',s:30},
-      {w:'insurance company',s:26},{w:'member portal',s:28},{w:'benefits portal',s:26},
-      {w:'health plan',s:26},{w:'formulary',s:24},{w:'prior authorization',s:22},
-      {w:'insurance',s:16},{w:'payer',s:18},{w:'claims',s:16}
+      {w:'health insurance',s:32},{w:'insurance coverage',s:30},{w:'payer network',s:32},
+      {w:'insurance company',s:28},{w:'member portal',s:30},{w:'benefits portal',s:28},
+      {w:'health plan',s:28},{w:'formulary',s:26},{w:'prior authorization',s:24},
+      {w:'deductible',s:22},{w:'copay',s:24},{w:'network provider',s:22},
+      {w:'out of pocket',s:20},{w:'open enrollment',s:22},{w:'summary of benefits',s:26},
+      {w:'insurance',s:16},{w:'payer',s:20},{w:'claims',s:18},{w:'premium',s:14}
     ],
-    negativeKw: ['game','video game','shop','cart','social network','tweet','movie','music','recipe'],
-    minScore: 0, requireDomain: false
+    negativeKw: ['game','video game','shop','cart','social network','tweet','movie','music','recipe','real estate'],
+    minScore: 20, requireDomain: false
   },
 
   // ── 4c. Provider Portal & Credentialing ────────────────────
   {
-    id: 'provider', label: 'Provider Portal', emoji: '\uD83E\uDE7A', cssClass: 'cat-provider',
+    id: 'provider', label: 'Provider Portal', emoji: '🩺', cssClass: 'cat-provider',
     description: 'A healthcare provider, practice management, or credentialing portal.',
     tlds: [],
     domains: [
       'caqh.org','availity.com','athenahealth.com','epic.com',
       'eclinicalworks.com','nextgen.com','kareo.com','practicefusion.com',
-      'changehealthcare.com','emdeon.com','trizetto.com','optum.com',
-      'zelis.com','navicure.com','waystar.com'
+      'changehealthcare.com','trizetto.com','optum.com',
+      'zelis.com','navicure.com','waystar.com','mdvip.com',
+      'doximity.com','healthgrades.com','zocdoc.com'
     ],
-    subdomainKw: [
-      'provider','caqh','proview','credentialing','ehr','emr','nonprod','sit','uat',
-      'prod','rx'
-    ],
+    subdomainKw: ['provider','caqh','proview','credentialing','ehr','emr','nonprod','sit','uat','prod','rx','pcp'],
     keywords: [
-      {w:'provider credentialing',s:34},{w:'credentialing portal',s:34},
-      {w:'provider portal',s:32},{w:'network provider',s:28},
-      {w:'claims processing',s:28},{w:'healthcare network',s:26},
-      {w:'care management',s:24},{w:'healthcare provider',s:24},
-      {w:'credentialing',s:24},{w:'provider',s:14}
+      {w:'provider credentialing',s:36},{w:'credentialing portal',s:36},
+      {w:'provider portal',s:34},{w:'network provider',s:30},
+      {w:'claims processing',s:30},{w:'healthcare network',s:28},
+      {w:'care management',s:26},{w:'healthcare provider',s:26},
+      {w:'credentialing',s:26},{w:'npi number',s:28},{w:'taxonomy code',s:26},
+      {w:'provider',s:14},{w:'medical practice',s:20}
     ],
     negativeKw: ['game','video game','shop','cart','social network','tweet','movie','music','recipe'],
-    minScore: 0, requireDomain: false
+    minScore: 20, requireDomain: false
   },
 
   // ── 5. Business / Enterprise Portal ───────────────────────
   {
-    id: 'portal', label: 'Business / Enterprise Portal', emoji: '\uD83C\uDFE2', cssClass: 'cat-portal',
+    id: 'portal', label: 'Business / Enterprise Portal', emoji: '🏢', cssClass: 'cat-portal',
     description: 'A business application, enterprise portal, internal tool, or SaaS platform.',
     tlds: [],
     domains: [
       'salesforce.com','workday.com','sap.com','oracle.com','servicenow.com',
       'zendesk.com','atlassian.com','freshdesk.com','hubspot.com','pipedrive.com',
       'monday.com','asana.com','notion.so','airtable.com','smartsheet.com',
-      'slack.com','zoom.us','webex.com','sharepoint.com','sharepoint.microsoft.com',
-      'portal.azure.com'
+      'slack.com','zoom.us','webex.com','sharepoint.com',
+      'portal.azure.com','okta.com','onelogin.com',
+      'bamboohr.com','gusto.com','rippling.com','deel.com','greenhouse.io',
+      'lever.co','trello.com','clickup.com','basecamp.com','todoist.com',
+      'freshservice.com','jira.atlassian.com','confluence.atlassian.com'
     ],
-    subdomainKw: [
-      'portal','app','dashboard','admin','manage','platform','console','workspace',
-      'enterprise','internal','nonprod','sit','uat','qa','staging','crm','erp',
-      'hrms','intranet','employee','vendor','client','partner','b2b'
-    ],
+    subdomainKw: ['portal','dashboard','admin','manage','platform','console','workspace',
+      'enterprise','internal','intranet','employee','vendor','client','partner',
+      'b2b','staging','nonprod','sit','uat','qa','crm','erp','hrms','helpdesk'],
     keywords: [
-      // ── Very strong portal signals
-      {w:'enterprise portal',s:30},{w:'employee portal',s:30},{w:'client portal',s:30},
-      {w:'vendor portal',s:30},{w:'partner portal',s:30},{w:'supplier portal',s:28},
-      {w:'self-service portal',s:28},{w:'customer portal',s:28},
-      {w:'single sign-on',s:24},{w:'admin panel',s:22},{w:'management console',s:24},
-      {w:'workflow automation',s:22},{w:'ticketing system',s:20},{w:'help desk',s:18},
-      {w:'project management',s:18},{w:'task management',s:18},
-      {w:'human resources',s:18},{w:'payroll system',s:20},
-      {w:'accounting software',s:20},{w:'knowledge base',s:16},
-      // ── Moderate
-      {w:'dashboard',s:14},{w:'sso',s:14},{w:'crm',s:14},{w:'erp',s:14},
-      {w:'workflow',s:12},{w:'saas',s:14},{w:'b2b',s:14},{w:'automation',s:10}
+      {w:'enterprise portal',s:32},{w:'employee portal',s:32},{w:'client portal',s:32},
+      {w:'vendor portal',s:32},{w:'partner portal',s:32},{w:'supplier portal',s:30},
+      {w:'self-service portal',s:30},{w:'customer portal',s:30},
+      {w:'single sign-on',s:26},{w:'admin panel',s:24},{w:'management console',s:26},
+      {w:'workflow automation',s:24},{w:'ticketing system',s:22},{w:'help desk',s:20},
+      {w:'project management',s:20},{w:'task management',s:20},
+      {w:'human resources',s:20},{w:'payroll system',s:22},
+      {w:'accounting software',s:22},{w:'knowledge base',s:18},
+      {w:'sso',s:16},{w:'crm',s:16},{w:'erp',s:16},{w:'saas platform',s:18},
+      {w:'workflow',s:12},{w:'automation',s:10},{w:'b2b',s:14}
     ],
-    negativeKw: ['buy now','add to cart','recipe','game','movie','music','tweet','follower','news'],
-    minScore: 0, requireDomain: false
+    negativeKw: ['buy now','add to cart','recipe','game','movie','music','tweet','follower','news article','social media post'],
+    minScore: 20, requireDomain: false
   },
 
   // ── 6. Finance & Banking ───────────────────────────────────
   {
-    id: 'finance', label: 'Finance & Banking', emoji: '\uD83D\uDCB0', cssClass: 'cat-finance',
+    id: 'finance', label: 'Finance & Banking', emoji: '💰', cssClass: 'cat-finance',
     description: 'A finance, banking, investment, or fintech platform.',
     tlds: [],
     domains: [
@@ -606,110 +614,136 @@ const CATEGORIES = [
       'nyse.com','bankofamerica.com','chase.com','paypal.com','stripe.com',
       'coinbase.com','binance.com','fidelity.com','schwab.com','robinhood.com',
       'nerdwallet.com','creditkarma.com','mint.com','wise.com','revolut.com',
-      'quickbooks.com','xero.com','freshbooks.com'
+      'quickbooks.com','xero.com','freshbooks.com','etrade.com','tdameritrade.com',
+      'vanguard.com','blackrock.com','morganstanley.com','goldmansachs.com',
+      'wellsfargo.com','citibank.com','barclays.com','hsbc.com','jpmorgan.com',
+      'monzo.com','starlingbank.com','plaid.com','transferwise.com'
     ],
-    subdomainKw: ['bank','finance','invest','trading','crypto','payments','billing','accounting'],
+    subdomainKw: ['bank','finance','invest','trading','crypto','payments','billing','accounting','wealth'],
     keywords: [
-      {w:'investment portfolio',s:22},{w:'stock market',s:22},{w:'cryptocurrency exchange',s:24},
-      {w:'wealth management',s:22},{w:'financial planning',s:22},{w:'interest rate',s:20},
-      {w:'banking',s:14},{w:'investment',s:14},{w:'trading platform',s:20},
-      {w:'forex',s:16},{w:'bonds',s:14},{w:'equity',s:14},{w:'fintech',s:18},
-      {w:'bookkeeping',s:14},{w:'tax filing',s:18},{w:'mortgage',s:14},
-      {w:'credit score',s:18},{w:'payment gateway',s:18},{w:'digital wallet',s:18},
-      {w:'finance',s:8},{w:'accounting',s:10},{w:'budget',s:8},{w:'loan',s:10}
+      {w:'investment portfolio',s:24},{w:'stock market',s:24},{w:'cryptocurrency exchange',s:26},
+      {w:'wealth management',s:24},{w:'financial planning',s:24},{w:'interest rate',s:22},
+      {w:'banking',s:16},{w:'investment',s:16},{w:'trading platform',s:22},
+      {w:'forex',s:18},{w:'bonds',s:16},{w:'equity',s:16},{w:'fintech',s:20},
+      {w:'bookkeeping',s:16},{w:'tax filing',s:20},{w:'mortgage',s:16},
+      {w:'credit score',s:20},{w:'payment gateway',s:20},{w:'digital wallet',s:20},
+      {w:'mutual fund',s:22},{w:'hedge fund',s:22},{w:'ipo',s:18},
+      {w:'finance',s:10},{w:'accounting',s:12},{w:'budget',s:10},{w:'loan',s:12}
     ],
-    negativeKw: ['game','social media','movie','recipe','travel','hospital','credentialing'],
+    negativeKw: ['game','social media','movie','recipe','travel','hospital','credentialing','news article'],
     minScore: 0, requireDomain: false
   },
 
   // ── 7. E-Commerce / Shopping ──────────────────────────────
   {
-    id: 'ecommerce', label: 'E-Commerce / Shopping', emoji: '\uD83D\uDED2', cssClass: 'cat-ecommerce',
+    id: 'ecommerce', label: 'E-Commerce / Shopping', emoji: '🛒', cssClass: 'cat-ecommerce',
     description: 'An online retail store or shopping marketplace.',
     tlds: [],
     domains: [
       'amazon.com','ebay.com','walmart.com','shopify.com','etsy.com','alibaba.com',
       'aliexpress.com','target.com','bestbuy.com','newegg.com','wayfair.com',
-      'zappos.com','overstock.com','wish.com','flipkart.com','myntra.com'
+      'zappos.com','overstock.com','wish.com','flipkart.com','myntra.com',
+      'rakuten.com','shein.com','temu.com','asos.com','macys.com',
+      'homedepot.com','lowes.com','costco.com','chewy.com','nordstrom.com','zara.com'
     ],
-    subdomainKw: ['shop','store','cart','checkout','order'],
+    subdomainKw: ['shop','store','cart','checkout','order','buy'],
     keywords: [
-      {w:'add to cart',s:32},{w:'free shipping',s:28},{w:'buy now',s:28},
-      {w:'shopping cart',s:28},{w:'online store',s:24},{w:'return policy',s:22},
-      {w:'product catalog',s:22},{w:'checkout',s:20},{w:'discount code',s:22},
-      {w:'coupon',s:18},{w:'promo code',s:20},{w:'retail',s:14},{w:'marketplace',s:16},
-      {w:'delivery',s:10},{w:'shipping',s:14},{w:'wishlist',s:18},
+      {w:'add to cart',s:36},{w:'free shipping',s:30},{w:'buy now',s:30},
+      {w:'shopping cart',s:32},{w:'online store',s:26},{w:'return policy',s:24},
+      {w:'product catalog',s:24},{w:'checkout',s:22},{w:'discount code',s:24},
+      {w:'coupon',s:20},{w:'promo code',s:22},{w:'retail',s:16},{w:'marketplace',s:18},
+      {w:'delivery tracking',s:22},{w:'shipping policy',s:22},{w:'wishlist',s:20},
+      {w:'flash sale',s:24},{w:'limited time offer',s:22},{w:'sold out',s:16},
       {w:'shop',s:8},{w:'store',s:8},{w:'buy',s:8},{w:'price',s:6},{w:'sale',s:8}
     ],
-    negativeKw: ['hospital','government','military','university','credentialing'],
+    negativeKw: ['hospital','government','military','university','credentialing','news article'],
     minScore: 0, requireDomain: false
   },
 
   // ── 8. Social Media ───────────────────────────────────────
-  // requireDomain = true: keyword-only hits can't win alone.
-  // This prevents misclassification of portals as "social".
   {
-    id: 'social', label: 'Social Media', emoji: '\uD83D\uDCF1', cssClass: 'cat-social',
+    id: 'social', label: 'Social Media', emoji: '📱', cssClass: 'cat-social',
     description: 'A social networking or community platform.',
     tlds: [],
-    requireDomain: true,   // ← MUST have a domain/subdomain/TLD match
+    requireDomain: true,
     domains: [
       'facebook.com','twitter.com','x.com','instagram.com','tiktok.com',
       'linkedin.com','snapchat.com','pinterest.com','reddit.com','tumblr.com',
       'discord.com','telegram.org','whatsapp.com','mastodon.social',
-      'threads.net','bsky.app','weibo.com','vk.com','minds.com'
+      'threads.net','bsky.app','weibo.com','vk.com','minds.com',
+      'quora.com','medium.com','substack.com'
     ],
     subdomainKw: ['social','community','forum'],
     keywords: [
-      // Only VERY specific social phrases score high
-      {w:'social networking platform',s:32},{w:'social media platform',s:32},
-      {w:'social network',s:28},{w:'friend request',s:28},{w:'news feed',s:26},
-      {w:'direct message',s:22},{w:'retweet',s:24},{w:'hashtag trending',s:22},
-      {w:'short video platform',s:24},{w:'influencer marketing',s:22},
-      {w:'followers count',s:22},{w:'user timeline',s:22},
-      // Generic social words — very low weight, can't win alone
-      {w:'tweet',s:12},{w:'reels',s:12},{w:'stories',s:8},{w:'followers',s:8},
-      {w:'hashtag',s:10},{w:'influencer',s:10},
-      // These are far too generic — minimal weight
-      {w:'community',s:4},{w:'profile',s:2},{w:'share',s:2},{w:'post',s:2}
+      {w:'social networking platform',s:34},{w:'social media platform',s:34},
+      {w:'social network',s:30},{w:'friend request',s:30},{w:'news feed',s:28},
+      {w:'direct message',s:24},{w:'retweet',s:26},{w:'hashtag trending',s:24},
+      {w:'short video platform',s:26},{w:'influencer marketing',s:24},
+      {w:'followers count',s:24},{w:'user timeline',s:24},
+      {w:'tweet',s:14},{w:'reels',s:14},{w:'stories',s:10},{w:'followers',s:10},
+      {w:'hashtag',s:12},{w:'influencer',s:12}
     ],
-    negativeKw: [
-      'hospital','provider','insurance','government','military',
-      'shop','university','credentialing','claims','payer','dashboard'
-    ],
-    minScore: 30   // requires at least 30 pts — means a domain match is nearly mandatory
+    negativeKw: ['hospital','provider','insurance','government','military','shop','university','credentialing','claims','payer','dashboard'],
+    minScore: 30
   },
 
   // ── 9. Technology & Software ──────────────────────────────
   {
-    id: 'technology', label: 'Technology & Software', emoji: '\uD83D\uDCBB', cssClass: 'cat-technology',
+    id: 'technology', label: 'Technology & Software', emoji: '💻', cssClass: 'cat-technology',
     description: 'A technology company, developer tool, or software product.',
-    tlds: [],
+    tlds: ['.io','.dev','.tech'],
     domains: [
       'github.com','gitlab.com','stackoverflow.com','developer.mozilla.org',
       'npmjs.com','apple.com','google.com','microsoft.com','linux.org',
       'docker.com','vercel.com','netlify.com','cloudflare.com',
       'digitalocean.com','heroku.com','jetbrains.com','replit.com',
-      'codesandbox.io','openai.com','anthropic.com','huggingface.co'
+      'codesandbox.io','openai.com','anthropic.com','huggingface.co',
+      'aws.amazon.com','azure.microsoft.com','cloud.google.com',
+      'hashicorp.com','datadog.com','newrelic.com','splunk.com','elastic.co',
+      'postman.com','swagger.io','redhat.com','canonical.com'
     ],
-    subdomainKw: ['dev','api','docs','developer','code','git','tech','sdk','cloud','repo'],
+    subdomainKw: ['dev','api','docs','developer','code','git','tech','sdk','cloud','repo','devops'],
     keywords: [
-      {w:'open source software',s:22},{w:'software development',s:22},{w:'developer tools',s:22},
-      {w:'machine learning model',s:22},{w:'artificial intelligence',s:20},
-      {w:'api documentation',s:24},{w:'cloud computing',s:20},{w:'devops pipeline',s:22},
-      {w:'continuous integration',s:22},{w:'microservices',s:20},{w:'kubernetes',s:20},
-      {w:'data science',s:18},{w:'open-source',s:18},{w:'programming language',s:18},
-      {w:'cybersecurity',s:18},{w:'infrastructure as code',s:22},
+      {w:'open source software',s:24},{w:'software development',s:24},{w:'developer tools',s:24},
+      {w:'api documentation',s:26},{w:'cloud computing',s:22},{w:'devops pipeline',s:24},
+      {w:'continuous integration',s:24},{w:'microservices',s:22},{w:'kubernetes',s:22},
+      {w:'programming language',s:20},{w:'cybersecurity',s:20},{w:'infrastructure as code',s:24},
+      {w:'version control',s:22},{w:'ci/cd',s:22},{w:'containerization',s:22},
       {w:'software',s:8},{w:'developer',s:10},{w:'programming',s:14},{w:'framework',s:12},
-      {w:'technology',s:8},{w:'tech',s:6},{w:'cloud',s:8},{w:'startup',s:8}
+      {w:'technology',s:8},{w:'tech',s:6},{w:'cloud',s:8},{w:'startup',s:8},{w:'code',s:6}
     ],
-    negativeKw: ['hospital','recipe','game','movie','shop','social network','credentialing'],
+    negativeKw: ['hospital','recipe','game','movie','shop','social network','credentialing','health insurance'],
     minScore: 0, requireDomain: false
+  },
+
+  // ── 9b. AI & Machine Learning ─────────────────────────────
+  {
+    id: 'ai', label: 'AI & Machine Learning', emoji: '🤖', cssClass: 'cat-ai',
+    description: 'An artificial intelligence, machine learning, or LLM platform.',
+    tlds: [],
+    domains: [
+      'openai.com','anthropic.com','huggingface.co','deepmind.com','gemini.google.com',
+      'mistral.ai','perplexity.ai','character.ai','claude.ai','copilot.microsoft.com',
+      'replicate.com','stability.ai','midjourney.com','runwayml.com','cohere.com',
+      'together.ai','groq.com','ollama.com','lmsys.org','civitai.com'
+    ],
+    subdomainKw: ['ai','ml','llm','model','inference','chat','gpt','neural','nlp'],
+    keywords: [
+      {w:'large language model',s:36},{w:'artificial intelligence',s:32},{w:'machine learning model',s:32},
+      {w:'generative ai',s:34},{w:'natural language processing',s:32},{w:'neural network',s:28},
+      {w:'ai chatbot',s:30},{w:'llm',s:26},{w:'gpt',s:24},{w:'foundation model',s:28},
+      {w:'text generation',s:24},{w:'image generation',s:24},{w:'fine-tuning',s:22},
+      {w:'prompt engineering',s:26},{w:'vector database',s:24},{w:'embeddings',s:22},
+      {w:'ai assistant',s:26},{w:'deep learning',s:24},{w:'transformer model',s:26},
+      {w:'chatgpt',s:30},{w:'gemini',s:22},{w:'claude',s:22},{w:'copilot',s:18}
+    ],
+    negativeKw: ['shop','recipe','game','movie','hospital','insurance','credentialing'],
+    minScore: 20, requireDomain: false
   },
 
   // ── 10. News & Media ──────────────────────────────────────
   {
-    id: 'news', label: 'News & Media', emoji: '\uD83D\uDCF0', cssClass: 'cat-news',
+    id: 'news', label: 'News & Media', emoji: '📰', cssClass: 'cat-news',
     description: 'A news outlet, journalism, or media publication.',
     tlds: [],
     domains: [
@@ -717,40 +751,45 @@ const CATEGORIES = [
       'reuters.com','apnews.com','washingtonpost.com','foxnews.com',
       'nbcnews.com','aljazeera.com','theatlantic.com','time.com',
       'economist.com','newsweek.com','vox.com','theverge.com','wired.com',
-      'huffpost.com','buzzfeed.com','ndtv.com','thehindu.com'
+      'huffpost.com','buzzfeed.com','ndtv.com','thehindu.com','indiatoday.in',
+      'hindustantimes.com','timesofindia.com','abc.net.au','cbsnews.com',
+      'msnbc.com','npr.org','pbs.org','propublica.org','axios.com',
+      'politico.com','thehill.com','techcrunch.com','engadget.com'
     ],
-    subdomainKw: ['news','press','media','editorial','breaking','headline'],
+    subdomainKw: ['news','press','media','editorial','breaking','headline','politics'],
     keywords: [
-      {w:'breaking news',s:28},{w:'latest news',s:24},{w:'world news',s:24},
-      {w:'investigative journalism',s:30},{w:'editorial board',s:24},
-      {w:'press release',s:22},{w:'news headline',s:24},{w:'live coverage',s:22},
-      {w:'journalist',s:18},{w:'reporter',s:16},{w:'broadcast',s:14},
-      {w:'publication',s:14},{w:'newsletter',s:14},{w:'editorial',s:14},
-      {w:'news',s:8},{w:'media',s:8},{w:'press',s:8},{w:'magazine',s:12}
+      {w:'breaking news',s:30},{w:'latest news',s:26},{w:'world news',s:26},
+      {w:'investigative journalism',s:32},{w:'editorial board',s:26},
+      {w:'press release',s:24},{w:'news headline',s:26},{w:'live coverage',s:24},
+      {w:'journalist',s:20},{w:'reporter',s:18},{w:'broadcast',s:16},
+      {w:'publication',s:16},{w:'newsletter',s:16},{w:'editorial',s:16},
+      {w:'news',s:8},{w:'media',s:8},{w:'press',s:8},{w:'magazine',s:12},{w:'journalism',s:18}
     ],
-    negativeKw: ['shop','game','recipe','social network','hospital','credentialing'],
+    negativeKw: ['shop','game','recipe','social network','hospital','credentialing','add to cart'],
     minScore: 0, requireDomain: false
   },
 
   // ── 11. Gaming ────────────────────────────────────────────
   {
-    id: 'gaming', label: 'Gaming', emoji: '\uD83C\uDFAE', cssClass: 'cat-gaming',
+    id: 'gaming', label: 'Gaming', emoji: '🎮', cssClass: 'cat-gaming',
     description: 'A gaming platform, publisher, or gaming community.',
     tlds: [],
     domains: [
       'steampowered.com','epicgames.com','ign.com','gamespot.com','kotaku.com',
       'twitch.tv','ea.com','ubisoft.com','blizzard.com','riotgames.com',
       'xbox.com','playstation.com','nintendo.com','roblox.com','minecraft.net',
-      'gog.com','humblebundle.com'
+      'gog.com','humblebundle.com','g2a.com','cdkeys.com',
+      'rockstargames.com','2k.com','bethesda.net','bungie.net','valvesoftware.com',
+      'activision.com','squareenix.com','capcom.com','sega.com'
     ],
-    subdomainKw: ['game','games','gaming','play','esports','arcade'],
+    subdomainKw: ['game','games','gaming','play','esports','arcade','clan','guild'],
     keywords: [
-      {w:'battle royale',s:28},{w:'video game',s:24},{w:'online multiplayer',s:24},
-      {w:'esports tournament',s:26},{w:'pc gaming',s:22},{w:'gaming platform',s:24},
-      {w:'game developer',s:22},{w:'open world game',s:24},
-      {w:'fps',s:14},{w:'rpg',s:14},{w:'mmorpg',s:20},{w:'leaderboard',s:18},
-      {w:'gameplay',s:18},{w:'streamer',s:14},{w:'indie game',s:20},
-      {w:'game',s:8},{w:'gaming',s:10},{w:'player',s:6},{w:'level',s:4}
+      {w:'battle royale',s:30},{w:'video game',s:26},{w:'online multiplayer',s:26},
+      {w:'esports tournament',s:28},{w:'pc gaming',s:24},{w:'gaming platform',s:26},
+      {w:'game developer',s:24},{w:'open world game',s:26},
+      {w:'fps',s:16},{w:'rpg',s:16},{w:'mmorpg',s:22},{w:'leaderboard',s:20},
+      {w:'gameplay',s:20},{w:'streamer',s:16},{w:'indie game',s:22},
+      {w:'game',s:8},{w:'gaming',s:10},{w:'player',s:6},{w:'multiplayer',s:12}
     ],
     negativeKw: ['hospital','insurance','government','recipe','news','credentialing'],
     minScore: 0, requireDomain: false
@@ -758,22 +797,24 @@ const CATEGORIES = [
 
   // ── 12. Entertainment & Streaming ─────────────────────────
   {
-    id: 'entertainment', label: 'Entertainment & Streaming', emoji: '\uD83C\uDFAC', cssClass: 'cat-entertainment',
+    id: 'entertainment', label: 'Entertainment & Streaming', emoji: '🎬', cssClass: 'cat-entertainment',
     description: 'A streaming, movies, music, or media content platform.',
     tlds: [],
     domains: [
       'netflix.com','youtube.com','spotify.com','disneyplus.com','hulu.com',
       'hbomax.com','max.com','primevideo.com','peacocktv.com','soundcloud.com',
       'pandora.com','tidal.com','imdb.com','rottentomatoes.com','crunchyroll.com',
-      'deezer.com'
+      'deezer.com','appletv.com','paramountplus.com','discovery.com','fandango.com',
+      'vimeo.com','dailymotion.com','twitch.tv','kick.com','rumble.com'
     ],
-    subdomainKw: ['stream','watch','movies','shows','music','podcast'],
+    subdomainKw: ['stream','watch','movies','shows','music','podcast','episode'],
     keywords: [
-      {w:'streaming platform',s:28},{w:'watch online',s:24},{w:'binge watch',s:24},
-      {w:'original series',s:22},{w:'movie trailer',s:24},{w:'tv show',s:22},
-      {w:'music streaming',s:24},{w:'podcast episode',s:22},
+      {w:'streaming platform',s:30},{w:'watch online',s:26},{w:'binge watch',s:26},
+      {w:'original series',s:24},{w:'movie trailer',s:26},{w:'tv show',s:24},
+      {w:'music streaming',s:26},{w:'podcast episode',s:24},
       {w:'movie',s:10},{w:'film',s:10},{w:'series',s:10},{w:'episode',s:10},
-      {w:'streaming',s:14},{w:'music',s:8},{w:'playlist',s:12},{w:'album',s:12}
+      {w:'streaming',s:14},{w:'music',s:8},{w:'playlist',s:12},{w:'album',s:12},
+      {w:'subscribe',s:10},{w:'watch now',s:18},{w:'stream live',s:20}
     ],
     negativeKw: ['shop','hospital','government','recipe','social network','credentialing'],
     minScore: 0, requireDomain: false
@@ -781,20 +822,21 @@ const CATEGORIES = [
 
   // ── 13. Reference & Encyclopedia ──────────────────────────
   {
-    id: 'reference', label: 'Reference & Encyclopedia', emoji: '\uD83D\uDCDA', cssClass: 'cat-reference',
+    id: 'reference', label: 'Reference & Encyclopedia', emoji: '📚', cssClass: 'cat-reference',
     description: 'A reference site, encyclopedia, or knowledge base.',
     tlds: [],
     domains: [
       'wikipedia.org','wikimedia.org','britannica.com','merriam-webster.com',
       'dictionary.com','thesaurus.com','wolframalpha.com','archive.org',
-      'jstor.org','pubmed.ncbi.nlm.nih.gov','scholar.google.com'
+      'jstor.org','pubmed.ncbi.nlm.nih.gov','scholar.google.com',
+      'stackexchange.com','snopes.com','goodreads.com','worldcat.org'
     ],
-    subdomainKw: ['wiki','encyclopedia','docs','kb','knowledgebase','reference','lib'],
+    subdomainKw: ['wiki','encyclopedia','docs','kb','knowledgebase','reference','lib','archive'],
     keywords: [
-      {w:'free encyclopedia',s:28},{w:'open encyclopedia',s:28},{w:'knowledge base',s:22},
-      {w:'dictionary definition',s:24},{w:'scholarly article',s:24},{w:'peer reviewed',s:24},
-      {w:'encyclopedia',s:22},{w:'thesaurus',s:20},{w:'reference guide',s:20},
-      {w:'wiki',s:16},{w:'definition',s:14},{w:'glossary',s:18},
+      {w:'free encyclopedia',s:30},{w:'open encyclopedia',s:30},{w:'knowledge base',s:24},
+      {w:'dictionary definition',s:26},{w:'scholarly article',s:26},{w:'peer reviewed',s:26},
+      {w:'encyclopedia',s:24},{w:'thesaurus',s:22},{w:'reference guide',s:22},
+      {w:'wiki',s:16},{w:'definition',s:14},{w:'glossary',s:20},
       {w:'archive',s:12},{w:'library',s:10},{w:'research',s:8}
     ],
     negativeKw: ['shop','game','movie','social media','recipe'],
@@ -803,22 +845,24 @@ const CATEGORIES = [
 
   // ── 14. Design & Creative ─────────────────────────────────
   {
-    id: 'design', label: 'Design & Creative', emoji: '\uD83C\uDFA8', cssClass: 'cat-design',
+    id: 'design', label: 'Design & Creative', emoji: '🎨', cssClass: 'cat-design',
     description: 'A design tool, creative platform, or digital portfolio site.',
     tlds: [],
     domains: [
       'dribbble.com','behance.net','figma.com','adobe.com','canva.com',
       'unsplash.com','pexels.com','shutterstock.com','gettyimages.com',
-      'invision.com','framer.com','webflow.com','sketch.com'
+      'invision.com','framer.com','webflow.com','sketch.com',
+      'creativebloq.com','awwwards.com','codrops.com','iconscout.com',
+      'flaticon.com','freepik.com','envato.com','99designs.com'
     ],
-    subdomainKw: ['design','creative','studio','portfolio'],
+    subdomainKw: ['design','creative','studio','portfolio','art'],
     keywords: [
-      {w:'ui design',s:24},{w:'ux design',s:24},{w:'graphic design',s:24},
-      {w:'design system',s:22},{w:'color palette',s:22},{w:'design tool',s:22},
-      {w:'wireframe',s:20},{w:'prototype',s:18},{w:'mockup',s:18},
-      {w:'illustration',s:18},{w:'typography',s:20},{w:'branding',s:16},
+      {w:'ui design',s:26},{w:'ux design',s:26},{w:'graphic design',s:26},
+      {w:'design system',s:24},{w:'color palette',s:24},{w:'design tool',s:24},
+      {w:'wireframe',s:22},{w:'prototype',s:20},{w:'mockup',s:20},
+      {w:'illustration',s:20},{w:'typography',s:22},{w:'branding',s:18},
       {w:'design',s:8},{w:'creative',s:8},{w:'portfolio',s:12},
-      {w:'photography',s:12},{w:'icon',s:8}
+      {w:'photography',s:12},{w:'icon',s:8},{w:'logo design',s:20},{w:'visual design',s:22}
     ],
     negativeKw: ['hospital','government','game','shop','news','credentialing'],
     minScore: 0, requireDomain: false
@@ -826,20 +870,22 @@ const CATEGORIES = [
 
   // ── 15. Travel & Tourism ──────────────────────────────────
   {
-    id: 'travel', label: 'Travel & Tourism', emoji: '\u2708\uFE0F', cssClass: 'cat-travel',
+    id: 'travel', label: 'Travel & Tourism', emoji: '✈️', cssClass: 'cat-travel',
     description: 'A travel booking, tourism, or destination guide.',
     tlds: [],
     domains: [
       'booking.com','expedia.com','airbnb.com','tripadvisor.com','kayak.com',
-      'hotels.com','skyscanner.com','agoda.com','lonelyplanet.com','viator.com'
+      'hotels.com','skyscanner.com','agoda.com','lonelyplanet.com','viator.com',
+      'priceline.com','hotwire.com','momondo.com','cheapflights.com',
+      'marriott.com','hilton.com','ihg.com','airfrance.com','delta.com','united.com'
     ],
-    subdomainKw: ['travel','tours','booking','flights','hotels','vacation'],
+    subdomainKw: ['travel','tours','booking','flights','hotels','vacation','trip'],
     keywords: [
-      {w:'book flights',s:28},{w:'hotel booking',s:26},{w:'vacation package',s:24},
-      {w:'travel guide',s:24},{w:'travel deals',s:22},{w:'flight search',s:24},
-      {w:'destination guide',s:24},{w:'tour package',s:22},{w:'travel insurance',s:22},
-      {w:'travel',s:10},{w:'tourism',s:14},{w:'hotel',s:10},{w:'flight',s:10},
-      {w:'vacation',s:12},{w:'itinerary',s:14},{w:'sightseeing',s:14}
+      {w:'book flights',s:30},{w:'hotel booking',s:28},{w:'vacation package',s:26},
+      {w:'travel guide',s:26},{w:'travel deals',s:24},{w:'flight search',s:26},
+      {w:'destination guide',s:26},{w:'tour package',s:24},{w:'travel insurance',s:24},
+      {w:'travel',s:10},{w:'tourism',s:16},{w:'hotel',s:10},{w:'flight',s:10},
+      {w:'vacation',s:14},{w:'itinerary',s:16},{w:'sightseeing',s:16},{w:'resort',s:12}
     ],
     negativeKw: ['hospital','government','game','recipe','credentialing'],
     minScore: 0, requireDomain: false
@@ -847,24 +893,147 @@ const CATEGORIES = [
 
   // ── 16. Food & Lifestyle ──────────────────────────────────
   {
-    id: 'food', label: 'Food & Lifestyle', emoji: '\uD83C\uDF55', cssClass: 'cat-food',
+    id: 'food', label: 'Food & Lifestyle', emoji: '🍕', cssClass: 'cat-food',
     description: 'A food, recipe, restaurant, or lifestyle website.',
     tlds: [],
     domains: [
       'allrecipes.com','foodnetwork.com','epicurious.com','seriouseats.com',
       'tasty.co','delish.com','doordash.com','ubereats.com','grubhub.com',
-      'yelp.com','zomato.com','opentable.com','bonappetit.com'
+      'yelp.com','zomato.com','opentable.com','bonappetit.com',
+      'food52.com','thekitchn.com','simplyrecipes.com','instacart.com'
     ],
-    subdomainKw: ['food','recipe','menu','restaurant','kitchen','chef'],
+    subdomainKw: ['food','recipe','menu','restaurant','kitchen','chef','dining'],
     keywords: [
-      {w:'cooking tips',s:22},{w:'restaurant review',s:22},{w:'food delivery',s:22},
-      {w:'meal prep',s:20},{w:'healthy eating',s:18},{w:'vegan recipe',s:22},
-      {w:'food blog',s:20},{w:'nutrition facts',s:18},
+      {w:'cooking tips',s:24},{w:'restaurant review',s:24},{w:'food delivery',s:24},
+      {w:'meal prep',s:22},{w:'healthy eating',s:20},{w:'vegan recipe',s:24},
+      {w:'food blog',s:22},{w:'nutrition facts',s:20},
       {w:'recipe',s:18},{w:'chef',s:12},{w:'ingredient',s:14},{w:'cuisine',s:14},
-      {w:'food',s:8},{w:'cooking',s:10},{w:'restaurant',s:10},{w:'meal',s:8}
+      {w:'food',s:8},{w:'cooking',s:10},{w:'restaurant',s:10},{w:'meal',s:8},{w:'menu',s:10}
     ],
     negativeKw: ['hospital','government','game','social media','credentialing'],
     minScore: 0, requireDomain: false
+  },
+
+  // ── 17. Sports & Fitness ──────────────────────────────────
+  {
+    id: 'sports', label: 'Sports & Fitness', emoji: '⚽', cssClass: 'cat-sports',
+    description: 'A sports, athletics, or fitness platform.',
+    tlds: [],
+    domains: [
+      'espn.com','nfl.com','nba.com','mlb.com','nhl.com','fifa.com','uefa.com',
+      'skysports.com','cbssports.com','bleacherreport.com','sportsillustrated.com',
+      'theathletic.com','strava.com','peloton.com','nike.com','adidas.com',
+      'underarmour.com','myfitnesspal.com','whoop.com','garmin.com'
+    ],
+    subdomainKw: ['sports','sport','fitness','gym','athlete','team','league','football','soccer','basketball'],
+    keywords: [
+      {w:'sports news',s:28},{w:'live score',s:28},{w:'match result',s:26},
+      {w:'football league',s:26},{w:'nba standings',s:28},{w:'sports highlights',s:26},
+      {w:'athlete profile',s:24},{w:'fitness tracker',s:24},{w:'workout plan',s:24},
+      {w:'personal best',s:22},{w:'marathon training',s:24},{w:'sports analysis',s:24},
+      {w:'sports',s:10},{w:'fitness',s:10},{w:'gym',s:8},{w:'match',s:8},{w:'score',s:8},
+      {w:'athlete',s:12},{w:'team',s:6},{w:'league',s:12},{w:'championship',s:16}
+    ],
+    negativeKw: ['hospital','government','recipe','social media','credentialing','news article','shop'],
+    minScore: 0, requireDomain: false
+  },
+
+  // ── 18. Real Estate ───────────────────────────────────────
+  {
+    id: 'realestate', label: 'Real Estate', emoji: '🏠', cssClass: 'cat-realestate',
+    description: 'A real estate, property listing, or mortgage platform.',
+    tlds: [],
+    domains: [
+      'zillow.com','realtor.com','trulia.com','redfin.com','homes.com',
+      'rightmove.co.uk','zoopla.co.uk','domain.com.au','realestate.com.au',
+      'magicbricks.com','99acres.com','housing.com','loopnet.com',
+      'apartments.com','rent.com','costar.com'
+    ],
+    subdomainKw: ['realestate','property','homes','rent','mortgage','realtor','mls'],
+    keywords: [
+      {w:'homes for sale',s:34},{w:'property listing',s:32},{w:'real estate agent',s:30},
+      {w:'mortgage rate',s:30},{w:'rent apartment',s:28},{w:'home buying',s:28},
+      {w:'property search',s:28},{w:'house for sale',s:30},{w:'real estate market',s:28},
+      {w:'mls listing',s:30},{w:'square feet',s:22},{w:'bedroom bathroom',s:20},
+      {w:'real estate',s:20},{w:'property',s:12},{w:'mortgage',s:14},{w:'rent',s:10}
+    ],
+    negativeKw: ['game','movie','hospital','credentialing','social media','recipe'],
+    minScore: 16, requireDomain: false
+  },
+
+  // ── 19. Legal & Law ───────────────────────────────────────
+  {
+    id: 'legal', label: 'Legal & Law', emoji: '⚖️', cssClass: 'cat-legal',
+    description: 'A law firm, legal services, or legal information site.',
+    tlds: [],
+    domains: [
+      'lexisnexis.com','westlaw.com','findlaw.com','avvo.com','justia.com',
+      'nolo.com','legalzoom.com','rocketlawyer.com','law360.com','scotusblog.com',
+      'oyez.org','courtlistener.com','pacer.gov','law.cornell.edu'
+    ],
+    subdomainKw: ['law','legal','attorney','lawyer','court','litigation','compliance'],
+    keywords: [
+      {w:'law firm',s:34},{w:'legal advice',s:30},{w:'attorney at law',s:34},
+      {w:'legal services',s:30},{w:'court case',s:28},{w:'legal representation',s:30},
+      {w:'litigation',s:26},{w:'legal compliance',s:28},{w:'legal document',s:24},
+      {w:'contract law',s:26},{w:'lawsuit',s:22},{w:'plaintiff',s:22},
+      {w:'defendant',s:22},{w:'jurisdiction',s:20},
+      {w:'attorney',s:20},{w:'lawyer',s:18},{w:'legal',s:10},{w:'law',s:8}
+    ],
+    negativeKw: ['game','movie','recipe','shop','social media','credentialing'],
+    minScore: 16, requireDomain: false
+  },
+
+  // ── 20. Cybersecurity ─────────────────────────────────────
+  {
+    id: 'cybersecurity', label: 'Cybersecurity', emoji: '🔐', cssClass: 'cat-cybersecurity',
+    description: 'A cybersecurity, infosec, or threat intelligence platform.',
+    tlds: [],
+    domains: [
+      'crowdstrike.com','paloaltonetworks.com','tenable.com','qualys.com',
+      'rapid7.com','darktrace.com','sentinelone.com',
+      'malwarebytes.com','eset.com','avast.com','kaspersky.com','norton.com',
+      'virustotal.com','shodan.io','haveibeenpwned.com','threatpost.com',
+      'krebsonsecurity.com','sans.org'
+    ],
+    subdomainKw: ['security','cyber','infosec','threat','firewall','vpn','siem','soc','pentest'],
+    keywords: [
+      {w:'threat intelligence',s:36},{w:'vulnerability assessment',s:34},
+      {w:'penetration testing',s:34},{w:'endpoint detection',s:32},
+      {w:'zero day exploit',s:34},{w:'ransomware protection',s:32},
+      {w:'incident response',s:30},{w:'security operations center',s:32},
+      {w:'security posture',s:28},{w:'attack surface',s:28},
+      {w:'malware analysis',s:30},{w:'phishing detection',s:30},
+      {w:'cybersecurity',s:22},{w:'infosec',s:22},{w:'firewall',s:16},
+      {w:'security',s:8},{w:'vulnerability',s:16},{w:'exploit',s:14},{w:'breach',s:14}
+    ],
+    negativeKw: ['shop','recipe','game','movie','social media','hospital','insurance'],
+    minScore: 20, requireDomain: false
+  },
+
+  // ── 21. Automotive ────────────────────────────────────────
+  {
+    id: 'automotive', label: 'Automotive', emoji: '🚗', cssClass: 'cat-automotive',
+    description: 'A car manufacturer, dealership, or automotive information site.',
+    tlds: [],
+    domains: [
+      'cars.com','carmax.com','autotrader.com','edmunds.com','kelleybluebook.com',
+      'cargurus.com','truecar.com','vroom.com','carvana.com',
+      'toyota.com','honda.com','ford.com','chevrolet.com','bmw.com',
+      'mercedes-benz.com','audi.com','volkswagen.com','tesla.com',
+      'motortrend.com','caranddriver.com','topgear.com','jalopnik.com'
+    ],
+    subdomainKw: ['cars','auto','automotive','dealership','vehicle','motor','ev'],
+    keywords: [
+      {w:'car dealership',s:32},{w:'vehicle listing',s:30},{w:'used cars',s:30},
+      {w:'new car price',s:30},{w:'test drive',s:26},{w:'auto financing',s:28},
+      {w:'fuel economy',s:24},{w:'horsepower',s:24},{w:'torque',s:20},
+      {w:'electric vehicle',s:26},{w:'car review',s:26},{w:'vehicle history',s:24},
+      {w:'car insurance',s:22},{w:'vin number',s:24},
+      {w:'car',s:8},{w:'vehicle',s:10},{w:'automotive',s:14},{w:'dealership',s:16}
+    ],
+    negativeKw: ['hospital','government','game','recipe','credentialing','insurance plan'],
+    minScore: 16, requireDomain: false
   }
 
 ];
