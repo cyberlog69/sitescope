@@ -244,6 +244,38 @@ async function checkSite(url) {
     metaProtocol.textContent = proto;
   } catch {}
 
+  // ── Step 1: Probe reachability via allorigins (fast, independent of Microlink) ──
+  let siteIsReachable = false;
+  try {
+    const probeRes = await fetch(
+      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&timestamp=${Date.now()}`,
+      { signal: AbortSignal.timeout(8000) }
+    );
+    const probeJson = await probeRes.json();
+    siteIsReachable = !!(probeJson && probeJson.status && probeJson.status.http_code > 0);
+  } catch (e) {
+    siteIsReachable = false;
+  }
+
+  // ── Step 2: Show Reachable badge + run intel immediately if probe succeeded ──
+  if (siteIsReachable) {
+    statusDot.style.background = '#22c55e';
+    statusDot.style.boxShadow  = '0 0 8px #22c55e';
+    metaStatus.innerHTML = `<span class="badge badge-ok">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      Reachable
+    </span>`;
+    renderCategory(url, domain, '');
+    if (typeof fetchIpIntel === 'function') fetchIpIntel(getDomain(url));
+    document.getElementById('advancedIntelPanel').style.display = 'block';
+    fetchWhois(getDomain(url));
+    fetchHttpHeaders(getDomain(url));
+    if (typeof renderQrCode === 'function') renderQrCode(url);
+  }
+
+  // ── Step 3: Fetch rich metadata via Microlink API ────────────────────
   // ── Fetch via Microlink API ─────────────────────────────
   const apiUrl = `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=true&video=false`;
 
@@ -345,6 +377,27 @@ function showScreenshotError() {
   hide(screenshotLoading);
   hide(screenshotImg);
   show(screenshotError);
+}
+
+// ── Screenshot Fallback Chain ─────────────────────────────────
+// Tries Google PageSpeed thumbnail when Microlink doesn't return a screenshot.
+async function tryScreenshotFallback(url) {
+  try {
+    const encoded = encodeURIComponent(url);
+    const psRes = await fetch(
+      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encoded}&strategy=desktop&fields=lighthouseResult.audits.final-screenshot`,
+      { signal: AbortSignal.timeout(14000) }
+    );
+    const psJson = await psRes.json();
+    const imgData = psJson?.lighthouseResult?.audits?.['final-screenshot']?.details?.data;
+    if (imgData && imgData.startsWith('data:image')) {
+      renderScreenshot(imgData);
+      return;
+    }
+  } catch (e) {
+    // PageSpeed fallback failed, fall through
+  }
+  showScreenshotError();
 }
 
 // ── Favicon ─────────────────────────────────────────────────
