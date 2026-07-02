@@ -474,6 +474,15 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+// ── Safe URL for href attributes ─────────────────────────────────────────────
+// Prevents javascript: protocol injection — escapeHtml() alone is not sufficient
+// because javascript:alert(1) contains no HTML special characters.
+function safeHref(url) {
+  if (typeof url !== 'string') return '#';
+  const t = url.trim();
+  return (t.startsWith('https://') || t.startsWith('http://')) ? escapeHtml(t) : '#';
+}
+
 // ════════════════════════════════════════════════════════════
 // ── SITE CLASSIFICATION ENGINE v2 ───────────────────────────
 //
@@ -1486,6 +1495,10 @@ function makeSkeletonRow(num, url) {
 
 // ── Completed result row ─────────────────────────────────────
 function makeResultRow(r) {
+  // Security: reject any non-http(s) URL before rendering into the DOM
+  if (!r.url || (!r.url.startsWith('https://') && !r.url.startsWith('http://'))) {
+    r = { ...r, url: '#' };
+  }
   const tr = document.createElement('tr');
 
   const statusHtml = r.ok
@@ -1519,7 +1532,7 @@ function makeResultRow(r) {
     <td><span class="row-desc" title="${escapeHtml(r.desc)}">${r.desc ? escapeHtml(r.desc) : '&mdash;'}</span></td>
     <td>
       <div class="row-actions">
-        <a class="row-action-btn" href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer">
+        <a class="row-action-btn" href="${safeHref(r.url)}" target="_blank" rel="noopener noreferrer">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           Open
         </a>
@@ -2004,7 +2017,7 @@ function resetSandboxPanel() {
   sandboxLiveBadge.className = 'sandbox-live-badge';
   [sbScripts,sbForms,sbIframes,sbRedirects,sbTracking,sbHandlers].forEach(el => {
     el.className = 'sblock sblock-loading';
-    el.innerHTML = el.innerHTML; // force shimmer reset
+    void el.getBoundingClientRect(); // force reflow to reset shimmer animation
   });
 }
 

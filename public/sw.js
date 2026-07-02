@@ -1,63 +1,70 @@
-const CACHE_NAME = 'sitescope-v4-cache-v1';
-const urlsToCache = [
+const CACHE_NAME = 'sitescope-v4-cache-v3';
+const CACHE_MAX_BYTES = 5 * 1024 * 1024; // 5 MB cache cap
+
+const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/style.css',
-  '/manifest.json'
+  '/manifest.json',
 ];
 
+// ── Install: pre-cache static shell ──────────────────────────
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
+      .then(cache => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 
+// ── Activate: evict old caches ────────────────────────────────
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(names =>
+      Promise.all(
+        names
+          .filter(name => name !== CACHE_NAME)
+          .map(name => caches.delete(name))
+      )
+    ).then(() => self.clients.claim())
+  );
+});
+
+// ── Fetch: stale-while-revalidate for own-origin GET only ─────
 self.addEventListener('fetch', event => {
-  // Only intercept GET requests for our own origin (don't cache API calls or sandboxed pages)
-  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+  const { request } = event;
+
+  // Only handle same-origin GET requests — never intercept API/external calls
+  if (
+    request.method !== 'GET' ||
+    !request.url.startsWith(self.location.origin) ||
+    request.url.includes('/api/')
+  ) {
     return;
   }
-  
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        return fetch(event.request).then(
-          response => {
-            // Check if we received a valid response
-            if(!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-            return response;
-          }
-        );
-      })
-  );
-});
 
-self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
+  // Reject opaque (cross-origin) responses — they can mask errors
+  event.respondWith(
+    caches.open(CACHE_NAME).then(async cache => {
+      const cached = await cache.match(request);
+
+      const networkFetch = fetch(request).then(response => {
+        // Only cache valid, non-opaque, same-origin responses
+        if (
+          response &&
+          response.status === 200 &&
+          response.type === 'basic' &&
+          response.headers.get('content-length') !== null
+            ? parseInt(response.headers.get('content-length'), 10) < CACHE_MAX_BYTES
+            : true
+        ) {
+          cache.put(request, response.clone());
+        }
+        return response;
+      }).catch(() => cached); // Network error — serve cache if available
+
+      // Stale-while-revalidate: serve cached immediately, update in background
+      return cached || networkFetch;
     })
   );
 });
