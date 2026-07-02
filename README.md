@@ -180,21 +180,197 @@ npm run build
 
 ---
 
-## 🌍 Deployment
+## 🌍 Internet Hosting & Deployment
 
-SiteScope is a fully static Vite PWA — deploy anywhere with zero backend required.
+SiteScope is a **100% static Vite PWA** — no backend, no database, no server-side code. This makes it trivially easy to deploy anywhere for free.
 
-### Vercel (Current, Recommended)
+---
+
+### ▲ Vercel *(Current live deployment — Recommended)*
+
+Vercel offers the best experience for Vite apps: automatic builds, global edge CDN, PR previews, and custom domains.
+
 1. Sign up at [vercel.com](https://vercel.com) with your GitHub account.
-2. Import the `cyberlog69/sitescope` repository.
-3. Vercel auto-detects Vite and runs `npm run build`.
-4. The `vercel.json` in the repo automatically applies all HTTP security headers.
-5. Click **Deploy** — your PWA is live globally with edge CDN.
+2. Click **Add New Project** → Import `cyberlog69/sitescope`.
+3. Vercel auto-detects Vite — no settings needed.
+4. The `vercel.json` in the repo automatically applies all HTTP security headers (HSTS, CSP, X-Frame-Options, etc.).
+5. Click **Deploy**. Your app is live globally in ~30 seconds.
 
-### GitHub Pages
-1. Go to repository Settings → Pages.
-2. Set source to GitHub Actions.
-3. Use a Vite/Node.js build workflow to deploy the `dist/` folder.
+> **Auto-deploy:** Every `git push` to `master` triggers a fresh deployment automatically.
+
+**Live URL:** [sitescope-omega.vercel.app](https://sitescope-omega.vercel.app)
+
+---
+
+### 🟦 Netlify
+
+Nearly identical to Vercel — also free, also supports Vite, and offers a generous free tier.
+
+1. Sign up at [netlify.com](https://netlify.com) with your GitHub account.
+2. Click **Add new site** → **Import an existing project** → connect GitHub.
+3. Select the `cyberlog69/sitescope` repository.
+4. Set build settings:
+   - **Build command:** `npm run build`
+   - **Publish directory:** `dist`
+5. Click **Deploy site**.
+
+> **Custom Headers:** Create a `netlify.toml` file in the root to replicate the security headers from `vercel.json`:
+> ```toml
+> [[headers]]
+>   for = "/*"
+>   [headers.values]
+>     X-Frame-Options = "DENY"
+>     X-Content-Type-Options = "nosniff"
+>     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+>     Referrer-Policy = "strict-origin-when-cross-origin"
+> ```
+
+---
+
+### 🐙 GitHub Pages
+
+Free hosting directly from your GitHub repository — no third-party account needed.
+
+1. Push the code to your GitHub repository.
+2. Go to **Settings → Pages** in your repo.
+3. Under **Build and deployment**, choose **GitHub Actions**.
+4. Create `.github/workflows/deploy.yml`:
+
+```yaml
+name: Deploy to GitHub Pages
+on:
+  push:
+    branches: [master]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm run build
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+```
+
+5. Push this file and GitHub will build and deploy automatically.
+
+> **Note:** GitHub Pages doesn't support custom HTTP headers — the security headers from `vercel.json` won't apply. Use Vercel or Netlify for full security header support.
+
+---
+
+### 🔷 Cloudflare Pages
+
+Cloudflare Pages provides a global CDN with unlimited bandwidth and excellent performance.
+
+1. Log in to [dash.cloudflare.com](https://dash.cloudflare.com) → **Pages → Create a project**.
+2. Connect your GitHub account and select the `sitescope` repository.
+3. Set build settings:
+   - **Framework preset:** Vite
+   - **Build command:** `npm run build`
+   - **Build output directory:** `dist`
+4. Click **Save and Deploy**.
+
+> **Security Headers:** Add headers via a `_headers` file in the `public/` directory:
+> ```
+> /*
+>   X-Frame-Options: DENY
+>   X-Content-Type-Options: nosniff
+>   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+>   Referrer-Policy: strict-origin-when-cross-origin
+> ```
+
+---
+
+### 🔵 Azure Static Web Apps
+
+Deploy to Microsoft Azure's global static hosting platform.
+
+1. Go to [portal.azure.com](https://portal.azure.com) → **Create a resource → Static Web App**.
+2. Connect your GitHub account and select the `sitescope` repository.
+3. Set build details:
+   - **App location:** `/`
+   - **Output location:** `dist`
+   - **Build command:** `npm run build`
+4. Click **Review + Create → Create**.
+5. Azure automatically creates a GitHub Actions workflow for CI/CD.
+
+---
+
+### 🟠 AWS Amplify
+
+Deploy to Amazon Web Services using their managed static hosting.
+
+1. Go to the [AWS Amplify Console](https://console.aws.amazon.com/amplify/).
+2. Click **New app → Host web app → GitHub**.
+3. Select the `cyberlog69/sitescope` repository and branch `master`.
+4. Amplify detects Vite automatically. Confirm the build settings:
+   ```yaml
+   version: 1
+   frontend:
+     phases:
+       preBuild:
+         commands:
+           - npm install
+       build:
+         commands:
+           - npm run build
+     artifacts:
+       baseDirectory: dist
+       files:
+         - '**/*'
+     cache:
+       paths:
+         - node_modules/**/*
+   ```
+5. Click **Save and deploy**.
+
+---
+
+### 🖥️ Local Development Server
+
+To run SiteScope on your own machine:
+
+```bash
+# Clone the repository
+git clone https://github.com/cyberlog69/sitescope.git
+cd sitescope
+
+# Install dependencies
+npm install
+
+# Start local dev server with Hot Module Replacement
+npm run dev
+# → App available at http://localhost:5173
+
+# Build for production
+npm run build
+# → Optimized bundle in dist/
+
+# Preview the production build locally
+npm run preview
+# → Serves dist/ at http://localhost:4173
+```
+
+Alternatively, double-click **`start-local.bat`** in the project root for a one-click local start.
+
+---
+
+### ☁️ Deployment Comparison
+
+| Platform | Free Tier | Auto-Deploy | Security Headers | Custom Domain | Edge CDN |
+|---|---|---|---|---|---|
+| **Vercel** *(current)* | ✅ Unlimited | ✅ | ✅ via `vercel.json` | ✅ | ✅ Global |
+| **Netlify** | ✅ 100GB/mo | ✅ | ✅ via `netlify.toml` | ✅ | ✅ Global |
+| **GitHub Pages** | ✅ Unlimited | ✅ | ❌ Limited | ✅ | ✅ Partial |
+| **Cloudflare Pages** | ✅ Unlimited | ✅ | ✅ via `_headers` | ✅ | ✅ Best |
+| **Azure Static** | ✅ 100GB/mo | ✅ | ✅ via `staticwebapp.config.json` | ✅ | ✅ Global |
+| **AWS Amplify** | ⚠️ Limited | ✅ | ✅ via console | ✅ | ✅ Global |
+
 
 ---
 
