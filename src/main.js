@@ -224,18 +224,15 @@ async function checkSite(url) {
   currentUrl = url;
   const domain = getDomain(url);
 
-  // Show results section immediately with loading state
+  // Show results immediately with loading state
   show(results);
   resetResults();
 
-  // Set info bar
   resultUrlText.textContent = url;
   browserAddress.textContent = url;
-
-  // Set domain in info panel
   siteDomain.textContent = domain;
 
-  // Favicon: try Google's favicon service
+  // Favicon
   loadFavicon(url, domain);
 
   // Protocol badge
@@ -244,21 +241,53 @@ async function checkSite(url) {
     metaProtocol.textContent = proto;
   } catch {}
 
-  // ── Step 1: Probe reachability via allorigins (fast, independent of Microlink) ──
-  let siteIsReachable = false;
-  try {
-    const probeRes = await fetch(
-      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&timestamp=${Date.now()}`,
-      { signal: AbortSignal.timeout(8000) }
-    );
-    const probeJson = await probeRes.json();
-    siteIsReachable = !!(probeJson && probeJson.status && probeJson.status.http_code > 0);
-  } catch (e) {
-    siteIsReachable = false;
+  // ── Kick off screenshot immediately via free thumbnail APIs (no API key, no wait) ──
+  // These services return an image directly — no JSON, no auth, sandboxed remote render
+  loadScreenshotWaterfall(url);
+
+  // ── Run metadata + reachability in parallel ──────────────────────────────────
+  const [metaResult, reachable] = await Promise.allSettled([
+    fetchSiteMeta(url),
+    probeSiteReachability(url)
+  ]);
+
+  setLoading(false);
+
+  const isReachable = reachable.status === 'fulfilled' && reachable.value === true;
+  const meta = metaResult.status === 'fulfilled' ? metaResult.value : null;
+
+  // ── Populate metadata ─────────────────────────────────────────────────────────
+  const title = meta?.title || meta?.publisher || domain;
+  const desc  = meta?.description || meta?.author || null;
+
+  siteTitle.textContent = title || domain;
+  siteDescription.textContent = desc || `No description metadata found for ${domain}.`;
+  if (meta?.author) metaAuthor.textContent = meta.author;
+  if (meta?.lang)   metaLang.textContent = meta.lang.toUpperCase();
+
+  // OG image
+  if (meta?.image?.url) {
+    show(ogSection);
+    ogImage.src = meta.image.url;
+    ogImage.onerror = () => hide(ogSection);
   }
 
-  // ── Step 2: Show Reachable badge + run intel immediately if probe succeeded ──
-  if (siteIsReachable) {
+  // Tags
+  const tags = meta?.keywords || meta?.tags;
+  if (tags && tags.length) renderTags(tags);
+
+  // ── Category, security, intel ─────────────────────────────────────────────────
+  renderCategory(url, title, desc || '');
+  scanSecurity(url).then(threatLevel => {
+    if (typeof saveCloudHistory === 'function')
+      saveCloudHistory(url, title, `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=32`, threatLevel);
+  });
+
+  // ── Status badge ──────────────────────────────────────────────────────────────
+  // Consider reachable if: probe passed OR Microlink returned valid metadata
+  const siteReachable = isReachable || meta !== null;
+
+  if (siteReachable) {
     statusDot.style.background = '#22c55e';
     statusDot.style.boxShadow  = '0 0 8px #22c55e';
     metaStatus.innerHTML = `<span class="badge badge-ok">
@@ -267,101 +296,46 @@ async function checkSite(url) {
       </svg>
       Reachable
     </span>`;
-    renderCategory(url, domain, '');
+    // Run intel panels
     if (typeof fetchIpIntel === 'function') fetchIpIntel(getDomain(url));
     document.getElementById('advancedIntelPanel').style.display = 'block';
     fetchWhois(getDomain(url));
     fetchHttpHeaders(getDomain(url));
     if (typeof renderQrCode === 'function') renderQrCode(url);
+  } else {
+    handleFetchError('Site could not be reached. It may be down, blocked, or require authentication.');
   }
+}
 
-  // ── Step 3: Fetch rich metadata via Microlink API ────────────────────
-  // ── Fetch via Microlink API ─────────────────────────────
-  const apiUrl = `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=true&video=false`;
-
+// ── Fetch Site Metadata (Microlink, returns null on failure) ──────────────────
+async function fetchSiteMeta(url) {
   try {
-    const res = await fetch(apiUrl, { headers: { Accept: 'application/json' } });
+    const apiUrl = `https://api.microlink.io/?url=${encodeURIComponent(url)}&meta=true&video=false`;
+    const res = await fetch(apiUrl, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(12000)
+    });
     const json = await res.json();
-
-    setLoading(false);
-
     if (json.status === 'success' || json.status === 'partial') {
-      const d = json.data;
-
-      // Title
-      const title = d.title || d.publisher || domain;
-      siteTitle.textContent = title || domain;
-
-      // Description
-      const desc = d.description || d.author || null;
-      if (desc) {
-        siteDescription.textContent = desc;
-      } else {
-        siteDescription.textContent = `No description metadata found for ${domain}.`;
-      }
-
-      // Author
-      if (d.author) metaAuthor.textContent = d.author;
-
-      // Language
-      if (d.lang) metaLang.textContent = d.lang.toUpperCase();
-
-      // Category — run BEFORE description fallback so we also use URL signals
-      renderCategory(url, title, desc || '');
-      // Security scan (async, updates panel when done)
-      scanSecurity(url).then(threatLevel => {
-        if (typeof saveCloudHistory === 'function') saveCloudHistory(url, title, `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=32`, threatLevel);
-      });
-      if (typeof fetchIpIntel === 'function') fetchIpIntel(getDomain(url));
-      document.getElementById('advancedIntelPanel').style.display = 'block';
-      fetchWhois(getDomain(url));
-      fetchHttpHeaders(getDomain(url));
-      if (typeof renderQrCode === 'function') renderQrCode(url);
-
-      // Status badge
-      metaStatus.innerHTML = `<span class="badge badge-ok">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
-        Reachable
-      </span>`;
-
-      // Screenshot
-      const shot = d.screenshot;
-      if (shot && shot.url) {
-        renderScreenshot(shot.url);
-      } else {
-        showScreenshotError();
-      }
-
-      // OG / Social image
-      const img = d.image || d.logo;
-      if (img && img.url && img.url !== shot?.url) {
-        show(ogSection);
-        ogImage.src = img.url;
-        ogImage.onerror = () => hide(ogSection);
-      }
-
-      // Keywords from tags
-      if (d.keywords && d.keywords.length) {
-        renderTags(d.keywords);
-      } else if (d.tags && d.tags.length) {
-        renderTags(d.tags);
-      }
-
-    } else {
-      // API returned error status — still try to classify from URL alone
-      renderCategory(url, domain, '');
-      scanSecurity(url);
-      handleFetchError('Site returned an error or could not be reached.');
+      return json.data;
     }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
-  } catch (err) {
-    setLoading(false);
-    renderCategory(url, domain, '');
-    scanSecurity(url);
-    handleFetchError('Network error: could not connect to SiteScope API.');
-    console.error(err);
+// ── Probe Site Reachability (allorigins) ─────────────────────────────────────
+async function probeSiteReachability(url) {
+  try {
+    const probeRes = await fetch(
+      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&timestamp=${Date.now()}`,
+      { signal: AbortSignal.timeout(8000) }
+    );
+    const json = await probeRes.json();
+    return !!(json && json.status && json.status.http_code > 0);
+  } catch {
+    return false;
   }
 }
 
@@ -379,25 +353,61 @@ function showScreenshotError() {
   show(screenshotError);
 }
 
-// ── Screenshot Fallback Chain ─────────────────────────────────
-// Tries Google PageSpeed thumbnail when Microlink doesn't return a screenshot.
-async function tryScreenshotFallback(url) {
-  try {
-    const encoded = encodeURIComponent(url);
-    const psRes = await fetch(
-      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encoded}&strategy=desktop&fields=lighthouseResult.audits.final-screenshot`,
-      { signal: AbortSignal.timeout(14000) }
-    );
-    const psJson = await psRes.json();
-    const imgData = psJson?.lighthouseResult?.audits?.['final-screenshot']?.details?.data;
-    if (imgData && imgData.startsWith('data:image')) {
-      renderScreenshot(imgData);
+// ── Screenshot Waterfall ──────────────────────────────────────
+// Tries free, keyless thumbnail services in order. Each is just an <img src>.
+// Services: WordPress mShots → Thum.io → Microlink embed
+// All are sandboxed remote renders — no site JS runs on the user's browser.
+function loadScreenshotWaterfall(url) {
+  const enc = encodeURIComponent(url);
+
+  // Service definitions — ordered by reliability
+  const services = [
+    // WordPress mShots: free, reliable, 1200px wide, returns JPEG
+    `https://s0.wordpress.com/mshots/v1/${enc}?w=1200&h=800`,
+    // Thum.io: free tier, no key, generates on-demand
+    `https://image.thum.io/get/width/1200/crop/800/${url}`,
+    // Microlink embed mode (different endpoint, faster than full API call)
+    `https://api.microlink.io/screenshot?url=${enc}&waitForTimeout=2000&type=jpeg&quality=85&viewport.width=1280&viewport.height=800`,
+  ];
+
+  let current = 0;
+
+  function tryNext() {
+    if (current >= services.length) {
+      showScreenshotError();
       return;
     }
-  } catch (e) {
-    // PageSpeed fallback failed, fall through
+    const imgSrc = services[current++];
+    const img = new Image();
+    img.onload = () => {
+      // Make sure we're still on the same URL (user may have checked another site)
+      if (screenshotImg.closest('#screenshotView') || document.getElementById('screenshotView')) {
+        renderScreenshot(imgSrc);
+      }
+    };
+    img.onerror = () => {
+      // This service failed — try the next one
+      tryNext();
+    };
+    // Set a timeout per service (mShots can be slow on first load for uncached sites)
+    const timeout = setTimeout(() => {
+      img.onload = null;
+      img.onerror = null;
+      img.src = '';
+      tryNext();
+    }, current === 1 ? 18000 : 10000); // 18s for mShots (it generates on demand), 10s for others
+    img.onload = () => {
+      clearTimeout(timeout);
+      renderScreenshot(imgSrc);
+    };
+    img.onerror = () => {
+      clearTimeout(timeout);
+      tryNext();
+    };
+    img.src = imgSrc;
   }
-  showScreenshotError();
+
+  tryNext();
 }
 
 // ── Favicon ─────────────────────────────────────────────────
