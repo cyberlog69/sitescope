@@ -364,6 +364,29 @@ Alternatively, double-click **`start-local.bat`** in the project root for a one-
 
 ---
 
+### 🐳 Docker Deployment
+
+SiteScope can be built and run as a lightweight container served by Nginx:
+
+1. **Build the Docker Image:**
+   ```bash
+   docker build -t sitescope:latest .
+   ```
+
+2. **Run the Container:**
+   ```bash
+   docker run -d -p 8080:80 --name sitescope sitescope:latest
+   ```
+
+The app will be served at **[http://localhost:8080](http://localhost:8080)**.
+
+#### How it works:
+- **Multi-Stage Build:** Stage 1 installs dependencies and compiles the Vite application in a lightweight `node:20-alpine` environment. Stage 2 copies the compiled static assets into an `nginx:stable-alpine` container.
+- **Embedded Security Headers:** The container includes a custom `nginx.conf` that mirrors the production headers (CSP, HSTS, XSS protection, Referrer Policy) so your Docker deployment remains fully security-hardened.
+- **Static Asset Caching:** Nginx is configured to serve static assets with a `Cache-Control` header of 1 year.
+
+---
+
 ### ☁️ Deployment Comparison
 
 | Platform | Free Tier | Auto-Deploy | Security Headers | Custom Domain | Edge CDN |
