@@ -1713,3 +1713,31 @@ body {
   .results-grid { grid-template-columns: 1fr; }
   .header-nav { display: none; }
 }
+
+/* ─── Advanced Intel Panel ─────────────────────────────────── */
+.advanced-intel-panel {
+  grid-column: 1 / -1;
+  margin-top: 14px;
+}
+.intel-tab-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+}
+.whois-row, .header-line {
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+.whois-row:last-child, .header-line:last-child {
+  border-bottom: none;
+}
+.whois-row strong, .header-line strong {
+  color: var(--violet-2);
+  margin-right: 6px;
+}
+.text-green { color: var(--green) !important; }
+.text-red { color: var(--red) !important; }
+.text-yellow { color: var(--yellow) !important; }
+

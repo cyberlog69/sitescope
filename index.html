@@ -688,6 +688,55 @@
           </div>
 
         </div>
+
+        <!-- Advanced Intel Panel -->
+        <div class="panel advanced-intel-panel hidden" id="advancedIntelPanel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              Advanced Intelligence
+            </div>
+            <div class="panel-tabs" id="advancedIntelTabs">
+              <button class="tab-btn active" data-tab="whois">WHOIS</button>
+              <button class="tab-btn" data-tab="headers">Headers</button>
+              <button class="tab-btn" data-tab="dns">DNS Resolver</button>
+              <button class="tab-btn" data-tab="ssl">SSL/TLS</button>
+              <button class="tab-btn" data-tab="stack">Tech Stack</button>
+              <button class="tab-btn" data-tab="robots">Robots.txt</button>
+              <button class="tab-btn" data-tab="latency">Latency</button>
+            </div>
+          </div>
+          
+          <div class="intel-tab-content" id="intelTabWhois">
+            <div class="whois-content" id="intelWhois" style="padding:14px;font-family:monospace;font-size:0.75rem;">Fetching WHOIS...</div>
+          </div>
+          
+          <div class="intel-tab-content hidden" id="intelTabHeaders">
+            <div class="headers-content" id="intelHeaders" style="padding:14px;font-family:monospace;font-size:0.75rem;line-height:1.4;">Fetching headers...</div>
+          </div>
+          
+          <div class="intel-tab-content hidden" id="intelTabDns">
+            <div id="intelDns" class="info-value" style="padding:14px;">Fetching DNS...</div>
+          </div>
+          
+          <div class="intel-tab-content hidden" id="intelTabSsl">
+            <div id="intelSsl" class="info-value" style="padding:14px;">Fetching SSL...</div>
+          </div>
+          
+          <div class="intel-tab-content hidden" id="intelTabStack">
+            <div id="intelStack" class="info-value" style="padding:14px;">Detecting technologies...</div>
+          </div>
+          
+          <div class="intel-tab-content hidden" id="intelTabRobots">
+            <div id="intelRobots" class="info-value" style="padding:14px;">Analyzing robots.txt...</div>
+          </div>
+          
+          <div class="intel-tab-content hidden" id="intelTabLatency">
+            <div id="intelLatency" class="info-value" style="padding:14px;">Measuring latency...</div>
+          </div>
+        </div>
       </div>
     </section>
 

@@ -92,15 +92,19 @@ The **Sandbox tab** is the safest way to visually inspect any website without ru
 
 ---
 
-## 🧠 Advanced Network Intelligence
+## 🧠 Advanced Network Intelligence (NEXUS Engine)
 
-Every site check automatically pulls multi-layered intelligence:
+Every site check automatically resolves multi-layered diagnostic reports under a tabbed intelligence panel:
 
-- **IP & DNS Resolution:** Resolves A-records using Google DoH (`dns.google`).
-- **WHOIS Lookups:** Uses **RDAP** (the IANA-standard Registration Data Access Protocol) — faster, JSON-native, and rate-limit-free. Falls back to a Verisign RDAP mirror.
-- **HTTP Security Headers:** Analyzes critical security headers (`Strict-Transport-Security`, `Content-Security-Policy`, `X-Frame-Options`, `Referrer-Policy`, etc.) via the HackerTarget API, proxied through allorigins to respect the app's CSP.
+1. **WHOIS Lookup:** Standards-based domain registration query via RDAP (rate-limit-free) detailing registrar name, creation, and expiration dates.
+2. **HTTP Headers:** Surfacing active response headers (`Server`, `Strict-Transport-Security`, `Content-Security-Policy`, `X-Frame-Options`, `Referrer-Policy`, etc.) to evaluate server configurations.
+3. **DNS Resolver:** Queries all record types (`A`, `AAAA`, `MX`, `TXT`, `CNAME`, `NS`, `SOA`, `CAA`) directly using Google DoH, with verification badges for email security policies (`SPF` & `DMARC`).
+4. **SSL/TLS Inspector:** Queries public Certificate Transparency (CT) logs on `crt.sh`, maps Subject Alternative Names (SANs), calculates remaining validity days, and issues a security grade (`A` to `F`).
+5. **Technology Stack Detector:** Scans page markup and headers for signature patterns to identify frameworks (React, Next.js, Vue, Angular, jQuery), CMS (WordPress, Shopify, Squarespace, Wix), CDNs/Cloud (Cloudflare, Vercel, Netlify, AWS CloudFront), and analytics tags.
+6. **Robots.txt & Sitemap Parser:** Fetches and parses crawl instructions, alerts on sensitive directories exposed to crawlers (like `admin`, `api`, `config`, `.git`), and lists sitemaps.
+7. **Latency Probe:** Fires a 5-probe HEAD latency sequence directly to the host using `no-cors` mode, calculating minimum, maximum, average, and 95th percentile (`p95`) connection RTT (Round Trip Time).
 
-> **Security note:** All WHOIS and header data is rendered using `textContent` and DOM `createElement()` — never injected via `innerHTML` — eliminating any XSS risk from third-party API responses.
+> **Security note:** All API data is rendered safely using DOM `textContent` and `createElement()` inputs rather than `innerHTML` blocks, ensuring protection against XSS injections from third-party hosts.
 
 ---
 
