@@ -1,6 +1,6 @@
 import { fetchWhois, fetchHttpHeaders } from './intel.js';
 import { classifySite, CATEGORIES } from './modules/category.js';
-import { scanSecurity, THREAT_META } from './modules/security.js';
+import { scanSecurity, heuristicScan, THREAT_META } from './modules/security.js';
 import { sanitizeForSandbox } from './modules/sandbox.js';
 import { checkEmail, isValidEmailFormat, emailScoreFillCls, EMAIL_VERDICT } from './modules/email.js';
 import { fetchAllDns, renderDnsPanel } from './tools/dns.js';
@@ -1207,7 +1207,8 @@ async function startBulkCheck() {
       result = await fetchSiteData(url);
     } catch(e) {
       const { category } = classifySite(url, getDomain(url), '');
-      result = { ok: false, url, title: getDomain(url), desc: 'Error fetching data.', category, lang: null,
+      const threat = heuristicScan(url);
+      result = { ok: false, url, title: getDomain(url), desc: 'Error fetching data.', category, lang: null, threat,
                  favicon: `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=32` };
     }
 
@@ -1275,6 +1276,7 @@ function makeSkeletonRow(num, url) {
     <td><div class="sk-cell" style="width:70px"></div></td>
     <td><div class="sk-cell" style="width:220px"></div></td>
     <td><div class="sk-cell" style="width:90px"></div></td>
+    <td><div class="sk-cell" style="width:80px"></div></td>
   `;
   return tr;
 }
