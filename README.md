@@ -161,6 +161,7 @@ Verify email addresses instantly without sending a message:
 | **RDAP (rdap.org)** | Standards-based WHOIS/domain registration data |
 | **URLhaus API** | Malware and phishing URL threat database |
 | **Google DoH** | DNS-over-HTTPS for IP/A-record resolution |
+| **DESIGN.md** | Machine-readable design tokens and rules standard for Google Stitch AI design canvas |
 
 ---
 
