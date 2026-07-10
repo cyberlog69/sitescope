@@ -23,7 +23,8 @@ const SUSPICIOUS_TLDS = new Set([
 const KNOWN_BRANDS = [
   'google','facebook','twitter','instagram','amazon','microsoft','apple',
   'paypal','netflix','spotify','linkedin','github','youtube','whatsapp',
-  'telegram','discord','dropbox','adobe','salesforce','stripe'
+  'telegram','discord','dropbox','adobe','salesforce','stripe',
+  'coinbase','binance','metamask','outlook','office365','yahoo','steam'
 ];
 
 const PHISHING_KEYWORDS = [
@@ -31,7 +32,9 @@ const PHISHING_KEYWORDS = [
   'update','account','secure','security','confirm','banking','bank',
   'password','credential','wallet','recovery','support','helpdesk',
   'suspended','alert','notice','locked','unlock','claim','reward',
-  'prize','winner','free','gift','offer','cashback','refund'
+  'prize','winner','free','gift','offer','cashback','refund',
+  '2fa','mfa','otp','code','signin-secure','unusual-activity','tax-refund',
+  'post-office','shipping-update','invoice','payment','billing'
 ];
 
 const SUSPICIOUS_EXTS = ['.exe','.bat','.cmd','.msi','.vbs','.ps1','.jar','.apk','.dmg','.iso'];
@@ -46,6 +49,37 @@ function levenshtein(a, b) {
       dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1]
                : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
   return dp[a.length][b.length];
+}
+
+// Shannon entropy calculation to detect random DGA domain names
+function calculateEntropy(str) {
+  const len = str.length;
+  if (len === 0) return 0;
+  const freqs = {};
+  for (let i = 0; i < len; i++) {
+    const char = str[i];
+    freqs[char] = (freqs[char] || 0) + 1;
+  }
+  let entropy = 0;
+  for (const char in freqs) {
+    const p = freqs[char] / len;
+    entropy -= p * Math.log2(p);
+  }
+  return entropy;
+}
+
+// Helper to check for private / Link-local IP ranges (SSRF prevention)
+export function isPrivateIP(ip) {
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some(isNaN)) return false;
+  const [p0, p1, p2, p3] = parts;
+  if (p0 === 127) return true; // Loopback
+  if (p0 === 10) return true;  // Private Space
+  if (p0 === 172 && (p1 >= 16 && p1 <= 31)) return true; // Private Space
+  if (p0 === 192 && p1 === 168) return true; // Private Space
+  if (p0 === 169 && p1 === 254) return true; // Link-Local
+  if (p0 === 0) return true;   // Any IP
+  return false;
 }
 
 export function heuristicScan(url) {
@@ -77,6 +111,10 @@ export function heuristicScan(url) {
   if (/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname)) {
     score += 30;
     findings.push({ type: 'danger', text: 'URL uses a raw IP address instead of a domain name — common in malware/phishing.' });
+    if (isPrivateIP(hostname)) {
+      score += 40;
+      findings.push({ type: 'danger', text: 'URL references a private/local IP space — potential local network SSRF attempt.' });
+    }
   }
 
   // Port in URL
@@ -140,22 +178,52 @@ export function heuristicScan(url) {
     findings.push({ type: 'danger', text: `URL path ends in "${extMatch}" — direct download of an executable file.` });
   }
 
-  // Typosquatting
-  const domainBase = hostname.replace(/^www\./, '').split('.')[0];
-  const typoHit = KNOWN_BRANDS.find(brand => {
-    if (domainBase === brand) return false;
-    return levenshtein(domainBase, brand) <= 2 && domainBase.length >= brand.length - 1;
-  });
-  if (typoHit) {
-    score += 25;
-    findings.push({ type: 'danger', text: `Domain "${domainBase}" closely resembles "${typoHit}" — possible brand impersonation / typosquatting.` });
-  }
+  // Domain structure checks
+  const hostnameParts = hostname.replace(/^www\./, '').split('.');
+  if (hostnameParts.length >= 2) {
+    const domainBase = hostnameParts[hostnameParts.length - 2];
+    
+    // Multiple hyphens in base domain (e.g. paypal-login-verification)
+    const hyphenCount = (domainBase.match(/-/g) || []).length;
+    if (hyphenCount >= 2) {
+      score += 15;
+      findings.push({ type: 'warn', text: `Multiple hyphens (${hyphenCount}) in domain base "${domainBase}" — frequently used to construct fake subdomains.` });
+    }
 
-  // Known brand exact match
-  const isKnownBrand = KNOWN_BRANDS.includes(domainBase);
-  if (isKnownBrand) {
-    score -= 15;
-    findings.push({ type: 'good', text: `Domain matches known brand "${domainBase}" — appears to be the genuine site.` });
+    // Levenshtein Typosquatting
+    const typoHit = KNOWN_BRANDS.find(brand => {
+      if (domainBase === brand) return false;
+      return levenshtein(domainBase, brand) <= 2 && domainBase.length >= brand.length - 1;
+    });
+    if (typoHit) {
+      score += 25;
+      findings.push({ type: 'danger', text: `Domain "${domainBase}" closely resembles "${typoHit}" — possible brand impersonation / typosquatting.` });
+    }
+
+    // Subdomain brand spoofing check
+    // If a known brand is present in subdomains but the main domain is different (e.g., brand.com.login-verify.xyz)
+    const subdomains = hostnameParts.slice(0, hostnameParts.length - 2);
+    if (subdomains.length > 0) {
+      const spoofedBrand = KNOWN_BRANDS.find(brand => subdomains.includes(brand));
+      if (spoofedBrand && domainBase !== spoofedBrand) {
+        score += 30;
+        findings.push({ type: 'danger', text: `Brand name "${spoofedBrand}" used as subdomain of a different base domain "${domainBase}" — suspicious obfuscation.` });
+      }
+    }
+
+    // Shannon Entropy Check for random generated domains (DGA)
+    const entropy = calculateEntropy(domainBase);
+    if (entropy > 3.85 && domainBase.length > 8) {
+      score += 20;
+      findings.push({ type: 'warn', text: `High randomness (entropy: ${entropy.toFixed(2)}) in base domain "${domainBase}" — common in Domain Generation Algorithms (DGA) used by malware.` });
+    }
+
+    // Known brand exact match
+    const isKnownBrand = KNOWN_BRANDS.includes(domainBase);
+    if (isKnownBrand && !spoofedBrand) {
+      score -= 15;
+      findings.push({ type: 'good', text: `Domain matches known brand "${domainBase}" — appears to be the genuine site.` });
+    }
   }
 
   score = Math.max(0, Math.min(100, score));
@@ -188,15 +256,40 @@ export async function checkUrlhaus(url) {
   }
 }
 
+// Async DoH call to retrieve IPs and check for local SSRF threat vectors
+async function fetchDomainAAnswers(domain) {
+  try {
+    const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=A`);
+    if (!res.ok) return [];
+    const json = await res.json();
+    return (json.Answer || []).map(r => r.data).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 export async function scanSecurity(url) {
   const heuristic = heuristicScan(url);
-  const db = await checkUrlhaus(url);
+  
+  let parsedUrl;
+  let domain = '';
+  try {
+    parsedUrl = new URL(url);
+    domain = parsedUrl.hostname;
+  } catch {}
+
+  // Run DB check and DoH check in parallel
+  const [db, resolvedIps] = await Promise.all([
+    checkUrlhaus(url),
+    domain ? fetchDomainAAnswers(domain) : Promise.resolve([])
+  ]);
 
   let finalScore = heuristic.score;
   let finalLevel = heuristic.level;
   let dbStatus   = 'clean';
   const dbFindings = [];
 
+  // 1. Process URLhaus Threat Database matching
   if (db.error) {
     dbStatus = 'unknown';
     dbFindings.push({ type: 'info', text: 'Threat database check unavailable (network error). Heuristic analysis only.' });
@@ -209,6 +302,22 @@ export async function scanSecurity(url) {
   } else {
     dbStatus = 'clean';
     dbFindings.push({ type: 'good', text: 'Not found in URLhaus malware/phishing database — no known active threats.' });
+  }
+
+  // 2. Process DNS SSRF Verification
+  let privateIpMatched = false;
+  const privateIps = [];
+  resolvedIps.forEach(ip => {
+    if (isPrivateIP(ip)) {
+      privateIpMatched = true;
+      privateIps.push(ip);
+    }
+  });
+
+  if (privateIpMatched) {
+    finalScore = Math.min(100, finalScore + 55);
+    finalLevel = 'critical';
+    dbFindings.push({ type: 'danger', text: `⚠️ Domain resolves to a private or restricted IP address (${privateIps.join(', ')}) — potential Server-Side Request Forgery (SSRF) or internal port scan.` });
   }
 
   return {
