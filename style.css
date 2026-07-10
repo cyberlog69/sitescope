@@ -106,6 +106,131 @@ body {
 .orb-3 { width:400px;height:400px;background:radial-gradient(circle, rgba(236,72,153,0.08) 0%, transparent 70%);bottom:-100px;left:25%; }
 /* Animations disabled to prevent 100% CPU lockup when combined with glassmorphism */
 
+/* ─── Layout System (SaaS Dashboard) ────────────────────────── */
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Sidebar ───────────────────────────────────────────────── */
+.sidebar {
+  width: 260px;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 20px;
+  z-index: 200;
+  flex-shrink: 0;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  margin-bottom: 36px;
+  padding-left: 6px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  text-align: left;
+  outline: none;
+  width: 100%;
+}
+
+.nav-item svg {
+  stroke: var(--text-muted);
+  transition: stroke 0.25s;
+  flex-shrink: 0;
+}
+
+.nav-item:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+  border-color: var(--border);
+}
+
+.nav-item:hover svg {
+  stroke: var(--text);
+}
+
+.nav-item.active {
+  color: var(--text);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(6, 182, 212, 0.08));
+  border-color: rgba(124, 58, 237, 0.25);
+  box-shadow: 0 0 16px rgba(124, 58, 237, 0.1);
+}
+
+.nav-item.active svg {
+  stroke: var(--violet-2);
+}
+
+.sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-badge {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-weight: 500;
+  letter-spacing: 0.4px;
+}
+
+.sidebar-github {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.sidebar-github:hover {
+  color: var(--text);
+}
+
+/* ─── Main Content Area ─────────────────────────────────────── */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 /* ─── Header ────────────────────────────────────────────────── */
 .header {
   position: sticky;
@@ -114,50 +239,27 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 40px;
-  background: rgba(6,8,15,0.8);
+  padding: 20px 40px;
+  background: rgba(6, 8, 15, 0.7);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border-bottom: 1px solid var(--border);
-  box-shadow: 0 1px 0 rgba(255,255,255,0.04);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02);
   will-change: transform;
 }
 
-.logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
-.logo-icon {
-  width:38px; height:38px;
-  background: linear-gradient(135deg, var(--violet), #5b21b6);
-  border-radius: 11px;
-  display:flex; align-items:center; justify-content:center;
-  box-shadow: 0 0 20px var(--violet-glow), inset 0 1px 0 rgba(255,255,255,0.15);
-}
-.logo-icon svg { width:18px; height:18px; stroke:#fff; }
-.logo-text {
+.header-view-title {
   font-family: 'Space Grotesk', sans-serif;
-  font-size:1.25rem;
-  font-weight:700;
-  letter-spacing:-0.5px;
-  background: linear-gradient(90deg, #fff 30%, var(--violet-2));
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-  background-clip:text;
-}
-.logo-version {
-  font-size:0.62rem;
-  font-weight:600;
-  color: var(--violet-2);
-  background: rgba(124,58,237,0.15);
-  border: 1px solid rgba(124,58,237,0.3);
-  padding: 2px 7px;
-  border-radius: 20px;
-  letter-spacing:0.5px;
-  align-self:center;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text);
 }
 
 .header-nav { display:flex; align-items:center; gap:8px; }
 .header-badge {
   font-size:0.72rem;
-  font-weight:500;
+  font-weight:600;
   color: var(--text-muted);
   background: var(--surface);
   border: 1px solid var(--border);
@@ -165,31 +267,40 @@ body {
   border-radius: 20px;
   letter-spacing:0.4px;
 }
-.header-github {
-  display:flex; align-items:center; gap:6px;
-  font-size:0.78rem;
-  font-weight:500;
-  color: var(--text-muted);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 6px 14px;
-  border-radius: 20px;
-  text-decoration: none;
-  transition: color 0.2s, background-color 0.2s, border-color 0.2s;
-}
-.header-github:hover {
-  color: var(--text);
-  border-color: var(--border-bright);
-  background: var(--surface-hover);
+
+/* ─── View Sections ─────────────────────────────────────────── */
+.view-section {
+  width: 100%;
+  animation: viewIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* ─── Main Layout ───────────────────────────────────────────── */
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.view-section.hidden {
+  display: none !important;
+}
+
+/* ─── Main Area Container ───────────────────────────────────── */
 .main {
   position: relative;
   z-index: 1;
-  max-width: 1160px;
+  max-width: 1120px;
+  width: 100%;
   margin: 0 auto;
-  padding: 64px 24px 100px;
+  padding: 32px 24px 80px;
+}
+
+/* ─── Dedicated History View ────────────────────────────────── */
+.history-list-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 6px;
 }
 
 /* ─── Hero ──────────────────────────────────────────────────── */
@@ -1435,6 +1546,7 @@ body {
 /* ─── Responsive ────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .header { padding: 12px 18px; }
+}
 
 /* ─── Bulk Table Sort Controls ──────────────────────────────── */
 .bulk-table th.sortable { cursor: pointer; user-select: none; }
@@ -1704,7 +1816,78 @@ body {
     scroll-behavior: auto !important;
   }
 }
-  .main   { padding: 36px 16px 60px; }
+@media (max-width: 900px) {
+  /* Layout shifts to mobile bottom nav */
+  .dashboard-layout {
+    flex-direction: column;
+    padding-bottom: 68px;
+  }
+  
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 64px;
+    top: auto;
+    z-index: 1000;
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 0 8px;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+    background: rgba(6, 8, 15, 0.95);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+  }
+
+  .sidebar-brand, .sidebar-footer {
+    display: none !important;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-around;
+    gap: 0;
+    align-items: center;
+  }
+
+  .nav-item {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 4px;
+    font-size: 0.62rem;
+    gap: 2px;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0;
+  }
+
+  .nav-item span {
+    font-size: 0.6rem;
+    font-weight: 500;
+  }
+
+  .nav-item svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+  }
+
+  .header {
+    padding: 14px 20px;
+  }
+  
+  /* Legacy mobile overrides */
+  .main { padding: 36px 16px 60px; }
   .hero-title { font-size: 2.2rem; letter-spacing: -1px; }
   .input-card-inner { padding: 18px 16px; }
   .input-row { flex-direction: column; }

@@ -1062,10 +1062,56 @@ emailExportCsvBtn.addEventListener('click', () => {
 });
 
 // ── Bulk diagnostics ─────────────────────────────────────────
-const modeSingle       = document.getElementById('modeSingle');
-const modeBulk         = document.getElementById('modeBulk');
-const singlePanel      = document.getElementById('singlePanel');
-const bulkPanel        = document.getElementById('bulkPanel');
+// ── Navigation & View Switching ──────────────────────────────
+const views = {
+  single: {
+    title: 'Single Inspector',
+    el: document.getElementById('singleView'),
+    nav: document.getElementById('navSingle')
+  },
+  bulk: {
+    title: 'Bulk Sites Scan',
+    el: document.getElementById('bulkView'),
+    nav: document.getElementById('navBulk')
+  },
+  email: {
+    title: 'Email Validator',
+    el: document.getElementById('emailView'),
+    nav: document.getElementById('navEmail')
+  },
+  history: {
+    title: 'Scan History Logs',
+    el: document.getElementById('historyView'),
+    nav: document.getElementById('navHistory')
+  }
+};
+
+const viewTitleEl = document.getElementById('currentViewTitle');
+
+function setMode(mode) {
+  Object.keys(views).forEach(key => {
+    const v = views[key];
+    if (v.el) v.el.classList.toggle('hidden', key !== mode);
+    if (v.nav) v.nav.classList.toggle('active', key === mode);
+  });
+  
+  if (viewTitleEl && views[mode]) {
+    viewTitleEl.textContent = views[mode].title;
+  }
+  
+  if (mode === 'history') {
+    renderCloudHistory();
+  }
+}
+
+if (document.getElementById('navSingle')) {
+  document.getElementById('navSingle').addEventListener('click', () => setMode('single'));
+  document.getElementById('navBulk').addEventListener('click', () => setMode('bulk'));
+  document.getElementById('navEmail').addEventListener('click', () => setMode('email'));
+  document.getElementById('navHistory').addEventListener('click', () => setMode('history'));
+}
+
+// ── Bulk Scan DOM Elements & State ───────────────────────────
 const bulkInput        = document.getElementById('bulkInput');
 const bulkCount        = document.getElementById('bulkCount');
 const bulkClearBtn     = document.getElementById('bulkClearBtn');
@@ -1091,41 +1137,6 @@ const DELAY_MS   = 600;
 let bulkRunning  = false;
 let bulkAbort    = false;
 let bulkData     = [];
-
-const modeEmail = document.getElementById('modeEmail');
-modeSingle.addEventListener('click', () => setMode('single'));
-modeBulk.addEventListener('click',   () => setMode('bulk'));
-modeEmail.addEventListener('click',  () => setMode('email'));
-
-function setMode(mode) {
-  const emailPanelEl = document.getElementById('emailPanel');
-  if (mode === 'single') {
-    modeSingle.classList.add('active');
-    modeBulk.classList.remove('active');
-    modeEmail.classList.remove('active');
-    show(singlePanel);
-    hide(bulkPanel);
-    hide(bulkResults);
-    if (emailPanelEl) hide(emailPanelEl);
-  } else if (mode === 'email') {
-    modeEmail.classList.add('active');
-    modeSingle.classList.remove('active');
-    modeBulk.classList.remove('active');
-    hide(singlePanel);
-    hide(bulkPanel);
-    hide(bulkResults);
-    hide(results);
-    if (emailPanelEl) show(emailPanelEl);
-  } else {
-    modeBulk.classList.add('active');
-    modeSingle.classList.remove('active');
-    modeEmail.classList.remove('active');
-    hide(singlePanel);
-    show(bulkPanel);
-    hide(results);
-    if (emailPanelEl) hide(emailPanelEl);
-  }
-}
 
 bulkInput.addEventListener('input', updateBulkCount);
 
@@ -1425,18 +1436,27 @@ function renderCloudHistory() {
       historyList.innerHTML = '<div class="history-loading">No history found.</div>';
       return;
     }
-    historyList.innerHTML = data.map(item => {
+    historyList.innerHTML = '';
+    data.forEach(item => {
       const date = new Date(item.time).toLocaleString();
       const threatColor = item.threat === 'safe' ? '#22c55e' : (item.threat === 'critical' ? '#ef4444' : (item.threat === 'low' ? '#fde047' : '#f59e0b'));
-      return `
-        <div class="history-item" onclick="document.getElementById('urlInput').value='${escapeHtml(item.url)}'; document.getElementById('checkBtn').click();">
-          <img class="history-favicon" src="${escapeHtml(item.favicon)}" onerror="this.style.display='none'" />
-          <div class="history-url">${escapeHtml(item.title)}</div>
-          <div class="history-threat" style="color:${threatColor}">${escapeHtml(item.threat)}</div>
-          <div class="history-time">${date}</div>
-        </div>
+      
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.innerHTML = `
+        <img class="history-favicon" src="${escapeHtml(item.favicon)}" onerror="this.style.display='none'" />
+        <div class="history-url">${escapeHtml(item.title)}</div>
+        <div class="history-threat" style="color:${threatColor}">${escapeHtml(item.threat)}</div>
+        <div class="history-time">${date}</div>
       `;
-    }).join('');
+      div.addEventListener('click', () => {
+        setMode('single');
+        urlInput.value = item.url;
+        if (clearBtn) clearBtn.classList.add('visible');
+        checkSite(item.url);
+      });
+      historyList.appendChild(div);
+    });
   });
 }
 

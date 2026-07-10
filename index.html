@@ -75,749 +75,732 @@
     <div class="orb orb-3"></div>
   </div>
 
-  <!-- Header -->
-  <header class="header">
-    <a href="#" class="logo">
-      <div class="logo-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="m21 21-4.35-4.35"/>
-          <path d="M11 8a3 3 0 0 1 3 3"/>
-        </svg>
-      </div>
-      <span class="logo-text">SiteScope</span>
-      <span class="logo-version">v4</span>
-    </a>
-    <div class="header-nav">
-      <div class="header-badge">Free &middot; No Signup &middot; Instant</div>
-      <div style="position:relative;">
-        <button id="historyBtn" class="header-github" style="background:transparent;cursor:pointer;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          History
-        </button>
-        <div id="historyDropdown" class="history-dropdown hidden">
-          <div class="history-header">
-            <span>Cloud History</span>
-            <button id="historyClearBtn" class="history-clear-btn">Clear</button>
-          </div>
-          <div id="historyList"></div>
-        </div>
-      </div>
-      <a href="https://github.com/cyberlog69/sitescope" class="header-github" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
-        </svg>
-        GitHub
-      </a>
-    </div>
-  </header>
-
-  <!-- Main Layout -->
-  <main class="main">
+  <!-- Dashboard Shell Layout -->
+  <div class="dashboard-layout">
     
-    <!-- Hero -->
-    <section class="hero">
-      <div class="hero-eyebrow">
-        <div class="hero-eyebrow-dot"></div>
-        SiteScope v4 is live
-      </div>
-      <h1 class="hero-title">
-        Website Intelligence<br />
-        <span class="gradient-text">Instantly.</span>
-      </h1>
-      <p class="hero-subtitle">
-        Paste a URL or Email below to get a live sandboxed preview, security analysis, scam detection, and AI categorization in seconds.
-      </p>
-      <div class="feature-pills">
-        <span class="fpill fpill-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Safe Sandbox</span>
-        <span class="fpill fpill-cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Malware Scan</span>
-        <span class="fpill fpill-pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Scam Email Detection</span>
-        <span class="fpill fpill-orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Fast Bulk Processing</span>
-      </div>
-    </section>
-
-    <!-- Input Card -->
-    <div class="input-card" id="inputCard">
-      <div class="input-card-accent"></div>
-      <div class="input-card-inner">
-
-        <!-- Mode Toggle -->
-        <div class="mode-toggle">
-          <button class="mode-btn active" id="modeSingle" data-mode="single">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            Single Site
-          </button>
-          <button class="mode-btn" id="modeBulk" data-mode="bulk">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            Bulk Sites
-          </button>
-          <button class="mode-btn" id="modeEmail" data-mode="email">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            Email Check
-          </button>
-        </div>
-
-        <!-- Single Mode Panel -->
-        <div id="singlePanel">
-          <div class="input-label">Enter a website URL</div>
-          <div class="input-row">
-            <div class="url-input-wrap">
-              <span class="input-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                </svg>
-              </span>
-              <input
-                type="url"
-                id="urlInput"
-                class="url-input"
-                placeholder="https://example.com"
-                autocomplete="off"
-                spellcheck="false"
-              />
-              <button class="clear-btn" id="clearBtn" aria-label="Clear input" title="Clear">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            </div>
-            <button class="check-btn" id="checkBtn">
-              <span class="btn-text" id="btnText">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-                  <polyline points="9 11 12 14 22 4"/>
-                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                </svg>
-                Check Site
-              </span>
-              <span class="btn-loader hidden" id="btnLoader">
-                <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                </svg>
-                Checking&hellip;
-              </span>
-            </button>
-          </div>
-          <div class="quick-links">
-            <span class="quick-label">Try:</span>
-            <button class="quick-btn" data-url="https://github.com">github.com</button>
-            <button class="quick-btn" data-url="https://wikipedia.org">wikipedia.org</button>
-            <button class="quick-btn" data-url="https://vercel.com">vercel.com</button>
-            <button class="quick-btn" data-url="http://ianfette.org">ianfette.org (Malware)</button>
-          </div>
-        </div>
-
-        <!-- Bulk Mode Panel -->
-        <div id="bulkPanel" class="hidden">
-          <div class="bulk-header">
-            <div class="input-label">Paste URLs &mdash; one per line</div>
-            <span class="bulk-counter"><span id="bulkCount">0</span> / 25 URLs</span>
-          </div>
-          <textarea
-            id="bulkInput"
-            class="bulk-textarea"
-            placeholder="https://github.com&#10;https://wikipedia.org&#10;https://stripe.com&#10;http://ianfette.org"
-            spellcheck="false"
-            rows="6"
-          ></textarea>
-          <div class="bulk-actions">
-            <button class="bulk-clear-btn" id="bulkClearBtn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-              Clear
-            </button>
-            <button class="check-btn bulk-run-btn" id="bulkRunBtn">
-              <span class="btn-text" id="bulkBtnText">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                Run Bulk Check
-              </span>
-              <span class="btn-loader hidden" id="bulkBtnLoader">
-                <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                Checking&hellip;
-              </span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Email Checker Panel -->
-        <div id="emailPanel" class="hidden">
-          <div class="email-sub-tabs">
-            <button class="email-sub-btn active" id="emailSubSingle">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              Single Email
-            </button>
-            <button class="email-sub-btn" id="emailSubBulk">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
-              Bulk Emails
-            </button>
-          </div>
-
-          <!-- Single email input -->
-          <div id="emailSinglePanel">
-            <div class="input-label">Enter an email address</div>
-            <div class="input-row">
-              <div class="url-input-wrap">
-                <span class="input-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                    <polyline points="22,6 12,13 2,6"/>
-                  </svg>
-                </span>
-                <input
-                  type="email"
-                  id="emailInput"
-                  class="url-input"
-                  placeholder="user@example.com"
-                  autocomplete="off"
-                  spellcheck="false"
-                />
-                <button class="clear-btn" id="emailClearBtn" aria-label="Clear" title="Clear">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-              </div>
-              <button class="check-btn" id="emailCheckBtn">
-                <span class="btn-text" id="emailBtnText">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                  Validate
-                </span>
-                <span class="btn-loader hidden" id="emailBtnLoader">
-                  <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                  Checking&hellip;
-                </span>
-              </button>
-            </div>
-            <div class="quick-links">
-              <span class="quick-label">Try:</span>
-              <button class="quick-btn" data-email="user@gmail.com">Gmail</button>
-              <button class="quick-btn" data-email="support@paypa1-secure.com">Scam Domain</button>
-              <button class="quick-btn" data-email="test@mailinator.com">Disposable</button>
-            </div>
-            <div class="email-result hidden" id="emailResult"></div>
-          </div>
-
-          <!-- Bulk email input -->
-          <div id="emailBulkPanel" class="hidden">
-            <div class="bulk-header">
-              <div class="input-label">Paste emails &mdash; one per line</div>
-              <span class="bulk-counter"><span id="emailBulkCount">0</span> / 50 emails</span>
-            </div>
-            <textarea
-              id="emailBulkInput"
-              class="bulk-textarea"
-              placeholder="user@gmail.com&#10;admin@paypal-secure.xyz&#10;test@mailinator.com"
-              spellcheck="false"
-              rows="6"
-            ></textarea>
-            <div class="bulk-actions">
-              <button class="bulk-clear-btn" id="emailBulkClearBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                Clear
-              </button>
-              <button class="check-btn bulk-run-btn" id="emailBulkRunBtn">
-                <span class="btn-text" id="emailBulkBtnText">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                  Run Email Check
-                </span>
-                <span class="btn-loader hidden" id="emailBulkBtnLoader">
-                  <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                  Checking&hellip;
-                </span>
-              </button>
-            </div>
-            <!-- Bulk email results -->
-            <div class="email-bulk-results hidden" id="emailBulkResults">
-              <div class="bulk-table-wrap">
-                <table class="bulk-table" id="emailBulkTable">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Email Address</th>
-                      <th>Format</th>
-                      <th>MX Records</th>
-                      <th>Disposable</th>
-                      <th>Scam Risk</th>
-                      <th>Verdict</th>
-                    </tr>
-                  </thead>
-                  <tbody id="emailBulkTableBody"></tbody>
-                </table>
-              </div>
-              <div class="bulk-summary hidden" id="emailBulkSummary" style="margin-top:14px">
-                <div class="summary-stat"><span class="summary-num" id="esum-total">0</span><span class="summary-lbl">Checked</span></div>
-                <div class="summary-stat"><span class="summary-num" id="esum-valid" style="color:var(--green)">0</span><span class="summary-lbl">Valid</span></div>
-                <div class="summary-stat"><span class="summary-num" id="esum-scam" style="color:var(--red)">0</span><span class="summary-lbl">Scam/Risk</span></div>
-                <div class="summary-stat"><span class="summary-num" id="esum-disposable" style="color:var(--yellow)">0</span><span class="summary-lbl">Disposable</span></div>
-                <div class="bulk-export-wrap">
-                  <button class="export-csv-btn" id="emailExportCsvBtn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    Export CSV
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-    </div>
-
-    <!-- Error Banner -->
-    <div class="error-banner hidden" id="errorBanner">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-      <span id="errorMsg">Please enter a valid URL.</span>
-    </div>
-
-    <!-- Results Section -->
-    <section class="results hidden" id="results">
-
-      <!-- Info Bar -->
-      <div class="result-info-bar">
-        <div class="result-url-pill" id="resultUrlPill">
-          <span class="status-dot" id="statusDot"></span>
-          <span id="resultUrlText"></span>
-        </div>
-        <a href="#" class="open-btn" id="openBtn" target="_blank" rel="noopener" title="Open in new tab">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+            <path d="M11 8a3 3 0 0 1 3 3"/>
           </svg>
-          Open Site
+        </div>
+        <span class="logo-text">SiteScope</span>
+        <span class="logo-version">v4</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" id="navSingle" data-view="single">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <span>Single Inspect</span>
+        </button>
+        <button class="nav-item" id="navBulk" data-view="bulk">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+          <span>Bulk Sites</span>
+        </button>
+        <button class="nav-item" id="navEmail" data-view="email">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          <span>Email Check</span>
+        </button>
+        <button class="nav-item" id="navHistory" data-view="history">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span>Scan History</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-badge">Free &middot; No Signup</div>
+        <a href="https://github.com/cyberlog69/sitescope" class="sidebar-github" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+          </svg>
+          GitHub Repository
         </a>
       </div>
+    </aside>
 
-      <div class="results-grid">
+    <!-- Main Content Area -->
+    <div class="main-content">
+      
+      <!-- Sticky Top Header -->
+      <header class="header">
+        <div class="header-title-wrap">
+          <h2 class="header-view-title" id="currentViewTitle">Single Inspector</h2>
+        </div>
+        <div class="header-nav">
+          <div class="header-badge">Instant Web Intelligence Platform</div>
+        </div>
+      </header>
 
-        <!-- Preview Panel -->
-        <div class="panel preview-panel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                <line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-              </svg>
-              Preview
+      <!-- Content Views Wrapper -->
+      <main class="main">
+
+        <!-- 🔍 VIEW 1: SINGLE INSPECTOR -->
+        <div class="view-section" id="singleView">
+          <!-- Hero Banner inside Single inspector only -->
+          <section class="hero">
+            <div class="hero-eyebrow">
+              <div class="hero-eyebrow-dot"></div>
+              NEXUS Intelligence Engine Active
             </div>
-            <div class="panel-tabs">
-              <button class="tab-btn active" id="tabScreenshot" data-tab="screenshot">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/></svg>
-                Screenshot
-              </button>
-              <button class="tab-btn" id="tabSandbox" data-tab="sandbox">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                Sandbox
-              </button>
-              <button class="tab-btn tab-btn-unsafe" id="tabLive" data-tab="live">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                Live
-              </button>
+            <h1 class="hero-title">
+              Instant Website <span class="gradient-text">Diagnostics</span>
+            </h1>
+            <p class="hero-subtitle">
+              Inspect headers, DNS records, SSL trust logs, technology stacks, and robots.txt parameters safely in a fully sandbox-protected container.
+            </p>
+          </section>
+
+          <!-- Input Panel -->
+          <div class="input-card">
+            <div class="input-card-accent"></div>
+            <div class="input-card-inner">
+              <div class="input-label">Enter a website URL</div>
+              <div class="input-row">
+                <div class="url-input-wrap">
+                  <span class="input-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                  </span>
+                  <input
+                    type="url"
+                    id="urlInput"
+                    class="url-input"
+                    placeholder="https://example.com"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                  <button class="clear-btn" id="clearBtn" aria-label="Clear input" title="Clear">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </div>
+                <button class="check-btn" id="checkBtn">
+                  <span class="btn-text" id="btnText">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    Check Site
+                  </span>
+                  <span class="btn-loader hidden" id="btnLoader">
+                    <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                    </svg>
+                    Checking&hellip;
+                  </span>
+                </button>
+              </div>
+              <div class="quick-links">
+                <span class="quick-label">Quick Links:</span>
+                <button class="quick-btn" data-url="https://github.com">github.com</button>
+                <button class="quick-btn" data-url="https://wikipedia.org">wikipedia.org</button>
+                <button class="quick-btn" data-url="https://vercel.com">vercel.com</button>
+                <button class="quick-btn" data-url="http://ianfette.org">ianfette.org (Malware)</button>
+              </div>
             </div>
           </div>
 
-          <!-- Screenshot view -->
-          <div class="preview-view" id="screenshotView">
-            <div class="screenshot-container">
-              <div class="browser-chrome">
-                <div class="browser-dots">
-                  <span class="dot dot-red"></span>
-                  <span class="dot dot-yellow"></span>
-                  <span class="dot dot-green"></span>
-                </div>
-                <div class="browser-address-bar" id="browserAddress"></div>
-                <div class="browser-actions">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                    <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.02"/>
-                  </svg>
-                </div>
+          <!-- Error Banner -->
+          <div class="error-banner hidden" id="errorBanner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span id="errorMsg">Please enter a valid URL.</span>
+          </div>
+
+          <!-- Results Presentation (Single URL) -->
+          <section class="results hidden" id="results">
+            <div class="result-info-bar">
+              <div class="result-url-pill" id="resultUrlPill">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="resultUrlText"></span>
               </div>
-              <div class="screenshot-wrap" id="screenshotWrap">
-                <div class="screenshot-loading" id="screenshotLoading">
-                  <div class="skeleton-lines">
-                    <div class="sk-line sk-w-60"></div>
-                    <div class="sk-line sk-w-80"></div>
-                    <div class="sk-line sk-w-40"></div>
-                    <div class="sk-gap"></div>
-                    <div class="sk-line sk-w-100"></div>
-                    <div class="sk-line sk-w-90"></div>
-                    <div class="sk-line sk-w-70"></div>
+              <div style="display:flex;gap:8px;">
+                <button id="showQrBtn" class="open-btn hidden" title="Generate QR Code">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                  </svg>
+                  QR Code
+                </button>
+                <a href="#" class="open-btn" id="openBtn" target="_blank" rel="noopener" title="Open in new tab">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                  Open Site
+                </a>
+              </div>
+            </div>
+
+            <div class="results-grid">
+              
+              <!-- Left: Live Preview Frame Panel -->
+              <div class="panel preview-panel">
+                <div class="panel-header">
+                  <div class="panel-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                      <line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                    Preview Mode
+                  </div>
+                  <div class="panel-tabs">
+                    <button class="tab-btn active" id="tabScreenshot" data-tab="screenshot">Screenshot</button>
+                    <button class="tab-btn" id="tabSandbox" data-tab="sandbox">Sandbox</button>
+                    <button class="tab-btn tab-btn-unsafe" id="tabLive" data-tab="live">Live (Unsafe)</button>
                   </div>
                 </div>
-                <img class="screenshot-img hidden" id="screenshotImg" alt="Website screenshot" />
-                <div class="screenshot-error hidden" id="screenshotError">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
-                    <rect x="2" y="3" width="20" height="14" rx="2"/><path d="m8 21 4-4 4 4"/><path d="M10 12l2-2 2 2"/>
-                  </svg>
-                  <p>Screenshot unavailable</p>
-                  <small>Try the Sandbox tab</small>
+
+                <!-- Views inside Preview Panel -->
+                <div class="preview-view" id="screenshotView">
+                  <div class="screenshot-container">
+                    <div class="browser-chrome">
+                      <div class="browser-dots">
+                        <span class="dot dot-red"></span>
+                        <span class="dot dot-yellow"></span>
+                        <span class="dot dot-green"></span>
+                      </div>
+                      <div class="browser-address-bar" id="browserAddress"></div>
+                    </div>
+                    <div class="screenshot-wrap" id="screenshotWrap">
+                      <div class="screenshot-loading" id="screenshotLoading">
+                        <div class="skeleton-lines">
+                          <div class="sk-line sk-w-60"></div>
+                          <div class="sk-line sk-w-80"></div>
+                          <div class="sk-line sk-w-40"></div>
+                          <div class="sk-gap"></div>
+                          <div class="sk-line sk-w-100"></div>
+                          <div class="sk-line sk-w-90"></div>
+                          <div class="sk-line sk-w-70"></div>
+                        </div>
+                      </div>
+                      <img class="screenshot-img hidden" id="screenshotImg" alt="Website screenshot" />
+                      <div class="screenshot-error hidden" id="screenshotError">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
+                          <rect x="2" y="3" width="20" height="14" rx="2"/><path d="m8 21 4-4 4 4"/><path d="M10 12l2-2 2 2"/>
+                        </svg>
+                        <p>Screenshot unavailable</p>
+                        <small>Try the Sandbox tab</small>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+
+                <!-- Sandbox protected preview -->
+                <div class="preview-view hidden" id="sandboxView">
+                  <div class="sandbox-header" id="sandboxHeader">
+                    <div class="sandbox-status-row">
+                      <div class="sandbox-shield-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      </div>
+                      <div class="sandbox-status-text">
+                        <span class="sandbox-title-text">Isolated Sandbox Container</span>
+                        <span class="sandbox-sub-text" id="sandboxStatusSub">Preparing isolated workspace&hellip;</span>
+                      </div>
+                      <span class="sandbox-live-badge" id="sandboxLiveBadge">Standby</span>
+                    </div>
+                    <div class="sandbox-blocks" id="sandboxBlocks">
+                      <span class="sblock sblock-loading" id="sb-scripts">Scripts <span class="sblock-count">0</span></span>
+                      <span class="sblock sblock-loading" id="sb-forms">Forms <span class="sblock-count">0</span></span>
+                      <span class="sblock sblock-loading" id="sb-iframes">Iframes <span class="sblock-count">0</span></span>
+                      <span class="sblock sblock-loading" id="sb-redirects">Redirects <span class="sblock-count">0</span></span>
+                      <span class="sblock sblock-loading" id="sb-tracking">Trackers <span class="sblock-count">0</span></span>
+                      <span class="sblock sblock-loading" id="sb-handlers">Events <span class="sblock-count">0</span></span>
+                    </div>
+                  </div>
+                  <div class="sandbox-frame-wrap">
+                    <div class="sandbox-loading-state" id="sandboxLoading">
+                      <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                      <p>Fetching page through proxy&hellip;</p>
+                      <small>Stripping scripts &amp; trackers&mdash;this may take a moment</small>
+                    </div>
+                    <div class="sandbox-err-state hidden" id="sandboxError">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      <p id="sandboxErrMsg">Could not load sandbox preview.</p>
+                      <small>Site may block external fetching. Try the Screenshot tab.</small>
+                    </div>
+                    <iframe
+                      id="sandboxFrame"
+                      class="site-iframe hidden"
+                      sandbox="allow-same-origin"
+                      referrerpolicy="no-referrer"
+                      allow="camera 'none'; microphone 'none'; payment 'none'; geolocation 'none'; usb 'none'; bluetooth 'none'"
+                      title="Sandboxed Website Preview"
+                    ></iframe>
+                  </div>
+                </div>
+
+                <!-- Unprotected live preview -->
+                <div class="preview-view hidden" id="liveView">
+                  <div class="iframe-wrap">
+                    <div class="iframe-notice iframe-notice-danger">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                      </svg>
+                      <strong>Unprotected</strong> &mdash; Site runs with full JavaScript. Use Sandbox tab for safe viewing.
+                    </div>
+                    <div class="iframe-chrome">
+                      <div class="browser-dots">
+                        <span class="dot dot-red"></span>
+                        <span class="dot dot-yellow"></span>
+                        <span class="dot dot-green"></span>
+                      </div>
+                      <div class="browser-address-bar" id="iframeAddress"></div>
+                    </div>
+                    <iframe id="siteFrame" class="site-iframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" title="Website Live Preview"></iframe>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Metadata & Classification Panel -->
+              <div class="panel info-panel">
+                
+                <!-- Site Identity -->
+                <div class="info-section site-identity">
+                  <div class="site-favicon-wrap">
+                    <img class="site-favicon hidden" id="siteFavicon" alt="favicon" />
+                    <div class="site-favicon-fallback" id="faviconFallback">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="site-identity-text">
+                    <div class="site-title" id="siteTitle">Loading&hellip;</div>
+                    <div class="site-domain" id="siteDomain"></div>
+                  </div>
+                </div>
+
+                <!-- Extracted Hyperlinks -->
+                <div class="info-section link-extractor" id="linkExtractorPanel" style="display:none;">
+                  <div class="link-extractor-header" id="linkExtHeader">
+                    <span class="link-extractor-title">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                      Page Links (<span id="linkExtCount">0</span>)
+                    </span>
+                    <span class="link-extractor-toggle" id="linkExtToggle">▼</span>
+                  </div>
+                  <div class="link-list hidden" id="linkExtList"></div>
+                </div>
+
+                <!-- IP & Location Grid -->
+                <div class="intel-grid hidden" id="intelGrid">
+                  <div class="intel-item">
+                    <span class="intel-label">IP Address</span>
+                    <span class="intel-value" id="intelIp">&mdash;</span>
+                  </div>
+                  <div class="intel-item">
+                    <span class="intel-label">Location</span>
+                    <span class="intel-value" id="intelLoc">&mdash;</span>
+                  </div>
+                </div>
+
+                <!-- Site Category Classifier -->
+                <div class="info-section category-section" id="categorySection">
+                  <div class="info-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+                    Site Category
+                  </div>
+                  <div class="category-display" id="categoryDisplay">
+                    <span class="category-badge category-loading" id="categoryBadge">
+                      <span class="cat-icon" id="catIcon">&#x2026;</span>
+                      <span class="cat-label" id="catLabel">Detecting&hellip;</span>
+                    </span>
+                    <p class="cat-description" id="catDescription"></p>
+                  </div>
+                </div>
+
+                <!-- Security Threats Scanner -->
+                <div class="info-section security-section" id="securitySection">
+                  <div class="info-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Security Shield
+                    <span class="sec-scanning-badge hidden" id="secScanningBadge">Scanning&hellip;</span>
+                  </div>
+                  <div id="securityReport">
+                    <div class="sec-placeholder" id="secPlaceholder">
+                      <div class="sk-line sk-w-60" style="height:32px;border-radius:8px;margin-bottom:10px"></div>
+                      <div class="sk-line sk-w-80" style="height:12px;border-radius:6px;margin-bottom:6px"></div>
+                      <div class="sk-line sk-w-50" style="height:12px;border-radius:6px"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Site Description -->
+                <div class="info-section">
+                  <div class="info-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Description
+                  </div>
+                  <div class="info-value description-value" id="siteDescription">Fetching site information&hellip;</div>
+                </div>
+
+                <!-- Meta Matrix -->
+                <div class="meta-grid">
+                  <div class="meta-item">
+                    <div class="meta-label">Status</div>
+                    <div class="meta-value" id="metaStatus"><span class="badge badge-loading">Checking&hellip;</span></div>
+                  </div>
+                  <div class="meta-item">
+                    <div class="meta-label">Author</div>
+                    <div class="meta-value" id="metaAuthor">&mdash;</div>
+                  </div>
+                  <div class="meta-item">
+                    <div class="meta-label">Language</div>
+                    <div class="meta-value" id="metaLang">&mdash;</div>
+                  </div>
+                  <div class="meta-item">
+                    <div class="meta-label">Protocol</div>
+                    <div class="meta-value" id="metaProtocol">&mdash;</div>
+                  </div>
+                </div>
+
+                <!-- Social Preview Image -->
+                <div class="info-section og-section hidden" id="ogSection">
+                  <div class="info-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    Social Preview Image
+                  </div>
+                  <img class="og-image" id="ogImage" alt="Open Graph preview" />
+                </div>
+
+                <!-- Tags / Keywords -->
+                <div class="info-section hidden" id="keywordsSection">
+                  <div class="info-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/></svg>
+                    Keywords
+                  </div>
+                  <div class="tags-wrap" id="tagsWrap"></div>
+                </div>
+              </div>
+
+              <!-- Full-Width: Advanced Intelligence Panel -->
+              <div class="panel advanced-intel-panel hidden" id="advancedIntelPanel">
+                <div class="panel-header">
+                  <div class="panel-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    Advanced Intelligence
+                  </div>
+                  <div class="panel-tabs" id="advancedIntelTabs">
+                    <button class="tab-btn active" data-tab="whois">WHOIS</button>
+                    <button class="tab-btn" data-tab="headers">Headers</button>
+                    <button class="tab-btn" data-tab="dns">DNS Resolver</button>
+                    <button class="tab-btn" data-tab="ssl">SSL/TLS</button>
+                    <button class="tab-btn" data-tab="stack">Tech Stack</button>
+                    <button class="tab-btn" data-tab="robots">Robots.txt</button>
+                    <button class="tab-btn" data-tab="latency">Latency</button>
+                  </div>
+                </div>
+
+                <div class="intel-tab-content" id="intelTabWhois">
+                  <div class="whois-content" id="intelWhois" style="padding:14px;font-family:monospace;font-size:0.75rem;">Fetching WHOIS...</div>
+                </div>
+                <div class="intel-tab-content hidden" id="intelTabHeaders">
+                  <div class="headers-content" id="intelHeaders" style="padding:14px;font-family:monospace;font-size:0.75rem;line-height:1.4;">Fetching headers...</div>
+                </div>
+                <div class="intel-tab-content hidden" id="intelTabDns">
+                  <div id="intelDns" class="info-value" style="padding:14px;">Fetching DNS...</div>
+                </div>
+                <div class="intel-tab-content hidden" id="intelTabSsl">
+                  <div id="intelSsl" class="info-value" style="padding:14px;">Fetching SSL...</div>
+                </div>
+                <div class="intel-tab-content hidden" id="intelTabStack">
+                  <div id="intelStack" class="info-value" style="padding:14px;">Detecting technologies...</div>
+                </div>
+                <div class="intel-tab-content hidden" id="intelTabRobots">
+                  <div id="intelRobots" class="info-value" style="padding:14px;">Analyzing robots.txt...</div>
+                </div>
+                <div class="intel-tab-content hidden" id="intelTabLatency">
+                  <div id="intelLatency" class="info-value" style="padding:14px;">Measuring latency...</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- 📋 VIEW 2: BULK SITES SCAN -->
+        <div class="view-section hidden" id="bulkView">
+          <div class="input-card">
+            <div class="input-card-accent"></div>
+            <div class="input-card-inner">
+              <div class="bulk-header">
+                <div class="input-label">Paste URLs &mdash; one per line</div>
+                <span class="bulk-counter"><span id="bulkCount">0</span> / 25 URLs</span>
+              </div>
+              <textarea
+                id="bulkInput"
+                class="bulk-textarea"
+                placeholder="https://github.com&#10;https://wikipedia.org&#10;https://stripe.com&#10;http://ianfette.org"
+                spellcheck="false"
+                rows="6"
+              ></textarea>
+              <div class="bulk-actions">
+                <button class="bulk-clear-btn" id="bulkClearBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                  Clear
+                </button>
+                <button class="check-btn bulk-run-btn" id="bulkRunBtn">
+                  <span class="btn-text" id="bulkBtnText">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Run Bulk Check
+                  </span>
+                  <span class="btn-loader hidden" id="bulkBtnLoader">
+                    <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                    Checking&hellip;
+                  </span>
+                </button>
               </div>
             </div>
           </div>
 
-          <!-- Sandbox view -->
-          <div class="preview-view hidden" id="sandboxView">
-            <div class="sandbox-header" id="sandboxHeader">
-              <div class="sandbox-status-row">
-                <div class="sandbox-shield-wrap">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                </div>
-                <div class="sandbox-status-text">
-                  <span class="sandbox-title-text">Isolated Sandbox Container</span>
-                  <span class="sandbox-sub-text" id="sandboxStatusSub">Fetching &amp; sanitizing page&hellip;</span>
-                </div>
-                <span class="sandbox-live-badge" id="sandboxLiveBadge">
-                  <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                  Loading
-                </span>
+          <!-- Bulk Results Section -->
+          <section class="bulk-results hidden" id="bulkResults">
+            <div class="bulk-progress-wrap" id="bulkProgressWrap">
+              <div class="bulk-progress-header">
+                <span class="bulk-progress-label" id="bulkProgressLabel">Checking 0 of 0&hellip;</span>
+                <button class="bulk-stop-btn" id="bulkStopBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                  Stop
+                </button>
               </div>
-              <div class="sandbox-blocks" id="sandboxBlocks">
-                <span class="sblock sblock-loading" id="sb-scripts">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                  Scripts
-                </span>
-                <span class="sblock sblock-loading" id="sb-forms">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
-                  Forms
-                </span>
-                <span class="sblock sblock-loading" id="sb-iframes">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
-                  Iframes
-                </span>
-                <span class="sblock sblock-loading" id="sb-redirects">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg>
-                  Redirects
-                </span>
-                <span class="sblock sblock-loading" id="sb-tracking">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 1 0 20A10 10 0 0 1 12 2"/></svg>
-                  Trackers
-                </span>
-                <span class="sblock sblock-loading" id="sb-handlers">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
-                  Events
-                </span>
+              <div class="bulk-progress-bar-track">
+                <div class="bulk-progress-bar-fill" id="bulkProgressFill" style="width:0%"></div>
               </div>
             </div>
 
-            <div class="sandbox-frame-wrap">
-              <div class="sandbox-loading-state" id="sandboxLoading">
-                <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                <p>Fetching page through proxy&hellip;</p>
-                <small>Stripping scripts &amp; trackers&mdash;this may take a moment</small>
+            <!-- Filters & Export -->
+            <div class="bulk-summary hidden" id="bulkSummary">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex:1;">
+                <div class="summary-stat"><span class="summary-num" id="sumTotal">0</span><span class="summary-lbl">Total</span></div>
+                <div class="summary-stat"><span class="summary-num" id="sumOk" style="color:var(--green)">0</span><span class="summary-lbl">Reachable</span></div>
+                <div class="summary-stat"><span class="summary-num" id="sumErr" style="color:var(--red)">0</span><span class="summary-lbl">Failed</span></div>
+                <div class="summary-stat"><span class="summary-num" id="sumTime">0s</span><span class="summary-lbl">Elapsed</span></div>
+                
+                <div class="bulk-table-filters" style="display:flex;gap:8px;margin-left:12px;">
+                  <input type="text" id="bulkFilterInput" placeholder="Filter by text..." class="url-input" style="padding:6px 12px;font-size:0.75rem;width:150px;" />
+                  <select id="bulkFilterThreat" class="url-input" style="padding:6px;font-size:0.75rem;width:110px;">
+                    <option value="all">All Threats</option>
+                    <option value="safe">Safe Only</option>
+                    <option value="risk">High Risk Only</option>
+                  </select>
+                </div>
               </div>
-              <div class="sandbox-err-state hidden" id="sandboxError">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <p id="sandboxErrMsg">Could not load sandbox preview.</p>
-                <small>Site may block external fetching. Try the Screenshot tab.</small>
+
+              <div class="bulk-export-wrap">
+                <button class="export-btn" id="exportCsvBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Export CSV
+                </button>
               </div>
-              <iframe
-                id="sandboxFrame"
-                class="site-iframe hidden"
-                sandbox="allow-same-origin"
-                referrerpolicy="no-referrer"
-                allow="camera 'none'; microphone 'none'; payment 'none'; geolocation 'none'; usb 'none'; bluetooth 'none'"
-                title="Sandboxed Website Preview"
-              ></iframe>
+            </div>
+
+            <!-- Bulk Table -->
+            <div class="bulk-table-wrap">
+              <table class="bulk-table" id="bulkTable">
+                <thead>
+                  <tr>
+                    <th class="sortable" data-sort="id">#</th>
+                    <th>Favicon</th>
+                    <th class="sortable" data-sort="url">URL / Title</th>
+                    <th class="sortable" data-sort="category">Category</th>
+                    <th class="sortable" data-sort="status">Status</th>
+                    <th class="sortable" data-sort="threats">Threats</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="bulkTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <!-- 📧 VIEW 3: EMAIL VALIDATOR -->
+        <div class="view-section hidden" id="emailView">
+          <div class="input-card">
+            <div class="input-card-accent"></div>
+            <div class="input-card-inner">
+              
+              <!-- Sub-selector for single/bulk emails -->
+              <div class="email-sub-tabs" style="margin-bottom:20px;">
+                <button class="email-sub-btn active" id="emailSubSingle">Single Email</button>
+                <button class="email-sub-btn" id="emailSubBulk">Bulk Emails</button>
+              </div>
+
+              <!-- Single email check pane -->
+              <div id="emailSinglePanel">
+                <div class="input-label">Enter an email address</div>
+                <div class="input-row">
+                  <div class="url-input-wrap">
+                    <span class="input-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                        <polyline points="22,6 12,13 2,6"/>
+                      </svg>
+                    </span>
+                    <input
+                      type="email"
+                      id="emailInput"
+                      class="url-input"
+                      placeholder="user@example.com"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                    <button class="clear-btn" id="emailClearBtn" aria-label="Clear" title="Clear">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                  <button class="check-btn" id="emailCheckBtn">
+                    <span class="btn-text" id="emailBtnText">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                      Validate
+                    </span>
+                    <span class="btn-loader hidden" id="emailBtnLoader">
+                      <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                      Checking&hellip;
+                    </span>
+                  </button>
+                </div>
+                <div class="quick-links">
+                  <span class="quick-label">Try:</span>
+                  <button class="quick-btn" data-email="user@gmail.com">Gmail</button>
+                  <button class="quick-btn" data-email="support@paypa1-secure.com">Scam Domain</button>
+                  <button class="quick-btn" data-email="test@mailinator.com">Disposable</button>
+                </div>
+                
+                <!-- Validation result display -->
+                <div class="email-result hidden" id="emailResult" style="margin-top:20px;"></div>
+              </div>
+
+              <!-- Bulk email check pane -->
+              <div id="emailBulkPanel" class="hidden">
+                <div class="bulk-header">
+                  <div class="input-label">Paste emails &mdash; one per line</div>
+                  <span class="bulk-counter"><span id="emailBulkCount">0</span> / 50 emails</span>
+                </div>
+                <textarea
+                  id="emailBulkInput"
+                  class="bulk-textarea"
+                  placeholder="user@gmail.com&#10;admin@paypal-secure.xyz&#10;test@mailinator.com"
+                  spellcheck="false"
+                  rows="6"
+                ></textarea>
+                <div class="bulk-actions">
+                  <button class="bulk-clear-btn" id="emailBulkClearBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                    Clear
+                  </button>
+                  <button class="check-btn bulk-run-btn" id="emailBulkRunBtn">
+                    <span class="btn-text" id="emailBulkBtnText">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                      Run Email Check
+                    </span>
+                    <span class="btn-loader hidden" id="emailBulkBtnLoader">
+                      <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                      Checking&hellip;
+                    </span>
+                  </button>
+                </div>
+
+                <!-- Bulk email verification results -->
+                <div class="email-bulk-results hidden" id="emailBulkResults" style="margin-top:20px;">
+                  <div class="bulk-table-wrap">
+                    <table class="bulk-table" id="emailBulkTable">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Email Address</th>
+                          <th>Format</th>
+                          <th>MX Records</th>
+                          <th>Disposable</th>
+                          <th>Scam Risk</th>
+                          <th>Verdict</th>
+                        </tr>
+                      </thead>
+                      <tbody id="emailBulkTableBody"></tbody>
+                    </table>
+                  </div>
+                  
+                  <div class="bulk-summary hidden" id="emailBulkSummary" style="margin-top:14px">
+                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;flex:1;">
+                      <div class="summary-stat"><span class="summary-num" id="esum-total">0</span><span class="summary-lbl">Checked</span></div>
+                      <div class="summary-stat"><span class="summary-num" id="esum-valid" style="color:var(--green)">0</span><span class="summary-lbl">Valid</span></div>
+                      <div class="summary-stat"><span class="summary-num" id="esum-scam" style="color:var(--red)">0</span><span class="summary-lbl">Scam/Risk</span></div>
+                      <div class="summary-stat"><span class="summary-num" id="esum-disposable" style="color:var(--yellow)">0</span><span class="summary-lbl">Disposable</span></div>
+                    </div>
+                    <div class="bulk-export-wrap">
+                      <button class="export-csv-btn" id="emailExportCsvBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Export CSV
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
+        </div>
 
-          <!-- Live iframe view -->
-          <div class="preview-view hidden" id="liveView">
-            <div class="iframe-wrap">
-              <div class="iframe-notice iframe-notice-danger">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        <!-- 📜 VIEW 4: SCAN HISTORY -->
+        <div class="view-section hidden" id="historyView">
+          <div class="panel" style="padding:20px;">
+            <div class="panel-header" style="margin-bottom:20px;border-bottom:none;padding:0;">
+              <div class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                 </svg>
-                <strong>Unprotected</strong> &mdash; Site runs with full JavaScript. Use Sandbox tab for safe viewing.
+                Recent Scan Logs
               </div>
-              <div class="iframe-chrome">
-                <div class="browser-dots">
-                  <span class="dot dot-red"></span>
-                  <span class="dot dot-yellow"></span>
-                  <span class="dot dot-green"></span>
-                </div>
-                <div class="browser-address-bar" id="iframeAddress"></div>
-              </div>
-              <iframe id="siteFrame" class="site-iframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" title="Website Live Preview"></iframe>
+              <button id="historyClearBtn" class="bulk-clear-btn" style="padding:6px 12px;font-size:0.75rem;">Clear All History</button>
+            </div>
+            <div id="historyList" class="history-list-pane">
+              <!-- Rendered via JS -->
+              <div class="history-loading">Fetching logs...</div>
             </div>
           </div>
-
         </div>
 
-        <!-- Info Panel -->
-        <div class="panel info-panel">
+      </main>
 
-          <!-- Site Identity -->
-          <div class="info-section site-identity">
-            <div class="site-favicon-wrap">
-              <img class="site-favicon hidden" id="siteFavicon" alt="favicon" />
-              <div class="site-favicon-fallback" id="faviconFallback">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                  <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                </svg>
-              </div>
-            </div>
-            <div class="site-identity-text">
-              <div class="site-title" id="siteTitle">Loading&hellip;</div>
-              <div class="site-domain" id="siteDomain"></div>
-            </div>
-          </div>
-
-          <!-- Extracted Links Panel -->
-          <div class="info-section link-extractor" id="linkExtractorPanel" style="display:none;">
-            <div class="link-extractor-header" id="linkExtHeader">
-              <span class="link-extractor-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                Page Links (<span id="linkExtCount">0</span>)
-              </span>
-              <span class="link-extractor-toggle" id="linkExtToggle">▼</span>
-            </div>
-            <div class="link-list hidden" id="linkExtList"></div>
-          </div>
-
-          <!-- IP & Domain Intel Panel -->
-          <div class="intel-grid hidden" id="intelGrid">
-            <div class="intel-item">
-              <span class="intel-label">IP Address</span>
-              <span class="intel-value" id="intelIp">&mdash;</span>
-            </div>
-            <div class="intel-item">
-              <span class="intel-label">Location</span>
-              <span class="intel-value" id="intelLoc">&mdash;</span>
-            </div>
-          </div>
-
-          <!-- Site Category -->
-          <div class="info-section category-section" id="categorySection">
-            <div class="info-label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                <path d="M4 6h16M4 12h16M4 18h7"/>
-              </svg>
-              Site Category
-            </div>
-            <div class="category-display" id="categoryDisplay">
-              <span class="category-badge category-loading" id="categoryBadge">
-                <span class="cat-icon" id="catIcon">&#x2026;</span>
-                <span class="cat-label" id="catLabel">Detecting&hellip;</span>
-              </span>
-              <p class="cat-description" id="catDescription"></p>
-            </div>
-          </div>
-
-          <!-- Security Scanner -->
-          <div class="info-section security-section" id="securitySection">
-            <div class="info-label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
-              Security Scan
-              <span class="sec-scanning-badge hidden" id="secScanningBadge">
-                <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                Scanning&hellip;
-              </span>
-            </div>
-            <div id="securityReport">
-              <!-- Placeholder while scanning -->
-              <div class="sec-placeholder" id="secPlaceholder">
-                <div class="sk-line sk-w-60" style="height:32px;border-radius:8px;margin-bottom:10px"></div>
-                <div class="sk-line sk-w-80" style="height:12px;border-radius:6px;margin-bottom:6px"></div>
-                <div class="sk-line sk-w-50" style="height:12px;border-radius:6px"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Description -->
-          <div class="info-section">
-            <div class="info-label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-              </svg>
-              Description
-            </div>
-            <div class="info-value description-value" id="siteDescription">Fetching site information&hellip;</div>
-          </div>
-
-          <!-- Metadata Grid -->
-          <div class="meta-grid">
-            <div class="meta-item">
-              <div class="meta-label">Status</div>
-              <div class="meta-value" id="metaStatus">
-                <span class="badge badge-loading">Checking&hellip;</span>
-              </div>
-            </div>
-            <div class="meta-item">
-              <div class="meta-label">Author</div>
-              <div class="meta-value" id="metaAuthor">&mdash;</div>
-            </div>
-            <div class="meta-item">
-              <div class="meta-label">Language</div>
-              <div class="meta-value" id="metaLang">&mdash;</div>
-            </div>
-            <div class="meta-item">
-              <div class="meta-label">Protocol</div>
-              <div class="meta-value" id="metaProtocol">&mdash;</div>
-            </div>
-          </div>
-
-          <!-- OG Image -->
-          <div class="info-section og-section hidden" id="ogSection">
-            <div class="info-label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-              </svg>
-              Social Preview Image
-            </div>
-            <img class="og-image" id="ogImage" alt="Open Graph preview" />
-          </div>
-
-          <!-- Keywords -->
-          <div class="info-section hidden" id="keywordsSection">
-            <div class="info-label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
-                <line x1="7" y1="7" x2="7.01" y2="7"/>
-              </svg>
-              Keywords / Tags
-            </div>
-            <div class="tags-wrap" id="tagsWrap"></div>
-          </div>
-
+      <!-- Footer -->
+      <footer class="footer">
+        <div class="footer-inner">
+          <p>Built with <span style="color:var(--violet-2);font-weight:600">SiteScope</span> v4</p>
+          <span class="footer-sep">&bull;</span>
+          <p>Preview powered by <a href="https://microlink.io" target="_blank" rel="noopener">Microlink</a></p>
+          <span class="footer-sep">&bull;</span>
+          <p>Scam filtering by <a href="https://urlhaus.abuse.ch" target="_blank" rel="noopener">URLhaus</a></p>
         </div>
+      </footer>
 
-        <!-- Advanced Intel Panel -->
-        <div class="panel advanced-intel-panel hidden" id="advancedIntelPanel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-              </svg>
-              Advanced Intelligence
-            </div>
-            <div class="panel-tabs" id="advancedIntelTabs">
-              <button class="tab-btn active" data-tab="whois">WHOIS</button>
-              <button class="tab-btn" data-tab="headers">Headers</button>
-              <button class="tab-btn" data-tab="dns">DNS Resolver</button>
-              <button class="tab-btn" data-tab="ssl">SSL/TLS</button>
-              <button class="tab-btn" data-tab="stack">Tech Stack</button>
-              <button class="tab-btn" data-tab="robots">Robots.txt</button>
-              <button class="tab-btn" data-tab="latency">Latency</button>
-            </div>
-          </div>
-          
-          <div class="intel-tab-content" id="intelTabWhois">
-            <div class="whois-content" id="intelWhois" style="padding:14px;font-family:monospace;font-size:0.75rem;">Fetching WHOIS...</div>
-          </div>
-          
-          <div class="intel-tab-content hidden" id="intelTabHeaders">
-            <div class="headers-content" id="intelHeaders" style="padding:14px;font-family:monospace;font-size:0.75rem;line-height:1.4;">Fetching headers...</div>
-          </div>
-          
-          <div class="intel-tab-content hidden" id="intelTabDns">
-            <div id="intelDns" class="info-value" style="padding:14px;">Fetching DNS...</div>
-          </div>
-          
-          <div class="intel-tab-content hidden" id="intelTabSsl">
-            <div id="intelSsl" class="info-value" style="padding:14px;">Fetching SSL...</div>
-          </div>
-          
-          <div class="intel-tab-content hidden" id="intelTabStack">
-            <div id="intelStack" class="info-value" style="padding:14px;">Detecting technologies...</div>
-          </div>
-          
-          <div class="intel-tab-content hidden" id="intelTabRobots">
-            <div id="intelRobots" class="info-value" style="padding:14px;">Analyzing robots.txt...</div>
-          </div>
-          
-          <div class="intel-tab-content hidden" id="intelTabLatency">
-            <div id="intelLatency" class="info-value" style="padding:14px;">Measuring latency...</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Bulk Results Section -->
-    <section class="bulk-results hidden" id="bulkResults">
-      <div class="bulk-progress-wrap" id="bulkProgressWrap">
-        <div class="bulk-progress-header">
-          <span class="bulk-progress-label" id="bulkProgressLabel">Checking 0 of 0&hellip;</span>
-          <button class="bulk-stop-btn" id="bulkStopBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-            Stop
-          </button>
-        </div>
-        <div class="bulk-progress-bar-track">
-          <div class="bulk-progress-bar-fill" id="bulkProgressFill" style="width:0%"></div>
-        </div>
-      </div>
-
-      <div class="bulk-summary hidden" id="bulkSummary">
-        <div class="summary-stat">
-          <span class="summary-num" id="sumTotal">0</span>
-          <span class="summary-lbl">Total</span>
-        </div>
-        <div class="summary-stat summary-ok">
-          <span class="summary-num" id="sumOk" style="color:var(--green)">0</span>
-          <span class="summary-lbl">Reachable</span>
-        </div>
-        <div class="summary-stat summary-err">
-          <span class="summary-num" id="sumErr" style="color:var(--red)">0</span>
-          <span class="summary-lbl">Failed</span>
-        </div>
-        <div class="summary-stat">
-          <span class="summary-num" id="sumTime">0s</span>
-          <span class="summary-lbl">Time</span>
-        </div>
-        <div class="bulk-export-wrap">
-          <button class="export-btn" id="exportCsvBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export CSV
-          </button>
-        </div>
-      </div>
-
-      <div class="bulk-table-wrap">
-        <table class="bulk-table" id="bulkTable">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Favicon</th>
-              <th>URL / Title</th>
-              <th>Category</th>
-              <th>Status</th>
-              <th>Threats</th>
-              <th>Description</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="bulkTableBody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- QR Code Modal -->
-    <div id="qrModal" class="qr-modal hidden">
-      <div class="qr-card">
-        <img id="qrImage" src="" alt="QR Code" width="180" height="180" />
-        <div class="qr-url-text" id="qrUrlText"></div>
-        <button class="qr-close-btn" id="qrCloseBtn">Close</button>
-      </div>
     </div>
-  </main>
+  </div>
 
-  <footer class="footer">
-    <div class="footer-inner">
-      <p>Built with <span style="color:var(--violet-2);font-weight:600">SiteScope</span> v4</p>
-      <span class="footer-sep">&bull;</span>
-      <p>Preview powered by <a href="https://microlink.io" target="_blank" rel="noopener">Microlink</a></p>
-      <span class="footer-sep">&bull;</span>
-      <p>Scam filtering by <a href="https://urlhaus.abuse.ch" target="_blank" rel="noopener">URLhaus</a></p>
+  <!-- QR Code Modal -->
+  <div id="qrModal" class="qr-modal hidden">
+    <div class="qr-card">
+      <img id="qrImage" src="" alt="QR Code" width="180" height="180" />
+      <div class="qr-url-text" id="qrUrlText"></div>
+      <button class="qr-close-btn" id="qrCloseBtn">Close</button>
     </div>
-  </footer>
+  </div>
 
   <script type="module" src="/src/main.js"></script>
 </body>
