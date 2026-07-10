@@ -161,15 +161,16 @@ body {
 .sidebar-toggle-wrap {
   display: flex;
   justify-content: flex-start;
-  padding-left: 6px;
-  margin-bottom: 20px;
+  padding-left: 16px;
+  margin-bottom: 24px;
+  margin-top: 4px;
   transition: padding 0.3s ease, margin-bottom 0.3s ease;
 }
 
 .sidebar.collapsed .sidebar-toggle-wrap {
   justify-content: center;
   padding-left: 0;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .hamburger-btn {
@@ -320,6 +321,41 @@ body {
   font-weight: 700;
   letter-spacing: -0.3px;
   color: var(--text);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-logo-text {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  background: linear-gradient(90deg, #fff 40%, var(--violet-2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-logo-version {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--violet-2);
+  background: rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  padding: 1px 6px;
+  border-radius: 20px;
+}
+
+.header-separator {
+  margin: 0 10px;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  font-weight: 400;
+  user-select: none;
 }
 
 .header-nav { display:flex; align-items:center; gap:8px; }
