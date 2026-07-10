@@ -1111,6 +1111,37 @@ if (document.getElementById('navSingle')) {
   document.getElementById('navHistory').addEventListener('click', () => setMode('history'));
 }
 
+// ── Hamburger Toggle & Sidebar Actions ────────────────────────
+const sidebarToggle = document.getElementById('sidebarToggle');
+const sidebarEl     = document.querySelector('.sidebar');
+
+if (sidebarToggle && sidebarEl) {
+  sidebarToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sidebarEl.classList.toggle('collapsed');
+    sidebarEl.classList.toggle('active');
+  });
+
+  // Click outside sidebar on mobile to dismiss it
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 900) {
+      if (!sidebarEl.contains(e.target) && e.target !== sidebarToggle && !sidebarToggle.contains(e.target)) {
+        sidebarEl.classList.remove('active');
+      }
+    }
+  });
+
+  // Clicking a nav item on mobile closes the side menu
+  const navItems = sidebarEl.querySelectorAll('.nav-item');
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      if (window.innerWidth <= 900) {
+        sidebarEl.classList.remove('active');
+      }
+    });
+  });
+}
+
 // ── Bulk Scan DOM Elements & State ───────────────────────────
 const bulkInput        = document.getElementById('bulkInput');
 const bulkCount        = document.getElementById('bulkCount');
