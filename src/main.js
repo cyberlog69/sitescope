@@ -1112,20 +1112,31 @@ if (document.getElementById('navSingle')) {
 }
 
 // ── Hamburger Toggle & Sidebar Actions ────────────────────────
-const sidebarToggle = document.getElementById('sidebarToggle');
-const sidebarEl     = document.querySelector('.sidebar');
+const sidebarToggle        = document.getElementById('sidebarToggle');
+const sidebarToggleDesktop = document.getElementById('sidebarToggleDesktop');
+const sidebarEl            = document.querySelector('.sidebar');
 
-if (sidebarToggle && sidebarEl) {
-  sidebarToggle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    sidebarEl.classList.toggle('collapsed');
-    sidebarEl.classList.toggle('active');
-  });
+if (sidebarEl) {
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sidebarEl.classList.toggle('active');
+    });
+  }
+
+  if (sidebarToggleDesktop) {
+    sidebarToggleDesktop.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sidebarEl.classList.toggle('collapsed');
+    });
+  }
 
   // Click outside sidebar on mobile to dismiss it
   document.addEventListener('click', (e) => {
     if (window.innerWidth <= 900) {
-      if (!sidebarEl.contains(e.target) && e.target !== sidebarToggle && !sidebarToggle.contains(e.target)) {
+      const isToggleClick = (sidebarToggle && (e.target === sidebarToggle || sidebarToggle.contains(e.target))) ||
+                            (sidebarToggleDesktop && (e.target === sidebarToggleDesktop || sidebarToggleDesktop.contains(e.target)));
+      if (!sidebarEl.contains(e.target) && !isToggleClick) {
         sidebarEl.classList.remove('active');
       }
     }

@@ -154,6 +154,24 @@ body {
   gap: 0;
 }
 
+#sidebarToggle {
+  display: none !important;
+}
+
+.sidebar-toggle-wrap {
+  display: flex;
+  justify-content: flex-start;
+  padding-left: 6px;
+  margin-bottom: 20px;
+  transition: padding 0.3s ease, margin-bottom 0.3s ease;
+}
+
+.sidebar.collapsed .sidebar-toggle-wrap {
+  justify-content: center;
+  padding-left: 0;
+  margin-bottom: 16px;
+}
+
 .hamburger-btn {
   display: flex;
   align-items: center;
@@ -166,7 +184,6 @@ body {
   color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-right: 16px;
   outline: none;
   flex-shrink: 0;
 }
@@ -1939,6 +1956,15 @@ body {
 
   .header {
     padding: 14px 20px;
+  }
+  
+  #sidebarToggle {
+    display: flex !important;
+    margin-right: 14px;
+  }
+  
+  .sidebar-toggle-wrap {
+    display: none !important;
   }
   
   /* Legacy mobile overrides */
