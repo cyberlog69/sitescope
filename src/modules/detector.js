@@ -358,41 +358,90 @@ export function renderOutageChart(reports = [], containerId) {
 }
 
 // ── Popular Services Grid ─────────────────────────────────────────────────────
+// Icon strategy: render a coloured letter-avatar SVG immediately (zero network,
+// never broken), then asynchronously try three logo sources in order:
+//   1. Clearbit Logo API   — high-quality logos for major companies
+//   2. Google S2 Favicons  — reliable favicon CDN
+//   3. (keep letter avatar if both fail)
+function makeLetterAvatar(letter, bgColor) {
+  // Sanitise so it's safe to embed inside an SVG attribute
+  const safeLetter = (letter || '?').toUpperCase().replace(/[^A-Z0-9]/g, '?')[0];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+    <rect width="24" height="24" rx="5" fill="${bgColor}"/>
+    <text x="12" y="17.5" font-family="Inter,Arial,sans-serif" font-size="13"
+          font-weight="700" text-anchor="middle" fill="#fff">${safeLetter}</text>
+  </svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
 export function renderPopularGrid(containerId, onSelectCallback) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  container.innerHTML = POPULAR_SERVICES.map((s, i) => `
-    <div class="detector-card" id="popCard-${i}" data-domain="${s.domain}">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div class="pop-icon-wrap" style="background:${s.color}18;border:1px solid ${s.color}40;border-radius:8px;padding:6px;flex-shrink:0;">
-          <img
-            src="https://www.google.com/s2/favicons?domain=${s.domain}&sz=64"
-            alt="${s.name}"
-            width="22" height="22"
-            style="display:block;border-radius:3px;"
-            onerror="this.onerror=null;this.src='https://icons.duckduckgo.com/ip3/${s.domain}.ico';"
-          />
+  container.innerHTML = POPULAR_SERVICES.map((s, i) => {
+    const avatarSrc = makeLetterAvatar(s.name[0], s.color);
+    return `
+      <div class="detector-card" id="popCard-${i}" data-domain="${s.domain}">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="pop-icon-wrap" style="background:${s.color}18;border:1px solid ${s.color}40;border-radius:8px;padding:6px;flex-shrink:0;">
+            <img
+              id="popIcon-${i}"
+              src="${avatarSrc}"
+              alt="${s.name}"
+              width="24" height="24"
+              style="display:block;border-radius:3px;"
+            />
+          </div>
+          <div>
+            <div style="font-size:0.84rem;font-weight:600;color:var(--text);white-space:nowrap;">${s.name}</div>
+            <div style="font-size:0.66rem;color:var(--text-muted);">${s.statusApi ? '⚡ Official API' : '🔍 DNS probe'}</div>
+          </div>
         </div>
-        <div>
-          <div style="font-size:0.84rem;font-weight:600;color:var(--text);white-space:nowrap;">${s.name}</div>
-          <div style="font-size:0.66rem;color:var(--text-muted);">${s.statusApi ? '⚡ Official API' : '🔍 DNS probe'}</div>
+        <div class="status-indicator">
+          <span class="status-time" id="popTime-${i}">Checking…</span>
+          <span class="status-dot status-dot-pulse bg-loading" id="popDot-${i}"></span>
         </div>
       </div>
-      <div class="status-indicator">
-        <span class="status-time" id="popTime-${i}">Checking…</span>
-        <span class="status-dot status-dot-pulse bg-loading" id="popDot-${i}"></span>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 
+  // Click handlers
   POPULAR_SERVICES.forEach((s, i) => {
     const el = document.getElementById(`popCard-${i}`);
     if (el) el.addEventListener('click', () => {
       if (typeof onSelectCallback === 'function') onSelectCallback(s.domain);
     });
   });
+
+  // Async icon loader — tries real logos after cards are painted.
+  // Uses a chain: Clearbit → Google S2 → keep letter avatar (never errors).
+  POPULAR_SERVICES.forEach((s, i) => {
+    const imgEl = document.getElementById(`popIcon-${i}`);
+    if (!imgEl) return;
+
+    const tryLoad = (src, nextSrc) => {
+      const probe = new Image();
+      probe.onload = () => {
+        // Only swap if the image has real dimensions (guards against 1×1 error images)
+        if (probe.naturalWidth > 4 && probe.naturalHeight > 4) {
+          imgEl.src = probe.src;
+        } else if (nextSrc) {
+          tryLoad(nextSrc, null);
+        }
+      };
+      probe.onerror = () => {
+        if (nextSrc) tryLoad(nextSrc, null);
+        // else keep letter avatar — imgEl.src already set
+      };
+      probe.src = src;
+    };
+
+    const clearbit = `https://logo.clearbit.com/${s.domain}`;
+    const googleS2 = `https://www.google.com/s2/favicons?domain=${s.domain}&sz=64`;
+    tryLoad(clearbit, googleS2);
+  });
 }
+
 
 // ── Grid Background Poller ────────────────────────────────────────────────────
 async function pollSingleService(service, index) {
