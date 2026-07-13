@@ -8,6 +8,7 @@ import { fetchSslInfo, renderSslPanel } from './tools/ssl.js';
 import { detectTechnologies, renderStackPanel } from './tools/stack.js';
 import { fetchRobotsTxt, parseRobotsTxt, renderRobotsPanel } from './tools/robots.js';
 import { runLatencySuite, renderLatencyPanel } from './tools/latency.js';
+import { checkWebsiteStatus, submitOutageReport, fetchOutageReports, renderOutageChart, renderPopularGrid, startBackgroundGridPoll, stopBackgroundGridPoll } from './modules/detector.js';
 
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js (Modularized)
@@ -1083,6 +1084,11 @@ const views = {
     title: 'Scan History Logs',
     el: document.getElementById('historyView'),
     nav: document.getElementById('navHistory')
+  },
+  detector: {
+    title: 'Down Detector & Status Monitor',
+    el: document.getElementById('detectorView'),
+    nav: document.getElementById('navDetector')
   }
 };
 
@@ -1102,6 +1108,12 @@ function setMode(mode) {
   if (mode === 'history') {
     renderCloudHistory();
   }
+
+  if (mode === 'detector') {
+    initDetectorTab();
+  } else {
+    stopBackgroundGridPoll();
+  }
 }
 
 if (document.getElementById('navSingle')) {
@@ -1109,6 +1121,128 @@ if (document.getElementById('navSingle')) {
   document.getElementById('navBulk').addEventListener('click', () => setMode('bulk'));
   document.getElementById('navEmail').addEventListener('click', () => setMode('email'));
   document.getElementById('navHistory').addEventListener('click', () => setMode('history'));
+  document.getElementById('navDetector').addEventListener('click', () => setMode('detector'));
+}
+
+// ── Down Detector Page Controller ────────────────────────────
+let detectorEventsBound = false;
+let currentDetectorKey = '';
+
+function initDetectorTab() {
+  renderPopularGrid('popularServicesGrid', (domain) => {
+    document.getElementById('detectorUrlInput').value = domain;
+    runDetectorCheck(domain);
+  });
+  startBackgroundGridPoll();
+
+  if (detectorEventsBound) return;
+  detectorEventsBound = true;
+
+  const urlInput = document.getElementById('detectorUrlInput');
+  const checkBtn = document.getElementById('detectorCheckBtn');
+  const clearBtn = document.getElementById('detectorClearBtn');
+  const reportBtn = document.getElementById('detectorReportBtn');
+
+  checkBtn.addEventListener('click', () => {
+    const rawVal = urlInput.value.trim();
+    if (rawVal) runDetectorCheck(rawVal);
+  });
+
+  urlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const rawVal = urlInput.value.trim();
+      if (rawVal) runDetectorCheck(rawVal);
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    urlInput.value = '';
+    document.getElementById('detectorResults').classList.add('hidden');
+    document.getElementById('detectorErrorBanner').classList.add('hidden');
+  });
+
+  reportBtn.addEventListener('click', async () => {
+    if (!currentDetectorKey) return;
+    
+    reportBtn.disabled = true;
+    reportBtn.textContent = 'Reporting...';
+    
+    try {
+      const updatedReports = await submitOutageReport(currentDetectorKey);
+      
+      document.getElementById('detectorCommunityReports').textContent = `${updatedReports.length} reports (Active)`;
+      renderOutageChart(updatedReports, 'outageChartContainer');
+      
+      reportBtn.textContent = 'Report Registered!';
+      setTimeout(() => {
+        reportBtn.textContent = 'Report Outage';
+        reportBtn.disabled = false;
+      }, 3000);
+    } catch {
+      reportBtn.textContent = 'Report Failed';
+      reportBtn.disabled = false;
+    }
+  });
+}
+
+async function runDetectorCheck(target) {
+  const btnText = document.getElementById('detectorBtnText');
+  const btnLoader = document.getElementById('detectorBtnLoader');
+  const checkBtn = document.getElementById('detectorCheckBtn');
+  const resultsDiv = document.getElementById('detectorResults');
+  const errorBanner = document.getElementById('detectorErrorBanner');
+
+  checkBtn.disabled = true;
+  btnText.classList.add('hidden');
+  btnLoader.classList.remove('hidden');
+  errorBanner.classList.add('hidden');
+
+  try {
+    const result = await checkWebsiteStatus(target);
+    currentDetectorKey = result.cleanKey;
+
+    document.getElementById('detectorDomainTitle').textContent = result.domain;
+    document.getElementById('detectorMessage').textContent = result.message;
+
+    const favImg = document.getElementById('detectorFavicon');
+    favImg.src = `https://www.google.com/s2/favicons?domain=${result.domain}&sz=32`;
+    favImg.style.display = 'block';
+
+    const badge = document.getElementById('detectorStatusBadge');
+    badge.className = 'verdict-badge';
+    badge.textContent = result.status;
+
+    const card = document.getElementById('detectorVerdictCard');
+    card.className = 'verdict-glow-card';
+
+    if (result.status === 'Online') {
+      badge.classList.add('badge-online');
+      card.classList.add('verdict-online');
+    } else if (result.status === 'Slow') {
+      badge.classList.add('badge-slow');
+      card.classList.add('verdict-slow');
+    } else {
+      badge.classList.add('badge-down');
+      card.classList.add('verdict-down');
+    }
+
+    document.getElementById('detectorLocalLatency').textContent = result.localLatency !== null ? `${result.localLatency} ms` : 'Timeout';
+    document.getElementById('detectorGlobalReach').textContent = result.isGloballyReachable ? '✓ Available' : '✗ Offline';
+    document.getElementById('detectorCommunityReports').textContent = `${result.reportsCount} active`;
+
+    renderOutageChart(result.reports, 'outageChartContainer');
+
+    resultsDiv.classList.remove('hidden');
+  } catch (e) {
+    console.error(e);
+    document.getElementById('detectorErrorMsg').textContent = 'An error occurred while inspecting the website status.';
+    errorBanner.classList.remove('hidden');
+    resultsDiv.classList.add('hidden');
+  } finally {
+    checkBtn.disabled = false;
+    btnText.classList.remove('hidden');
+    btnLoader.classList.add('hidden');
+  }
 }
 
 // ── Hamburger Toggle & Sidebar Actions ────────────────────────

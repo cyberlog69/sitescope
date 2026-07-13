@@ -2041,3 +2041,178 @@ body {
 .text-red { color: var(--red) !important; }
 .text-yellow { color: var(--yellow) !important; }
 
+/* ─── Down Detector Panel ──────────────────────────────────── */
+.detector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+.detector-card {
+  background: var(--card-background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-medium);
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.detector-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-bright);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.15);
+}
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.status-time {
+  font-size: 0.76rem;
+  font-family: monospace;
+  color: var(--text-muted);
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  transition: background-color 0.3s, box-shadow 0.3s;
+}
+.status-dot-pulse {
+  animation: pulse-dot-anim 1.8s infinite;
+}
+@keyframes pulse-dot-anim {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.7; }
+}
+
+.bg-success {
+  background-color: var(--green) !important;
+  box-shadow: 0 0 8px var(--green);
+}
+.bg-warning {
+  background-color: var(--yellow) !important;
+  box-shadow: 0 0 8px var(--yellow);
+}
+.bg-danger {
+  background-color: var(--red) !important;
+  box-shadow: 0 0 8px var(--red);
+}
+.bg-loading {
+  background-color: var(--text-dim) !important;
+}
+
+/* Verdict card */
+.verdict-glow-card {
+  background: var(--card-background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-large);
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  overflow: hidden;
+}
+.verdict-online {
+  border-color: rgba(34, 197, 94, 0.3) !important;
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.08);
+}
+.verdict-slow {
+  border-color: rgba(245, 158, 11, 0.3) !important;
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.08);
+}
+.verdict-down {
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.1);
+}
+
+.verdict-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.verdict-domain {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 4px 0;
+}
+.verdict-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.verdict-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+.badge-online {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #86efac;
+}
+.badge-slow {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fde68a;
+}
+.badge-down {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.verdict-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border-radius: var(--radius-medium);
+  overflow: hidden;
+}
+.metric-item {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.metric-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.metric-value {
+  font-family: monospace;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+@media (max-width: 640px) {
+  .verdict-metrics {
+    grid-template-columns: 1fr;
+  }
+  .verdict-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .verdict-badge {
+    margin-top: 4px;
+  }
+}
+
+
