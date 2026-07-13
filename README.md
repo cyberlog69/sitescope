@@ -1,6 +1,6 @@
 # 🔍 SiteScope v4 — Instant Website Intelligence & Security Sandbox
 
-> A blazing-fast, installable Progressive Web App (PWA) that delivers instant website previews, deep metadata extraction, AI-style category classification, multi-layer security threat analysis, and a fully isolated sandbox — all from a single URL. No signup required. No backend. Hosted globally on Vercel.
+> A blazing-fast, installable Progressive Web App (PWA) that delivers instant website previews, deep metadata extraction, AI-style category classification, multi-layer security threat analysis, a fully isolated sandbox, and a real-time **Down Detector** powered by official status APIs — all from a single URL. No signup required. No backend. Hosted globally on Vercel.
 
 ![SiteScope](https://img.shields.io/badge/SiteScope-v4.0-7c3aed?style=for-the-badge&logo=googlechrome&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)
@@ -21,15 +21,83 @@
 | 📱 **PWA Ready** | Installable as a standalone app on desktop and mobile. Hardened Service Worker with stale-while-revalidate caching and 5 MB cache cap. |
 | ☁️ **Cloud History** | Recent scans are pushed to a lightweight cloud endpoint (kvdb.io) and synchronized across your session. |
 | 🖼️ **Screenshot Waterfall** | Three-provider fallback chain (WordPress mShots → Thum.io → Microlink embed) fires immediately for instant sandboxed page previews — no API key needed. |
-| 🏷️ **21-Category Classifier** | Keyword + TLD + domain scoring across 21 categories: Government, Military, Education, Healthcare, Insurance, Provider Portal, Finance, E-Commerce, Social Media, Technology, AI/ML, News, Gaming, Entertainment, Reference, Design, Travel, Food, Sports, Real Estate, Legal, Cybersecurity, and Automotive. |
+| 🏷️ **21-Category Classifier** | Keyword + TLD + domain scoring across 21 categories: Government, Military, Education, Healthcare, Finance, E-Commerce, Social Media, Technology, AI/ML, News, Gaming, Entertainment, Cybersecurity, and more. |
 | 🛡️ **Isolated Sandbox** | Sanitized HTML rendered safely — scripts, trackers, iframes, and malicious embedded elements stripped by a 10-layer DOM pipeline before blob rendering. |
 | 🔗 **Link Extractor** | Automatically extracts and lists all hyperlinks found on the target page during the sandbox phase. |
 | 🌐 **Advanced Intel** | RDAP-based WHOIS lookups, real-time IP & Location mapping, and HTTP Security Header analysis. All results sanitized against XSS. |
 | 📧 **Email Validator** | Complete RFC 5322 validation, MX record lookup, 400+ disposable domain list, and heuristic scam scoring with bulk CSV export. |
 | 🔐 **Security Scanner** | 2-stage threat detection: local heuristic scan + URLhaus malware database integration with risk score and findings report. |
 | 📋 **Bulk URL Check** | Check up to 25 URLs concurrently with live progress, threat-level filtering, sortable columns, and CSV export. |
+| 📡 **Down Detector** | Real-time outage detection using official Statuspage APIs + DNS-over-HTTPS. Live 3×3 service matrix, 24-hour outage chart, and community reporting. |
 | 📱 **QR Generator** | One-click QR code generation for any scanned URL. |
 | ⚡ **Zero-CPU Rendering** | CSS glassmorphism backgrounds replaced with native `radial-gradient` to eliminate expensive `filter: blur()` composite layers and prevent CPU lockup. |
+
+---
+
+## 📡 Down Detector & Status Monitor *(New)*
+
+SiteScope now includes a dedicated **Down Detector** tab that accurately reports whether any website is up, down, or degraded — with zero false positives.
+
+### How it works — dual-source architecture
+
+```
+User enters a URL or clicks a popular service card
+          │
+          ├──► Known service with official status page?
+          │         YES → Query Atlassian Statuspage API v2
+          │               github.com       → githubstatus.com/api/v2/status.json
+          │               openai.com       → status.openai.com/api/v2/status.json
+          │               discord.com      → discordstatus.com/api/v2/status.json
+          │               cloudflare.com   → cloudflarestatus.com/api/v2/status.json
+          │
+          └──► All other URLs
+                    → DNS-over-HTTPS (dns.google/resolve?name=domain&type=A)
+                    → allorigins CORS proxy reachability check
+                    → Direct no-cors HEAD probe
+                    → Majority-vote verdict (2/3 probes must agree)
+```
+
+### Status verdicts
+
+| Status | Meaning |
+|---|---|
+| 🟢 **Online** | All checks pass — site is fully operational |
+| 🟡 **Slow / Degraded** | Site responds but with elevated latency or partial issues |
+| 🟠 **Down for You** | DNS resolves globally but server unreachable from your connection |
+| 🔴 **Outage** | All probes fail — site appears to be globally down |
+
+### Real-Time Outage Matrix (Popular Services)
+
+A live **3×3 grid** polls 9 major services automatically every 35 seconds:
+
+| Service | Detection Method |
+|---|---|
+| GitHub | ⚡ Official Statuspage API |
+| OpenAI | ⚡ Official Statuspage API |
+| Discord | ⚡ Official Statuspage API |
+| Cloudflare | ⚡ Official Statuspage API |
+| Google | 🔍 DNS-over-HTTPS + HEAD probe |
+| YouTube | 🔍 DNS-over-HTTPS + HEAD probe |
+| Netflix | 🔍 DNS-over-HTTPS + HEAD probe |
+| Amazon | 🔍 DNS-over-HTTPS + HEAD probe |
+| X / Twitter | 🔍 DNS-over-HTTPS + HEAD probe |
+
+- Each card shows **live latency in ms** or `Operational` / `Degraded` based on the source
+- Click any card to run a full detailed check on that service
+- Service icons use a **letter-avatar-first** strategy — coloured SVG badges render instantly with zero network dependency, then real logos load asynchronously if available (Clearbit → Google S2)
+
+### Community Outage Reporting
+
+- Users can submit outage reports via the **Report Outage** button
+- Reports are stored in the shared `kvdb.io` bucket under `outage_<domain>` keys
+- A **24-hour SVG histogram** visualises hourly report frequency
+- Reports automatically expire after 24 hours
+
+### Source Transparency Badge
+
+Every verdict card displays how the status was obtained:
+- `⚡ Official Status API` — sourced directly from the service's own status page (green badge)
+- `🔍 Network Probe` — sourced from DNS + proxy checks (purple badge)
 
 ---
 
@@ -150,18 +218,53 @@ Verify email addresses instantly without sending a message:
 | Tool / Service | Purpose |
 |---|---|
 | **Vite 8** | Build system, module bundler, HMR dev server (0 vulnerabilities) |
-| **ES Modules** | Modular architecture (`src/main.js`, `src/intel.js`) |
+| **ES Modules** | Modular architecture (`src/main.js`, `src/modules/detector.js`, etc.) |
 | **Service Worker** | Hardened PWA caching with stale-while-revalidate (`public/sw.js`) |
 | **vercel.json** | Server-level HTTP security headers for the Vercel deployment |
-| **kvdb.io** | Stateless cloud KV store for cross-session history |
+| **kvdb.io** | Stateless cloud KV store for cross-session history and outage reports |
 | **WordPress mShots** | Primary free screenshot provider (no API key) |
 | **Thum.io** | Secondary free screenshot provider (no API key) |
 | **Microlink API** | Page metadata: title, description, tags, OG image (free tier) |
 | **allorigins.win** | CORS proxy for sandbox HTML fetching and API proxying |
 | **RDAP (rdap.org)** | Standards-based WHOIS/domain registration data |
 | **URLhaus API** | Malware and phishing URL threat database |
-| **Google DoH** | DNS-over-HTTPS for IP/A-record resolution |
+| **Google DNS-over-HTTPS** | `dns.google/resolve` — DNS resolution for the Down Detector and DNS intel panel |
+| **Atlassian Statuspage API** | Official status feeds for GitHub, OpenAI, Discord, Cloudflare |
+| **Clearbit Logo API** | High-quality company logos for the Down Detector service grid |
 | **DESIGN.md** | Machine-readable design tokens and rules standard for Google Stitch AI design canvas |
+
+---
+
+## 🗂️ Project Structure
+
+```
+sitescope/
+├── index.html              # Main app shell (all views: Single, Bulk, Email, History, Detector)
+├── style.css               # Global styles — cosmic theme, glassmorphism, Down Detector panels
+├── src/
+│   ├── main.js             # App controller — routing, event binding, all view controllers
+│   ├── intel.js            # WHOIS & HTTP header fetchers
+│   ├── modules/
+│   │   ├── category.js     # 21-category classification engine
+│   │   ├── security.js     # 2-stage threat scanner + URLhaus integration
+│   │   ├── sandbox.js      # 10-layer DOM sanitisation pipeline
+│   │   ├── email.js        # RFC 5322 validator + scam scorer
+│   │   └── detector.js     # Down Detector — Statuspage APIs, DNS-over-HTTPS, outage reports
+│   └── tools/
+│       ├── dns.js          # DNS-over-HTTPS multi-record resolver
+│       ├── ssl.js          # Certificate Transparency (crt.sh) inspector
+│       ├── stack.js        # Technology fingerprinting
+│       ├── robots.js       # robots.txt fetcher + parser
+│       └── latency.js      # 5-probe HEAD latency suite
+├── public/
+│   ├── sw.js               # Hardened Service Worker
+│   └── manifest.json       # PWA manifest
+├── start-local.bat         # One-click local dev server (Windows)
+├── Dockerfile              # Multi-stage Docker build (Node → Nginx)
+├── nginx.conf              # Nginx config with security headers for Docker
+├── vercel.json             # Vercel deployment config + HTTP security headers
+└── DESIGN.md               # Design token specification
+```
 
 ---
 
@@ -177,29 +280,32 @@ npm install
 
 # 3. Start the development server (Hot Module Replacement enabled)
 npm run dev
+# → App available at http://localhost:5173
 
 # 4. Build for production
 npm run build
 # → Creates an optimized bundle in dist/
+
+# 5. Preview the production build locally
+npm run preview
+# → Serves dist/ at http://localhost:4173
 ```
 
----
-
-## 🌍 Internet Hosting & Deployment
-
-SiteScope is a **100% static Vite PWA** — no backend, no database, no server-side code. This makes it trivially easy to deploy anywhere for free.
+**Windows shortcut:** Double-click **`start-local.bat`** in the project root — launches the Vite dev server automatically.
 
 ---
+
+## 🌍 Deployment Options
+
+SiteScope is a **100% static Vite PWA** — no backend, no database, no server-side code. Deploy anywhere for free.
 
 ### ▲ Vercel *(Current live deployment — Recommended)*
-
-Vercel offers the best experience for Vite apps: automatic builds, global edge CDN, PR previews, and custom domains.
 
 1. Sign up at [vercel.com](https://vercel.com) with your GitHub account.
 2. Click **Add New Project** → Import `cyberlog69/sitescope`.
 3. Vercel auto-detects Vite — no settings needed.
-4. The `vercel.json` in the repo automatically applies all HTTP security headers (HSTS, CSP, X-Frame-Options, etc.).
-5. Click **Deploy**. Your app is live globally in ~30 seconds.
+4. The `vercel.json` in the repo automatically applies all HTTP security headers.
+5. Click **Deploy**. Live globally in ~30 seconds.
 
 > **Auto-deploy:** Every `git push` to `master` triggers a fresh deployment automatically.
 
@@ -209,39 +315,19 @@ Vercel offers the best experience for Vite apps: automatic builds, global edge C
 
 ### 🟦 Netlify
 
-Nearly identical to Vercel — also free, also supports Vite, and offers a generous free tier.
+1. Sign up at [netlify.com](https://netlify.com) → **Add new site → Import an existing project**.
+2. Connect GitHub, select `cyberlog69/sitescope`.
+3. Build command: `npm run build` · Publish directory: `dist`
+4. Click **Deploy site**.
 
-1. Sign up at [netlify.com](https://netlify.com) with your GitHub account.
-2. Click **Add new site** → **Import an existing project** → connect GitHub.
-3. Select the `cyberlog69/sitescope` repository.
-4. Set build settings:
-   - **Build command:** `npm run build`
-   - **Publish directory:** `dist`
-5. Click **Deploy site**.
-
-> **Custom Headers:** Create a `netlify.toml` file in the root to replicate the security headers from `vercel.json`:
-> ```toml
-> [[headers]]
->   for = "/*"
->   [headers.values]
->     X-Frame-Options = "DENY"
->     X-Content-Type-Options = "nosniff"
->     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
->     Referrer-Policy = "strict-origin-when-cross-origin"
-> ```
+> Add a `netlify.toml` to replicate security headers from `vercel.json`.
 
 ---
 
 ### 🐙 GitHub Pages
 
-Free hosting directly from your GitHub repository — no third-party account needed.
-
-1. Push the code to your GitHub repository.
-2. Go to **Settings → Pages** in your repo.
-3. Under **Build and deployment**, choose **GitHub Actions**.
-4. Create `.github/workflows/deploy.yml`:
-
 ```yaml
+# .github/workflows/deploy.yml
 name: Deploy to GitHub Pages
 on:
   push:
@@ -262,129 +348,31 @@ jobs:
           publish_dir: ./dist
 ```
 
-5. Push this file and GitHub will build and deploy automatically.
-
-> **Note:** GitHub Pages doesn't support custom HTTP headers — the security headers from `vercel.json` won't apply. Use Vercel or Netlify for full security header support.
+> **Note:** GitHub Pages doesn't support custom HTTP headers — security headers from `vercel.json` won't apply.
 
 ---
 
 ### 🔷 Cloudflare Pages
 
-Cloudflare Pages provides a global CDN with unlimited bandwidth and excellent performance.
+1. **Pages → Create a project** → connect GitHub → select `sitescope`.
+2. Framework preset: **Vite** · Build command: `npm run build` · Output: `dist`
+3. Click **Save and Deploy**.
 
-1. Log in to [dash.cloudflare.com](https://dash.cloudflare.com) → **Pages → Create a project**.
-2. Connect your GitHub account and select the `sitescope` repository.
-3. Set build settings:
-   - **Framework preset:** Vite
-   - **Build command:** `npm run build`
-   - **Build output directory:** `dist`
-4. Click **Save and Deploy**.
-
-> **Security Headers:** Add headers via a `_headers` file in the `public/` directory:
-> ```
-> /*
->   X-Frame-Options: DENY
->   X-Content-Type-Options: nosniff
->   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
->   Referrer-Policy: strict-origin-when-cross-origin
-> ```
+> Add a `public/_headers` file to apply security headers.
 
 ---
 
-### 🔵 Azure Static Web Apps
-
-Deploy to Microsoft Azure's global static hosting platform.
-
-1. Go to [portal.azure.com](https://portal.azure.com) → **Create a resource → Static Web App**.
-2. Connect your GitHub account and select the `sitescope` repository.
-3. Set build details:
-   - **App location:** `/`
-   - **Output location:** `dist`
-   - **Build command:** `npm run build`
-4. Click **Review + Create → Create**.
-5. Azure automatically creates a GitHub Actions workflow for CI/CD.
-
----
-
-### 🟠 AWS Amplify
-
-Deploy to Amazon Web Services using their managed static hosting.
-
-1. Go to the [AWS Amplify Console](https://console.aws.amazon.com/amplify/).
-2. Click **New app → Host web app → GitHub**.
-3. Select the `cyberlog69/sitescope` repository and branch `master`.
-4. Amplify detects Vite automatically. Confirm the build settings:
-   ```yaml
-   version: 1
-   frontend:
-     phases:
-       preBuild:
-         commands:
-           - npm install
-       build:
-         commands:
-           - npm run build
-     artifacts:
-       baseDirectory: dist
-       files:
-         - '**/*'
-     cache:
-       paths:
-         - node_modules/**/*
-   ```
-5. Click **Save and deploy**.
-
----
-
-### 🖥️ Local Development Server
-
-To run SiteScope on your own machine:
+### 🐳 Docker
 
 ```bash
-# Clone the repository
-git clone https://github.com/cyberlog69/sitescope.git
-cd sitescope
+# Build
+docker build -t sitescope:latest .
 
-# Install dependencies
-npm install
-
-# Start local dev server with Hot Module Replacement
-npm run dev
-# → App available at http://localhost:5173
-
-# Build for production
-npm run build
-# → Optimized bundle in dist/
-
-# Preview the production build locally
-npm run preview
-# → Serves dist/ at http://localhost:4173
+# Run (served by Nginx on port 8080)
+docker run -d -p 8080:80 --name sitescope sitescope:latest
 ```
 
-Alternatively, double-click **`start-local.bat`** in the project root for a one-click local start.
-
----
-
-### 🐳 Docker Deployment
-
-SiteScope can be built and run as a lightweight container served by Nginx:
-
-1. **Build the Docker Image:**
-   ```bash
-   docker build -t sitescope:latest .
-   ```
-
-2. **Run the Container:**
-   ```bash
-   docker run -d -p 8080:80 --name sitescope sitescope:latest
-   ```
-
-The app will be served at **[http://localhost:8080](http://localhost:8080)**.
-
-#### How it works:
-- **Multi-Stage Build:** Stage 1 installs dependencies and compiles the Vite application in a lightweight `node:20-alpine` environment. Stage 2 copies the compiled static assets into an `nginx:stable-alpine` container.
-- **Embedded Security Headers:** The container includes a custom `nginx.conf` that mirrors the production headers (CSP, HSTS, XSS protection, Referrer Policy) so your Docker deployment remains fully security-hardened.
-- **Static Asset Caching:** Nginx is configured to serve static assets with a `Cache-Control` header of 1 year.
+Multi-stage build: Node 20 Alpine compiles the Vite app → Nginx Alpine serves the static output. Custom `nginx.conf` mirrors all production security headers (CSP, HSTS, XSS protection).
 
 ---
 
@@ -396,9 +384,9 @@ The app will be served at **[http://localhost:8080](http://localhost:8080)**.
 | **Netlify** | ✅ 100GB/mo | ✅ | ✅ via `netlify.toml` | ✅ | ✅ Global |
 | **GitHub Pages** | ✅ Unlimited | ✅ | ❌ Limited | ✅ | ✅ Partial |
 | **Cloudflare Pages** | ✅ Unlimited | ✅ | ✅ via `_headers` | ✅ | ✅ Best |
-| **Azure Static** | ✅ 100GB/mo | ✅ | ✅ via `staticwebapp.config.json` | ✅ | ✅ Global |
+| **Azure Static** | ✅ 100GB/mo | ✅ | ✅ via config | ✅ | ✅ Global |
 | **AWS Amplify** | ⚠️ Limited | ✅ | ✅ via console | ✅ | ✅ Global |
-
+| **Docker + Nginx** | Self-hosted | Manual | ✅ via `nginx.conf` | ✅ | — |
 
 ---
 
@@ -412,6 +400,8 @@ The app will be served at **[http://localhost:8080](http://localhost:8080)**.
 | Bulk Rate Limit | 600ms delay between requests to respect free-tier API limits. |
 | Cloud History | History is stored in a public KV bucket — do not enter sensitive or private URLs. |
 | RDAP Coverage | `.com`/`.net`/`.org` domains have the best RDAP coverage. Some ccTLDs may fall back to "Unavailable". |
+| Down Detector — Services without official APIs | Google, YouTube, Netflix, Amazon, and X do not publish official Statuspage feeds. These are checked via DNS-over-HTTPS + network probes, which are accurate but not authoritative. |
+| Down Detector — Community Reports | Outage reports are stored in a shared public KV bucket. Do not use for private domains. |
 
 ---
 
@@ -424,4 +414,4 @@ The app will be served at **[http://localhost:8080](http://localhost:8080)**.
 
 ---
 
-*Built with ❤️ · Preview by [WordPress mShots](https://s0.wordpress.com/mshots/v1/) & [Thum.io](https://image.thum.io) · Metadata by [Microlink](https://microlink.io) · Threat data by [URLhaus](https://urlhaus.abuse.ch) · WHOIS by [RDAP](https://rdap.org)*
+*Built with ❤️ · Preview by [WordPress mShots](https://s0.wordpress.com/mshots/v1/) & [Thum.io](https://image.thum.io) · Metadata by [Microlink](https://microlink.io) · Threat data by [URLhaus](https://urlhaus.abuse.ch) · WHOIS by [RDAP](https://rdap.org) · Status APIs by [Atlassian Statuspage](https://www.atlassian.com/software/statuspage) · DNS by [Google DoH](https://developers.google.com/speed/public-dns/docs/doh)*
