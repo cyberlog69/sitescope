@@ -1204,10 +1204,43 @@ async function runDetectorCheck(target) {
     document.getElementById('detectorDomainTitle').textContent = result.domain;
     document.getElementById('detectorMessage').textContent = result.message;
 
-    const favImg = document.getElementById('detectorFavicon');
-    favImg.src = `https://www.google.com/s2/favicons?domain=${result.domain}&sz=64`;
-    favImg.onerror = () => { favImg.src = `https://icons.duckduckgo.com/ip3/${result.domain}.ico`; };
-    favImg.style.display = 'block';
+    const favDiv = document.getElementById('detectorFavicon');
+    // Build a letter avatar immediately — never breaks regardless of network
+    const domainLetter = (result.domain[0] || '?').toUpperCase();
+    const avatarColors = ['#6366f1','#8b5cf6','#06b6d4','#10b981','#f59e0b','#ef4444','#ec4899','#3b82f6'];
+    const avatarColor  = avatarColors[domainLetter.charCodeAt(0) % avatarColors.length];
+    const avatarSvg    = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+      <rect width="36" height="36" rx="8" fill="${avatarColor}"/>
+      <text x="18" y="25" font-family="Inter,Arial,sans-serif" font-size="18" font-weight="700"
+            text-anchor="middle" fill="#fff">${domainLetter}</text>
+    </svg>`;
+    favDiv.innerHTML = `<img src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(avatarSvg)}"
+      width="36" height="36" style="display:block;" alt="${result.domain}" />`;
+    favDiv.style.display = 'block';
+
+    // Async: try to load a real logo and swap it in if it's a proper image
+    (function loadRealLogo(domain) {
+      const sources = [
+        `https://logo.clearbit.com/${domain}`,
+        `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+      ];
+      let idx = 0;
+      function tryNext() {
+        if (idx >= sources.length) return;
+        const probe = new Image();
+        probe.onload = () => {
+          if (probe.naturalWidth > 4 && probe.naturalHeight > 4) {
+            // Only update if this result is still visible (user may have cleared)
+            const el = document.getElementById('detectorFavicon');
+            if (el) el.innerHTML = `<img src="${probe.src}" width="36" height="36"
+              style="display:block;object-fit:contain;" alt="${domain}" />`;
+          } else { idx++; tryNext(); }
+        };
+        probe.onerror = () => { idx++; tryNext(); };
+        probe.src = sources[idx++];
+      }
+      tryNext();
+    })(result.domain);
 
     const badge = document.getElementById('detectorStatusBadge');
     badge.className = 'verdict-badge';
