@@ -1205,7 +1205,8 @@ async function runDetectorCheck(target) {
     document.getElementById('detectorMessage').textContent = result.message;
 
     const favImg = document.getElementById('detectorFavicon');
-    favImg.src = `https://www.google.com/s2/favicons?domain=${result.domain}&sz=32`;
+    favImg.src = `https://www.google.com/s2/favicons?domain=${result.domain}&sz=64`;
+    favImg.onerror = () => { favImg.src = `https://icons.duckduckgo.com/ip3/${result.domain}.ico`; };
     favImg.style.display = 'block';
 
     const badge = document.getElementById('detectorStatusBadge');
@@ -1218,7 +1219,7 @@ async function runDetectorCheck(target) {
     if (result.status === 'Online') {
       badge.classList.add('badge-online');
       card.classList.add('verdict-online');
-    } else if (result.status === 'Slow') {
+    } else if (result.status === 'Slow' || result.status === 'Degraded' || result.status === 'Down for You') {
       badge.classList.add('badge-slow');
       card.classList.add('verdict-slow');
     } else {
@@ -1226,13 +1227,33 @@ async function runDetectorCheck(target) {
       card.classList.add('verdict-down');
     }
 
-    document.getElementById('detectorLocalLatency').textContent = result.localLatency !== null ? `${result.localLatency} ms` : 'Timeout';
-    document.getElementById('detectorGlobalReach').textContent = result.isGloballyReachable ? '✓ Available' : '✗ Offline';
+    // Local latency — only shown for probe-based checks; Official API doesn't measure it
+    const latencyEl = document.getElementById('detectorLocalLatency');
+    if (result.source === 'official') {
+      latencyEl.textContent = 'N/A (API)';
+      latencyEl.style.color = 'var(--text-muted)';
+    } else {
+      latencyEl.textContent = result.localLatency !== null ? `${result.localLatency} ms` : 'Timeout';
+      latencyEl.style.color = '';
+    }
+
+    // Global reachability
+    const reachEl = document.getElementById('detectorGlobalReach');
+    reachEl.textContent = result.isGloballyReachable ? '✓ Reachable' : '✗ Unreachable';
+    reachEl.style.color = result.isGloballyReachable ? 'var(--green)' : 'var(--red)';
+
     document.getElementById('detectorCommunityReports').textContent = `${result.reportsCount} active`;
 
-    renderOutageChart(result.reports, 'outageChartContainer');
+    // Source badge — show how we got this data
+    const sourceBadgeEl = document.getElementById('detectorSourceBadge');
+    if (sourceBadgeEl) {
+      sourceBadgeEl.textContent = result.source === 'official' ? '⚡ Official Status API' : '🔍 Network Probe';
+      sourceBadgeEl.className   = result.source === 'official' ? 'source-badge source-official' : 'source-badge source-probe';
+    }
 
+    renderOutageChart(result.reports, 'outageChartContainer');
     resultsDiv.classList.remove('hidden');
+
   } catch (e) {
     console.error(e);
     document.getElementById('detectorErrorMsg').textContent = 'An error occurred while inspecting the website status.';

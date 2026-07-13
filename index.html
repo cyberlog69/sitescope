@@ -861,8 +861,11 @@
                   </div>
                 </div>
 
-                <div class="verdict-actions" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:0.78rem;color:var(--text-muted);">Having trouble? Let the community know.</span>
+                <div class="verdict-actions" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:0.78rem;color:var(--text-muted);">Having trouble? Let the community know.</span>
+                    <span id="detectorSourceBadge" class="source-badge source-probe">🔍 Network Probe</span>
+                  </div>
                   <button class="check-btn" id="detectorReportBtn" style="padding:8px 16px;font-size:0.8rem;background:linear-gradient(180deg, var(--red), #b91c1c);box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);">
                     Report Outage
                   </button>
