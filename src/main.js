@@ -1606,89 +1606,162 @@ exportCsvBtn.addEventListener('click', () => {
   URL.revokeObjectURL(blobUrl);
 });
 
-// ── History & IP Intel ─────────────────────────────────────────
-const HISTORY_API_URL = 'https://kvdb.io/bucket/sitescope_v4_history/history';
+// ── History & Cloud Storage ──────────────────────────────────────────────────
+// kvdb.io is used for cross-device cloud sync.
+// localStorage is used as a reliable local fallback — history always saves
+// even if the network request fails.
+const HISTORY_KV_KEY  = 'history';
+const HISTORY_KV_URL  = `https://kvdb.io/sitescope_v4_history/${HISTORY_KV_KEY}`;
+const HISTORY_LS_KEY  = 'sitescope_scan_history';
+const HISTORY_MAX     = 50;
 
+// ── localStorage helpers ──────────────────────────────────────────────────────
+function lsGetHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_LS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function lsSaveHistory(items) {
+  try { localStorage.setItem(HISTORY_LS_KEY, JSON.stringify(items)); } catch {}
+}
+
+// ── Cloud fetch/save ───────────────────────────────────────────────────────────
 async function fetchCloudHistory() {
   try {
-    const res = await fetch(HISTORY_API_URL);
-    if (!res.ok) return [];
-    return await res.json();
+    const res = await fetch(HISTORY_KV_URL, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return null;            // null = network failure (not empty list)
+    const text = await res.text();
+    if (!text || !text.trim()) return [];
+    return JSON.parse(text);
   } catch {
-    return [];
+    return null;                         // null = network failure
   }
 }
 
 async function saveCloudHistory(url, title, favicon, threatLevel) {
-  try {
-    let history = await fetchCloudHistory();
-    if (!Array.isArray(history)) history = [];
-    history = history.filter(item => item.url !== url);
-    history.unshift({
-      url,
-      title: title || url,
-      favicon: favicon || '',
-      threat: threatLevel,
-      time: new Date().toISOString()
-    });
-    history = history.slice(0, 50);
+  // ── 1. Build updated entry ────────────────────────────────────────────────
+  const newEntry = {
+    url,
+    title: title || url,
+    favicon: favicon || '',
+    threat: threatLevel || 'safe',
+    time: new Date().toISOString()
+  };
 
-    await fetch(HISTORY_API_URL, {
+  // ── 2. Always save to localStorage first (instant, reliable) ─────────────
+  let local = lsGetHistory();
+  local = local.filter(item => item.url !== url);   // deduplicate
+  local.unshift(newEntry);
+  local = local.slice(0, HISTORY_MAX);
+  lsSaveHistory(local);
+
+  // ── 3. Try cloud sync in background (best-effort) ─────────────────────────
+  try {
+    let cloud = await fetchCloudHistory();
+    if (!Array.isArray(cloud)) cloud = local;        // cloud empty/failed → use local
+    cloud = cloud.filter(item => item.url !== url);
+    cloud.unshift(newEntry);
+    cloud = cloud.slice(0, HISTORY_MAX);
+
+    await fetch(HISTORY_KV_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(history)
+      body: JSON.stringify(cloud),
+      signal: AbortSignal.timeout(6000)
     });
-    renderCloudHistory();
   } catch (e) {
-    console.error('History save error', e);
+    console.warn('Cloud history sync failed — saved to localStorage only:', e);
   }
+
+  renderCloudHistory();
 }
 
 async function clearCloudHistory() {
+  // Clear both sources
+  lsSaveHistory([]);
   try {
-    await fetch(HISTORY_API_URL, {
+    await fetch(HISTORY_KV_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify([])
+      body: JSON.stringify([]),
+      signal: AbortSignal.timeout(6000)
     });
-    renderCloudHistory();
   } catch (e) {
-    console.error('History clear error', e);
+    console.warn('Cloud history clear failed:', e);
   }
+  renderCloudHistory();
+}
+
+// ── Merge cloud + local, deduplicate by URL, sort newest first ──────────────
+function mergeHistories(cloud, local) {
+  const map = new Map();
+  // local first so cloud can overwrite with fresher data
+  [...(Array.isArray(local) ? local : []),
+   ...(Array.isArray(cloud) ? cloud : [])].forEach(item => {
+    if (item && item.url) map.set(item.url, item);
+  });
+  return [...map.values()]
+    .sort((a, b) => new Date(b.time) - new Date(a.time))
+    .slice(0, HISTORY_MAX);
 }
 
 function renderCloudHistory() {
   const historyList = document.getElementById('historyList');
   if (!historyList) return;
-  historyList.innerHTML = '<div class="history-loading">Loading...</div>';
-  fetchCloudHistory().then(data => {
-    if (!data || !data.length) {
-      historyList.innerHTML = '<div class="history-loading">No history found.</div>';
+
+  // Show local data immediately while cloud loads
+  const localData = lsGetHistory();
+  if (localData.length > 0) {
+    renderHistoryItems(historyList, localData);
+  } else {
+    historyList.innerHTML = '<div class="history-loading">Loading history…</div>';
+  }
+
+  // Then fetch cloud and merge
+  fetchCloudHistory().then(cloudData => {
+    const merged = mergeHistories(cloudData, localData);
+
+    // Persist merged result locally so next open is instant
+    if (merged.length > 0) lsSaveHistory(merged);
+
+    if (!merged.length) {
+      historyList.innerHTML = '<div class="history-loading">No scan history yet. Run a check to get started.</div>';
       return;
     }
-    historyList.innerHTML = '';
-    data.forEach(item => {
-      const date = new Date(item.time).toLocaleString();
-      const threatColor = item.threat === 'safe' ? '#22c55e' : (item.threat === 'critical' ? '#ef4444' : (item.threat === 'low' ? '#fde047' : '#f59e0b'));
-      
-      const div = document.createElement('div');
-      div.className = 'history-item';
-      div.innerHTML = `
-        <img class="history-favicon" src="${escapeHtml(item.favicon)}" onerror="this.style.display='none'" />
-        <div class="history-url">${escapeHtml(item.title)}</div>
-        <div class="history-threat" style="color:${threatColor}">${escapeHtml(item.threat)}</div>
-        <div class="history-time">${date}</div>
-      `;
-      div.addEventListener('click', () => {
-        setMode('single');
-        urlInput.value = item.url;
-        if (clearBtn) clearBtn.classList.add('visible');
-        checkSite(item.url);
-      });
-      historyList.appendChild(div);
-    });
+    renderHistoryItems(historyList, merged);
   });
 }
+
+function renderHistoryItems(container, data) {
+  container.innerHTML = '';
+  data.forEach(item => {
+    const date = new Date(item.time).toLocaleString();
+    const threatColor =
+      item.threat === 'safe'     ? '#22c55e' :
+      item.threat === 'critical' ? '#ef4444' :
+      item.threat === 'low'      ? '#fde047' : '#f59e0b';
+
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `
+      <img class="history-favicon" src="${escapeHtml(item.favicon)}" onerror="this.style.display='none'" />
+      <div class="history-url">${escapeHtml(item.title)}</div>
+      <div class="history-threat" style="color:${threatColor}">${escapeHtml(item.threat)}</div>
+      <div class="history-time">${date}</div>
+    `;
+    div.addEventListener('click', () => {
+      setMode('single');
+      urlInput.value = item.url;
+      if (clearBtn) clearBtn.classList.add('visible');
+      checkSite(item.url);
+    });
+    container.appendChild(div);
+  });
+}
+
+
 
 function renderQrCode(url) {
   const qrImage = document.getElementById('qrImage');
