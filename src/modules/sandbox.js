@@ -1,3 +1,4 @@
+// @ts-check
 // sandbox.js — Sandbox Sanitizer & Iframe Loader module
 
 const TRACKER_DOMAINS = [
@@ -28,6 +29,13 @@ const DANGER_ATTRS = [
   'onpointercancel','onwheel','ontouchstart','ontouchmove','ontouchend'
 ];
 
+/**
+ * Sanitize raw HTML for safe sandboxed rendering.
+ * Strips scripts, iframes, event handlers, trackers; disables forms; injects CSP + base tag.
+ * @param {string} rawHtml
+ * @param {string} baseUrl
+ * @returns {{ html:string, stats:{scripts:number, forms:number, iframes:number, redirects:number, trackers:number, handlers:number}, links:{text:string, url:string}[] }}
+ */
 export function sanitizeForSandbox(rawHtml, baseUrl) {
   const parser = new DOMParser();
   const doc    = parser.parseFromString(rawHtml, 'text/html');

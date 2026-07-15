@@ -1,3 +1,4 @@
+import { escapeHtml, normalizeUrl, getDomain, sleep, safeHref } from './utils/helpers.js';
 import { fetchWhois, fetchHttpHeaders } from './intel.js';
 import { classifySite, CATEGORIES } from './modules/category.js';
 import { scanSecurity, heuristicScan, THREAT_META } from './modules/security.js';
@@ -74,19 +75,6 @@ let cachedHtmlUrl = '';
 let proxyFetchPromise = null;
 
 // ── Helpers ─────────────────────────────────────────────────
-function normalizeUrl(raw) {
-  raw = raw.trim();
-  if (!raw) return null;
-  if (!/^https?:\/\//i.test(raw)) raw = 'https://' + raw;
-  try { return new URL(raw).href; }
-  catch { return null; }
-}
-
-function getDomain(url) {
-  try { return new URL(url).hostname.replace(/^www\./, ''); }
-  catch { return url; }
-}
-
 function show(el) { el.classList.remove('hidden'); }
 function hide(el) { el.classList.add('hidden'); }
 
@@ -559,21 +547,7 @@ function handleFetchError(msg) {
   showScreenshotError();
 }
 
-// ── Escape HTML ──────────────────────────────────────────────
-function escapeHtml(str) {
-  return String(str || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
-// ── Safe URL for href attributes ─────────────────────────────────────────────
-function safeHref(url) {
-  if (typeof url !== 'string') return '#';
-  const t = url.trim();
-  return (t.startsWith('https://') || t.startsWith('http://')) ? escapeHtml(t) : '#';
-}
 
 function renderCategory(url, title, description) {
   const { category: cat, confidence } = classifySite(url, title, description);
@@ -1829,8 +1803,6 @@ function renderExtractedLinks(links, baseUrl) {
     }).join('');
   } catch (e) {}
 }
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 document.addEventListener('DOMContentLoaded', () => {
   const historyBtn = document.getElementById('historyBtn');

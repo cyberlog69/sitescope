@@ -1,3 +1,4 @@
+// @ts-check
 // email.js — Email Validator & Scam Detection module
 
 function levenshtein(a, b) {
@@ -97,11 +98,21 @@ const EMAIL_BRAND_DOMAINS = [
   'irs','gov','medicare','socialsecurity','fedex','ups','dhl','usps'
 ];
 
+/**
+ * Validate email format per RFC 5322.
+ * @param {string} email
+ * @returns {boolean}
+ */
 export function isValidEmailFormat(email) {
   const re = /^(?:[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-zA-Z0-9-]*[a-zA-Z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/;
   return re.test(email);
 }
 
+/**
+ * Check MX records for a domain via Google DNS-over-HTTPS.
+ * @param {string} domain
+ * @returns {Promise<{hasMx:boolean|null, count:number, servers:string[], error?:boolean}>}
+ */
 export async function checkMxRecords(domain) {
   try {
     const url = `https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=MX`;
@@ -119,6 +130,12 @@ export async function checkMxRecords(domain) {
   }
 }
 
+/**
+ * Heuristic scam scoring for email addresses.
+ * @param {string} localPart
+ * @param {string} domain
+ * @returns {{ score:number, findings:{type:string,text:string}[] }}
+ */
 export function emailScamScore(localPart, domain) {
   const findings = [];
   let score = 0;
@@ -206,6 +223,13 @@ export const EMAIL_VERDICT = {
   disposable:{ label: 'Disposable Email',   icon: '🗑️', cls: 'ev-medium',  badgeCls: 'ev-badge-medium',   msg: 'Temporary/disposable address — avoid for important communications.' }
 };
 
+/**
+ * Determine email verdict label based on score and flags.
+ * @param {number} score
+ * @param {boolean} isDisposableFlag
+ * @param {boolean} formatOk
+ * @returns {string}
+ */
 export function getVerdict(score, isDisposableFlag, formatOk) {
   if (!formatOk) return 'invalid';
   if (isDisposableFlag) return 'disposable';
@@ -216,6 +240,11 @@ export function getVerdict(score, isDisposableFlag, formatOk) {
   return 'critical';
 }
 
+/**
+ * Map a verdict string to a CSS class for the score fill bar.
+ * @param {string} verdict
+ * @returns {string}
+ */
 export function emailScoreFillCls(verdict) {
   const map = { clean:'sec-fill-safe', low:'sec-fill-low', medium:'sec-fill-medium',
                 high:'sec-fill-high', critical:'sec-fill-critical',
@@ -223,6 +252,14 @@ export function emailScoreFillCls(verdict) {
   return map[verdict] || 'sec-fill-medium';
 }
 
+/**
+ * Full email check: format, disposable domain, MX records, scam score.
+ * @param {string} email
+ * @returns {Promise<{email:string, localPart:string, domain:string, formatOk:boolean,
+ *   isDisposableFlag:boolean, mx:{hasMx:boolean|null, count:number, servers:string[]},
+ *   scam:{score:number, findings:{type:string,text:string}[]},
+ *   verdict:string, verdictMeta:{label:string, icon:string, cls:string, badgeCls:string, msg:string}}>}
+ */
 export async function checkEmail(email) {
   const formatOk = isValidEmailFormat(email);
   const atIdx    = email.lastIndexOf('@');

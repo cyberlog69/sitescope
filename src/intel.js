@@ -1,19 +1,8 @@
+// @ts-check
 // intel.js — WHOIS & HTTP Header intel panel
 // SECURITY: All API-returned data is escaped via escapeHtml() before any DOM injection.
 
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-}
-
-// Safe DOM text setter — never uses innerHTML for user/API data
-function safeSetText(el, text) {
-  el.textContent = String(text || '');
-}
+import { escapeHtml } from './utils/helpers.js';
 
 export async function fetchWhois(domain) {
   const whoisEl = document.getElementById('intelWhois');

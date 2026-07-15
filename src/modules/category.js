@@ -1,10 +1,23 @@
+// @ts-check
 // category.js — Site Category Classifier module
 
-function getDomain(url) {
-  try { return new URL(url).hostname.replace(/^www\./, ''); }
-  catch { return url; }
-}
+import { getDomain } from '../utils/helpers.js';
 
+/**
+ * @typedef {{ id:string, label:string, emoji:string, cssClass:string, description:string,
+ *   tlds:string[], domains:string[], subdomainKw:string[],
+ *   keywords:{w:string,s:number}[], negativeKw:string[], minScore:number, requireDomain:boolean }} CategoryDef
+ */
+
+/**
+ * @typedef {{ host:string, subStr:string, rootName:string, path:string, allText:string }} UrlTokens
+ */
+
+/**
+ * Extract tokens from a URL for classification.
+ * @param {string} url
+ * @returns {UrlTokens}
+ */
 function extractUrlTokens(url) {
   try {
     const u = new URL(url);
@@ -404,6 +417,13 @@ export const CATEGORIES = [
   }
 ];
 
+/**
+ * Classify a URL into one of the defined categories.
+ * @param {string} url
+ * @param {string} title
+ * @param {string} description
+ * @returns {{ category: CategoryDef, confidence: 'high'|'medium'|'low', score: number }}
+ */
 export function classifySite(url, title, description) {
   const domain  = getDomain(url).toLowerCase();
   const fullUrl = url.toLowerCase();
@@ -479,7 +499,9 @@ export function classifySite(url, title, description) {
       category: {
         id: 'unknown', label: 'General Website', emoji: '🌐',
         cssClass: 'cat-unknown',
-        description: 'Not enough signals to determine a specific category.'
+        description: 'Not enough signals to determine a specific category.',
+        tlds: [], domains: [], subdomainKw: [], keywords: [],
+        negativeKw: [], minScore: 0, requireDomain: false
       },
       confidence: 'low', score: 0
     };
@@ -503,7 +525,9 @@ export function classifySite(url, title, description) {
       category: {
         id: 'unknown', label: 'General Website', emoji: '🌐',
         cssClass: 'cat-unknown',
-        description: 'Not enough signals to reliably classify this site.'
+        description: 'Not enough signals to reliably classify this site.',
+        tlds: [], domains: [], subdomainKw: [], keywords: [],
+        negativeKw: [], minScore: 0, requireDomain: false
       },
       confidence: 'low', score: top.score
     };

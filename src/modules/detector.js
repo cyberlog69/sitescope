@@ -77,6 +77,7 @@ const POPULAR_SERVICES = [
   },
 ];
 
+/** @type {ReturnType<typeof setInterval> | null} */
 let pollIntervalId = null;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -416,7 +417,7 @@ export function renderPopularGrid(containerId, onSelectCallback) {
   // Async icon loader — tries real logos after cards are painted.
   // Uses a chain: Clearbit → Google S2 → keep letter avatar (never errors).
   POPULAR_SERVICES.forEach((s, i) => {
-    const imgEl = document.getElementById(`popIcon-${i}`);
+    const imgEl = /** @type {HTMLImageElement} */ (document.getElementById(`popIcon-${i}`));
     if (!imgEl) return;
 
     const tryLoad = (src, nextSrc) => {

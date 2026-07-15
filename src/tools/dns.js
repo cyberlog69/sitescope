@@ -1,5 +1,7 @@
 // dns.js — DNS DoH Query Module
 
+import { escapeHtml } from '../utils/helpers.js';
+
 const RECORD_TYPES = ['A', 'AAAA', 'MX', 'TXT', 'CNAME', 'NS', 'SOA', 'CAA'];
 
 export async function fetchDnsRecord(domain, type) {
@@ -101,11 +103,4 @@ export function renderDnsPanel(dnsData, containerEl) {
   `;
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-}
+

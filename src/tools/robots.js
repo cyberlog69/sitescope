@@ -1,5 +1,7 @@
 // robots.js — Robots.txt & Sitemap Analyzer Module
 
+import { escapeHtml } from '../utils/helpers.js';
+
 const ALLORIGINS = 'https://api.allorigins.win/get?url=';
 
 // Paths that look sensitive / private
@@ -130,11 +132,4 @@ export function renderRobotsPanel(parsedData, containerEl) {
   `;
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-}
+

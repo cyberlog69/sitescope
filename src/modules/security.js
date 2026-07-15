@@ -1,6 +1,14 @@
+// @ts-check
 // security.js — Heuristic & URLhaus Threat Scanner module
 
 // display metadata
+/**
+ * @typedef {'safe'|'low'|'medium'|'high'|'critical'} ThreatLevel
+ * @typedef {{ level:ThreatLevel, score:number, findings:{type:string,text:string}[], dbStatus:string }} ScanResult
+ * @typedef {{ label:string, icon:string, cls:string, secCls:string, msg:string }} ThreatMeta
+ */
+
+/** @type {Record<ThreatLevel|string, ThreatMeta>} */
 export const THREAT_META = {
   safe:     { label: 'Safe',     icon: '🟢', cls: 'safe',     secCls: 'sec-safe',
               msg: 'No threats detected. This site appears safe.' },
@@ -68,7 +76,11 @@ function calculateEntropy(str) {
   return entropy;
 }
 
-// Helper to check for private / Link-local IP ranges (SSRF prevention)
+/**
+ * Check if an IP address falls in a private / link-local range (SSRF prevention).
+ * @param {string} ip
+ * @returns {boolean}
+ */
 export function isPrivateIP(ip) {
   const parts = ip.split('.').map(Number);
   if (parts.length !== 4 || parts.some(isNaN)) return false;
@@ -82,6 +94,11 @@ export function isPrivateIP(ip) {
   return false;
 }
 
+/**
+ * Run a heuristic scan on a URL to detect phishing, malware, and other risk signals.
+ * @param {string} url
+ * @returns {{ level:ThreatLevel, score:number, findings:{type:string,text:string}[], dbStatus:string }}
+ */
 export function heuristicScan(url) {
   const findings = [];
   let score = 0;
@@ -203,8 +220,9 @@ export function heuristicScan(url) {
     // Subdomain brand spoofing check
     // If a known brand is present in subdomains but the main domain is different (e.g., brand.com.login-verify.xyz)
     const subdomains = hostnameParts.slice(0, hostnameParts.length - 2);
+    let spoofedBrand;
     if (subdomains.length > 0) {
-      const spoofedBrand = KNOWN_BRANDS.find(brand => subdomains.includes(brand));
+      spoofedBrand = KNOWN_BRANDS.find(brand => subdomains.includes(brand));
       if (spoofedBrand && domainBase !== spoofedBrand) {
         score += 30;
         findings.push({ type: 'danger', text: `Brand name "${spoofedBrand}" used as subdomain of a different base domain "${domainBase}" — suspicious obfuscation.` });
@@ -268,6 +286,11 @@ async function fetchDomainAAnswers(domain) {
   }
 }
 
+/**
+ * Full security scan: heuristic + URLhaus database + DNS SSRF check.
+ * @param {string} url
+ * @returns {Promise<ScanResult>}
+ */
 export async function scanSecurity(url) {
   const heuristic = heuristicScan(url);
   

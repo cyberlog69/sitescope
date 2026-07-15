@@ -1,5 +1,7 @@
 // ssl.js — Certificate Transparency & SSL Info Module
 
+import { escapeHtml } from '../utils/helpers.js';
+
 const ALLORIGINS = 'https://api.allorigins.win/get?url=';
 
 export async function fetchSslInfo(domain) {
@@ -93,11 +95,4 @@ export function renderSslPanel(sslData, domain, containerEl) {
   `;
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-}
+

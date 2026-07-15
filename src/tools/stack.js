@@ -1,5 +1,7 @@
 // stack.js — Web Technology Fingerprinting Module
 
+import { escapeHtml } from '../utils/helpers.js';
+
 export function detectTechnologies(html, headers) {
   const detected = [];
   const htmlLower = (html || '').toLowerCase();
@@ -138,11 +140,4 @@ export function renderStackPanel(techList, containerEl) {
   `;
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-}
+
