@@ -242,27 +242,37 @@ sitescope/
 ├── index.html              # Main app shell (all views: Single, Bulk, Email, History, Detector)
 ├── style.css               # Global styles — cosmic theme, glassmorphism, Down Detector panels
 ├── src/
-│   ├── main.js             # App controller — routing, event binding, all view controllers
+│   ├── main.js             # App controller — DOM wiring, event binding, all view controllers
 │   ├── intel.js            # WHOIS & HTTP header fetchers
+│   ├── main/
+│   │   ├── history.js      # Scan history: kvdb.io cloud sync + localStorage fallback (unit-tested)
+│   │   └── bulk.js         # Bulk URL parsing + per-URL metadata/threat fetch (unit-tested)
 │   ├── modules/
 │   │   ├── category.js     # 21-category classification engine
 │   │   ├── security.js     # 2-stage threat scanner + URLhaus integration
 │   │   ├── sandbox.js      # 10-layer DOM sanitisation pipeline
 │   │   ├── email.js        # RFC 5322 validator + scam scorer
 │   │   └── detector.js     # Down Detector — Statuspage APIs, DNS-over-HTTPS, outage reports
-│   └── tools/
-│       ├── dns.js          # DNS-over-HTTPS multi-record resolver
-│       ├── ssl.js          # Certificate Transparency (crt.sh) inspector
-│       ├── stack.js        # Technology fingerprinting
-│       ├── robots.js       # robots.txt fetcher + parser
-│       └── latency.js      # 5-probe HEAD latency suite
+│   ├── tools/
+│   │   ├── dns.js          # DNS-over-HTTPS multi-record resolver
+│   │   ├── ssl.js          # Certificate Transparency (crt.sh) inspector
+│   │   ├── stack.js        # Technology fingerprinting
+│   │   ├── robots.js       # robots.txt fetcher + parser
+│   │   └── latency.js      # 5-probe HEAD latency suite
+│   └── utils/
+│       ├── helpers.js      # escapeHtml, normalizeUrl, getDomain, sleep, safeHref
+│       ├── proxy.js        # CORS proxy fallback chain (allorigins → codetabs)
+│       └── logger.js       # Thin console wrapper (logWarn/logError)
 ├── public/
 │   ├── sw.js               # Hardened Service Worker
 │   └── manifest.json       # PWA manifest
+├── .github/workflows/
+│   └── ci.yml              # Lint + typecheck + test + build on every push/PR
 ├── start-local.bat         # One-click local dev server (Windows)
 ├── Dockerfile              # Multi-stage Docker build (Node → Nginx)
 ├── nginx.conf              # Nginx config with security headers for Docker
 ├── vercel.json             # Vercel deployment config + HTTP security headers
+├── CHANGELOG.md            # Version history
 └── DESIGN.md               # Design token specification
 ```
 

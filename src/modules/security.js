@@ -1,6 +1,8 @@
 // @ts-check
 // security.js — Heuristic & URLhaus Threat Scanner module
 
+import { logWarn } from '../utils/logger.js';
+
 // display metadata
 /**
  * @typedef {'safe'|'low'|'medium'|'high'|'critical'} ThreatLevel
@@ -148,6 +150,7 @@ export function heuristicScan(url) {
   }
 
   // Non-ASCII / homograph attack
+  // eslint-disable-next-line no-control-regex -- intentional ASCII-range check
   if (/[^\x00-\x7F]/.test(hostname) || hostname.includes('xn--')) {
     score += 35;
     findings.push({ type: 'danger', text: 'Non-ASCII or Punycode characters in domain — possible homograph/spoofing attack.' });
@@ -294,12 +297,12 @@ async function fetchDomainAAnswers(domain) {
 export async function scanSecurity(url) {
   const heuristic = heuristicScan(url);
   
-  let parsedUrl;
   let domain = '';
   try {
-    parsedUrl = new URL(url);
-    domain = parsedUrl.hostname;
-  } catch {}
+    domain = new URL(url).hostname;
+  } catch (err) {
+    logWarn('security:scanSecurity:parseUrl', err);
+  }
 
   // Run DB check and DoH check in parallel
   const [db, resolvedIps] = await Promise.all([
@@ -309,7 +312,8 @@ export async function scanSecurity(url) {
 
   let finalScore = heuristic.score;
   let finalLevel = heuristic.level;
-  let dbStatus   = 'clean';
+  /** @type {'clean'|'malware'|'unknown'} */
+  let dbStatus;
   const dbFindings = [];
 
   // 1. Process URLhaus Threat Database matching

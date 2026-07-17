@@ -79,7 +79,9 @@ export function sanitizeForSandbox(rawHtml, baseUrl) {
       try {
         const u = new URL(href, baseUrl);
         extractedLinks.push({ text: a.textContent.trim().substring(0, 50) || href.substring(0, 50), url: u.href });
-      } catch (e) {}
+      } catch {
+        // Malformed/unparseable href — skip this link
+      }
     }
   });
 

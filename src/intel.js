@@ -3,6 +3,7 @@
 // SECURITY: All API-returned data is escaped via escapeHtml() before any DOM injection.
 
 import { escapeHtml } from './utils/helpers.js';
+import { fetchViaCorsProxy } from './utils/proxy.js';
 
 export async function fetchWhois(domain) {
   const whoisEl = document.getElementById('intelWhois');
@@ -50,17 +51,19 @@ export async function fetchWhois(domain) {
     });
 
   } catch (e) {
-    // Fallback to allorigins RDAP proxy if direct fetch fails
+    // Fallback to a CORS-proxied RDAP request if the direct fetch fails
     try {
-      const fallback = await fetch(
-        `https://api.allorigins.win/get?url=${encodeURIComponent('https://rdap.verisign.com/com/v1/domain/' + domain)}`,
-        { signal: AbortSignal.timeout(6000) }
-      );
-      const proxy = await fallback.json();
-      const rdap = JSON.parse(proxy.contents || '{}');
-      const registrar = rdap.entities?.find(e => e.roles?.includes('registrar'))?.vcardArray?.[1]
-        ?.find(v => v[0] === 'fn')?.[3] || 'Unknown';
-      whoisEl.textContent = `Registrar: ${registrar}`;
+      const result = await fetchViaCorsProxy(`https://rdap.verisign.com/com/v1/domain/${domain}`, {
+        timeout: 6000
+      });
+      if (result) {
+        const rdap = JSON.parse(result.contents || '{}');
+        const registrar = rdap.entities?.find(e => e.roles?.includes('registrar'))?.vcardArray?.[1]
+          ?.find(v => v[0] === 'fn')?.[3] || 'Unknown';
+        whoisEl.textContent = `Registrar: ${registrar}`;
+      } else {
+        whoisEl.textContent = 'WHOIS unavailable';
+      }
     } catch {
       whoisEl.textContent = 'WHOIS unavailable';
     }
@@ -88,13 +91,12 @@ export async function fetchHttpHeaders(domain) {
   ]);
 
   try {
-    // Use HackerTarget via allorigins proxy to avoid direct API rate-limit exposure
-    const res = await fetch(
-      `https://api.allorigins.win/get?url=${encodeURIComponent('https://api.hackertarget.com/httpheaders/?q=' + encodeURIComponent(domain))}`,
-      { signal: AbortSignal.timeout(10000) }
+    // Use HackerTarget via a CORS proxy to avoid direct API rate-limit exposure
+    const result = await fetchViaCorsProxy(
+      `https://api.hackertarget.com/httpheaders/?q=${encodeURIComponent(domain)}`,
+      { timeout: 10000 }
     );
-    const proxy = await res.json();
-    const text  = proxy.contents || '';
+    const text = result?.contents || '';
 
     if (!text || text.includes('error') || text.includes('rate limit') || text.includes('valid key required')) {
       headersEl.textContent = 'Headers unavailable (API rate-limit reached)';

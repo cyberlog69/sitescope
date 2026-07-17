@@ -18,6 +18,12 @@
     "noImplicitThis": false,
     "strictNullChecks": true
   },
-  "include": ["src/utils/helpers.js", "src/modules/**.js"],
+  "include": [
+    "src/utils/**.js",
+    "src/modules/**.js",
+    "src/tools/**.js",
+    "src/main/**.js",
+    "src/intel.js"
+  ],
   "exclude": ["node_modules", "dist", "src/**/*.test.js"]
 }

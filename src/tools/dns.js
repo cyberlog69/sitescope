@@ -1,9 +1,21 @@
+// @ts-check
 // dns.js — DNS DoH Query Module
 
 import { escapeHtml } from '../utils/helpers.js';
+import { logError } from '../utils/logger.js';
+
+/**
+ * @typedef {{ name:string, type:number, TTL:number, data:string }} DnsAnswer
+ * @typedef {Record<string, DnsAnswer[]>} DnsResultMap
+ */
 
 const RECORD_TYPES = ['A', 'AAAA', 'MX', 'TXT', 'CNAME', 'NS', 'SOA', 'CAA'];
 
+/**
+ * @param {string} domain
+ * @param {string} type
+ * @returns {Promise<DnsAnswer[]>}
+ */
 export async function fetchDnsRecord(domain, type) {
   try {
     const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=${type}`);
@@ -11,12 +23,17 @@ export async function fetchDnsRecord(domain, type) {
     const json = await res.json();
     return json.Answer || [];
   } catch (e) {
-    console.error(`DNS ${type} error:`, e);
+    logError(`dns:fetchDnsRecord:${type}`, e);
     return [];
   }
 }
 
+/**
+ * @param {string} domain
+ * @returns {Promise<DnsResultMap>}
+ */
 export async function fetchAllDns(domain) {
+  /** @type {DnsResultMap} */
   const results = {};
   await Promise.all(RECORD_TYPES.map(async type => {
     results[type] = await fetchDnsRecord(domain, type);
@@ -24,6 +41,11 @@ export async function fetchAllDns(domain) {
   return results;
 }
 
+/**
+ * @param {DnsResultMap} dnsData
+ * @param {HTMLElement | null} containerEl
+ * @returns {void}
+ */
 export function renderDnsPanel(dnsData, containerEl) {
   if (!containerEl) return;
 

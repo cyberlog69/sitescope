@@ -1,24 +1,38 @@
+// @ts-check
 // ssl.js — Certificate Transparency & SSL Info Module
 
 import { escapeHtml } from '../utils/helpers.js';
+import { fetchViaCorsProxy } from '../utils/proxy.js';
+import { logError } from '../utils/logger.js';
 
-const ALLORIGINS = 'https://api.allorigins.win/get?url=';
+/**
+ * @typedef {{ issuer_name?:string, not_before:string, not_after:string, common_name?:string }} CrtShCert
+ */
 
+/**
+ * Fetch certificate transparency logs for a domain from crt.sh (via CORS proxy).
+ * @param {string} domain
+ * @returns {Promise<CrtShCert[] | null>}
+ */
 export async function fetchSslInfo(domain) {
   try {
     // Fetch certificate logs via crt.sh JSON endpoint (proxied to bypass CORS)
     const targetUrl = `https://crt.sh/?q=${encodeURIComponent(domain)}&output=json`;
-    const res = await fetch(ALLORIGINS + encodeURIComponent(targetUrl));
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    const data = JSON.parse(json.contents || '[]');
-    return data;
+    const result = await fetchViaCorsProxy(targetUrl);
+    if (!result) throw new Error('All CORS proxies failed');
+    return JSON.parse(result.contents || '[]');
   } catch (e) {
-    console.error('SSL fetch error:', e);
+    logError('ssl:fetchSslInfo', e);
     return null;
   }
 }
 
+/**
+ * @param {CrtShCert[] | null} sslData
+ * @param {string} domain
+ * @param {HTMLElement | null} containerEl
+ * @returns {void}
+ */
 export function renderSslPanel(sslData, domain, containerEl) {
   if (!containerEl) return;
 
@@ -41,7 +55,7 @@ export function renderSslPanel(sslData, domain, containerEl) {
   const issuer = latestCert.issuer_name || 'Unknown Issuer';
   const created = new Date(latestCert.not_before);
   const expires = new Date(latestCert.not_after);
-  const remainingMs = expires - new Date();
+  const remainingMs = expires.getTime() - Date.now();
   const remainingDays = Math.max(0, Math.floor(remainingMs / (1000 * 60 * 60 * 24)));
 
   // Calculate Grade

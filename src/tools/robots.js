@@ -1,8 +1,14 @@
+// @ts-check
 // robots.js — Robots.txt & Sitemap Analyzer Module
 
 import { escapeHtml } from '../utils/helpers.js';
+import { fetchViaCorsProxy } from '../utils/proxy.js';
+import { logError } from '../utils/logger.js';
 
-const ALLORIGINS = 'https://api.allorigins.win/get?url=';
+/**
+ * @typedef {{ agent:string, allow:string[], disallow:string[] }} RobotsGroup
+ * @typedef {{ rules:RobotsGroup[], sitemaps:string[] }} ParsedRobots
+ */
 
 // Paths that look sensitive / private
 const SENSITIVE_PATTERNS = [
@@ -11,29 +17,44 @@ const SENSITIVE_PATTERNS = [
   /phpmyadmin/i, /cpanel/i, /dashboard/i, /\.git/i, /auth/i,
 ];
 
+/**
+ * @param {string} path
+ * @returns {boolean}
+ */
 function isSensitivePath(path) {
   return SENSITIVE_PATTERNS.some(p => p.test(path));
 }
 
+/**
+ * Fetch a domain's robots.txt content via a CORS proxy.
+ * @param {string} domain
+ * @returns {Promise<string | null>}
+ */
 export async function fetchRobotsTxt(domain) {
   try {
     const robotsUrl = `https://${domain}/robots.txt`;
-    const res = await fetch(ALLORIGINS + encodeURIComponent(robotsUrl));
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    return json.contents || '';
+    const result = await fetchViaCorsProxy(robotsUrl);
+    if (!result) throw new Error('All CORS proxies failed');
+    return result.contents || '';
   } catch (e) {
-    console.error('Robots.txt fetch error:', e);
+    logError('robots:fetchRobotsTxt', e);
     return null;
   }
 }
 
+/**
+ * @param {string | null} content
+ * @returns {ParsedRobots | null}
+ */
 export function parseRobotsTxt(content) {
   if (!content || content.includes('<html')) return null;
 
   const lines = content.split(/\r?\n/);
+  /** @type {RobotsGroup[]} */
   const rules = [];
+  /** @type {string[]} */
   const sitemaps = [];
+  /** @type {RobotsGroup | null} */
   let currentGroup = null;
 
   lines.forEach(line => {
@@ -62,6 +83,11 @@ export function parseRobotsTxt(content) {
   return { rules, sitemaps };
 }
 
+/**
+ * @param {ParsedRobots | null} parsedData
+ * @param {HTMLElement | null} containerEl
+ * @returns {void}
+ */
 export function renderRobotsPanel(parsedData, containerEl) {
   if (!containerEl) return;
 
@@ -97,7 +123,7 @@ export function renderRobotsPanel(parsedData, containerEl) {
     `;
   }
 
-  let rulesHtml = parsedData.rules.slice(0, 5).map(g => {
+  const rulesHtml = parsedData.rules.slice(0, 5).map(g => {
     const allowText = g.allow.slice(0, 5).map(p => `Allow: ${p}`).join('<br/>');
     const disallowText = g.disallow.slice(0, 5).map(p => `Disallow: ${p}`).join('<br/>');
     

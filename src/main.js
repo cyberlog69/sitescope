@@ -1,4 +1,5 @@
 import { escapeHtml, normalizeUrl, getDomain, sleep, safeHref } from './utils/helpers.js';
+import { logWarn, logError } from './utils/logger.js';
 import { fetchWhois, fetchHttpHeaders } from './intel.js';
 import { classifySite, CATEGORIES } from './modules/category.js';
 import { scanSecurity, heuristicScan, THREAT_META } from './modules/security.js';
@@ -10,6 +11,8 @@ import { detectTechnologies, renderStackPanel } from './tools/stack.js';
 import { fetchRobotsTxt, parseRobotsTxt, renderRobotsPanel } from './tools/robots.js';
 import { runLatencySuite, renderLatencyPanel } from './tools/latency.js';
 import { checkWebsiteStatus, submitOutageReport, fetchOutageReports, renderOutageChart, renderPopularGrid, startBackgroundGridPoll, stopBackgroundGridPoll } from './modules/detector.js';
+import { loadMergedHistory, saveHistoryEntry, clearHistory as clearHistoryStore } from './main/history.js';
+import { MAX_BULK_URLS, parseBulkUrls, fetchSiteData, fallbackSiteData } from './main/bulk.js';
 
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js (Modularized)
@@ -261,7 +264,9 @@ async function checkSite(url) {
   try {
     const proto = new URL(url).protocol.replace(':', '').toUpperCase();
     metaProtocol.textContent = proto;
-  } catch {}
+  } catch (err) {
+    logWarn('main:checkSite:protocolBadge', err);
+  }
 
   // ── Kick off screenshot immediately via free thumbnail APIs
   loadScreenshotWaterfall(url);
@@ -313,11 +318,13 @@ async function checkSite(url) {
   const scanPromise = scanSecurity(url).then(merged => {
     renderSecurityReport(merged, 'done');
     hide(secScanningBadge);
-    
+
     // Save Cloud History
-    if (typeof saveCloudHistory === 'function') {
-      saveCloudHistory(url, title, `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=32`, merged.level);
-    }
+    saveHistoryEntry({
+      url, title,
+      favicon: `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=32`,
+      threatLevel: merged.level
+    }).then(() => renderCloudHistory());
   });
 
   // ── Status badge ──────────────────────────────────────────────────────────────
@@ -1262,7 +1269,7 @@ async function runDetectorCheck(target) {
     resultsDiv.classList.remove('hidden');
 
   } catch (e) {
-    console.error(e);
+    logError('main:runDetectorCheck', e);
     document.getElementById('detectorErrorMsg').textContent = 'An error occurred while inspecting the website status.';
     errorBanner.classList.remove('hidden');
     resultsDiv.classList.add('hidden');
@@ -1336,7 +1343,6 @@ const sumTime          = document.getElementById('sumTime');
 const exportCsvBtn     = document.getElementById('exportCsvBtn');
 const bulkTableBody    = document.getElementById('bulkTableBody');
 
-const MAX_BULK   = 25;
 const DELAY_MS   = 600;
 let bulkRunning  = false;
 let bulkAbort    = false;
@@ -1346,19 +1352,9 @@ bulkInput.addEventListener('input', updateBulkCount);
 
 function updateBulkCount() {
   const urls = parseBulkUrls(bulkInput.value);
-  const n = Math.min(urls.length, MAX_BULK);
+  const n = Math.min(urls.length, MAX_BULK_URLS);
   bulkCount.textContent = n;
-  bulkCount.style.color = n >= MAX_BULK ? 'var(--red)' : '';
-}
-
-function parseBulkUrls(text) {
-  return text
-    .split(/[\n,]+/)
-    .map(s => s.trim())
-    .filter(Boolean)
-    .map(s => normalizeUrl(s))
-    .filter(Boolean)
-    .slice(0, MAX_BULK);
+  bulkCount.style.color = n >= MAX_BULK_URLS ? 'var(--red)' : '';
 }
 
 bulkClearBtn.addEventListener('click', () => {
@@ -1417,14 +1413,11 @@ async function startBulkCheck() {
     const rowEl = document.getElementById(`bulk-row-${i}`);
     if (rowEl) rowEl.classList.add('bulk-row-checking');
 
-    let result = null;
+    let result;
     try {
       result = await fetchSiteData(url);
-    } catch(e) {
-      const { category } = classifySite(url, getDomain(url), '');
-      const threat = heuristicScan(url);
-      result = { ok: false, url, title: getDomain(url), desc: 'Error fetching data.', category, lang: null, threat,
-                 favicon: `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=32` };
+    } catch {
+      result = fallbackSiteData(url);
     }
 
     result.index = i + 1;
@@ -1453,27 +1446,6 @@ async function startBulkCheck() {
   bulkRunBtn.disabled = false;
   bulkStopBtn.disabled = true;
   if (window.updateBulkTableFilters) window.updateBulkTableFilters();
-}
-
-async function fetchSiteData(url) {
-  const apiUrl = `https://api.microlink.io/?url=${encodeURIComponent(url)}&meta=true&video=false`;
-  const res    = await fetch(apiUrl, { headers: { Accept: 'application/json' } });
-  const json   = await res.json();
-
-  if (json.status === 'success' || json.status === 'partial') {
-    const d = json.data;
-    const title = d.title || d.publisher || getDomain(url);
-    const desc  = d.description || '';
-    const lang  = d.lang || null;
-    const { category } = classifySite(url, title, desc);
-    const threat = heuristicScan(url);
-    return { ok: true, url, title, desc, lang, category, threat,
-             favicon: `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=32` };
-  }
-  const { category } = classifySite(url, getDomain(url), '');
-  const threat = heuristicScan(url);
-  return { ok: false, url, title: getDomain(url), desc: 'Could not fetch metadata.', lang: null, category, threat,
-           favicon: `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=32` };
 }
 
 function makeSkeletonRow(num, url) {
@@ -1581,131 +1553,30 @@ exportCsvBtn.addEventListener('click', () => {
 });
 
 // ── History & Cloud Storage ──────────────────────────────────────────────────
-// kvdb.io is used for cross-device cloud sync.
-// localStorage is used as a reliable local fallback — history always saves
-// even if the network request fails.
-const HISTORY_KV_KEY  = 'history';
-const HISTORY_KV_URL  = `https://kvdb.io/sitescope_v4_history/${HISTORY_KV_KEY}`;
-const HISTORY_LS_KEY  = 'sitescope_scan_history';
-const HISTORY_MAX     = 50;
-
-// ── localStorage helpers ──────────────────────────────────────────────────────
-function lsGetHistory() {
-  try {
-    const raw = localStorage.getItem(HISTORY_LS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
-
-function lsSaveHistory(items) {
-  try { localStorage.setItem(HISTORY_LS_KEY, JSON.stringify(items)); } catch {}
-}
-
-// ── Cloud fetch/save ───────────────────────────────────────────────────────────
-async function fetchCloudHistory() {
-  try {
-    const res = await fetch(HISTORY_KV_URL, { signal: AbortSignal.timeout(5000) });
-    if (!res.ok) return null;            // null = network failure (not empty list)
-    const text = await res.text();
-    if (!text || !text.trim()) return [];
-    return JSON.parse(text);
-  } catch {
-    return null;                         // null = network failure
-  }
-}
-
-async function saveCloudHistory(url, title, favicon, threatLevel) {
-  // ── 1. Build updated entry ────────────────────────────────────────────────
-  const newEntry = {
-    url,
-    title: title || url,
-    favicon: favicon || '',
-    threat: threatLevel || 'safe',
-    time: new Date().toISOString()
-  };
-
-  // ── 2. Always save to localStorage first (instant, reliable) ─────────────
-  let local = lsGetHistory();
-  local = local.filter(item => item.url !== url);   // deduplicate
-  local.unshift(newEntry);
-  local = local.slice(0, HISTORY_MAX);
-  lsSaveHistory(local);
-
-  // ── 3. Try cloud sync in background (best-effort) ─────────────────────────
-  try {
-    let cloud = await fetchCloudHistory();
-    if (!Array.isArray(cloud)) cloud = local;        // cloud empty/failed → use local
-    cloud = cloud.filter(item => item.url !== url);
-    cloud.unshift(newEntry);
-    cloud = cloud.slice(0, HISTORY_MAX);
-
-    await fetch(HISTORY_KV_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cloud),
-      signal: AbortSignal.timeout(6000)
-    });
-  } catch (e) {
-    console.warn('Cloud history sync failed — saved to localStorage only:', e);
-  }
-
-  renderCloudHistory();
-}
-
-async function clearCloudHistory() {
-  // Clear both sources
-  lsSaveHistory([]);
-  try {
-    await fetch(HISTORY_KV_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify([]),
-      signal: AbortSignal.timeout(6000)
-    });
-  } catch (e) {
-    console.warn('Cloud history clear failed:', e);
-  }
-  renderCloudHistory();
-}
-
-// ── Merge cloud + local, deduplicate by URL, sort newest first ──────────────
-function mergeHistories(cloud, local) {
-  const map = new Map();
-  // local first so cloud can overwrite with fresher data
-  [...(Array.isArray(local) ? local : []),
-   ...(Array.isArray(cloud) ? cloud : [])].forEach(item => {
-    if (item && item.url) map.set(item.url, item);
-  });
-  return [...map.values()]
-    .sort((a, b) => new Date(b.time) - new Date(a.time))
-    .slice(0, HISTORY_MAX);
-}
-
+// Cloud sync (kvdb.io) + localStorage fallback logic lives in ./main/history.js
+// (testable without a DOM). This section only renders it into the page.
 function renderCloudHistory() {
   const historyList = document.getElementById('historyList');
   if (!historyList) return;
 
-  // Show local data immediately while cloud loads
-  const localData = lsGetHistory();
-  if (localData.length > 0) {
-    renderHistoryItems(historyList, localData);
-  } else {
-    historyList.innerHTML = '<div class="history-loading">Loading history…</div>';
-  }
-
-  // Then fetch cloud and merge
-  fetchCloudHistory().then(cloudData => {
-    const merged = mergeHistories(cloudData, localData);
-
-    // Persist merged result locally so next open is instant
-    if (merged.length > 0) lsSaveHistory(merged);
-
+  loadMergedHistory((localData) => {
+    if (localData.length > 0) {
+      renderHistoryItems(historyList, localData);
+    } else {
+      historyList.innerHTML = '<div class="history-loading">Loading history…</div>';
+    }
+  }).then((merged) => {
     if (!merged.length) {
       historyList.innerHTML = '<div class="history-loading">No scan history yet. Run a check to get started.</div>';
       return;
     }
     renderHistoryItems(historyList, merged);
   });
+}
+
+async function clearCloudHistory() {
+  await clearHistoryStore();
+  renderCloudHistory();
 }
 
 function renderHistoryItems(container, data) {
@@ -1786,7 +1657,7 @@ function renderExtractedLinks(links, baseUrl) {
   panel.style.display = 'block';
   const unique = [];
   const seen = new Set();
-  for (let l of links) {
+  for (const l of links) {
     if (!seen.has(l.url)) {
       seen.add(l.url);
       unique.push(l);
@@ -1801,7 +1672,9 @@ function renderExtractedLinks(links, baseUrl) {
       const badge = isExternal ? '<span class="link-ext-badge link-ext-external">EXT</span>' : '<span class="link-ext-badge link-ext-internal">INT</span>';
       return '<div class="link-item">' + badge + '<a href="' + escapeHtml(l.url) + '" target="_blank">' + escapeHtml(l.text || l.url) + '</a></div>';
     }).join('');
-  } catch (e) {}
+  } catch (err) {
+    logWarn('main:renderExtractedLinks', err);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1863,7 +1736,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterText = (bulkFilterInput && bulkFilterInput.value || '').toLowerCase();
     const threatFilter = bulkFilterThreat ? bulkFilterThreat.value : 'all';
     
-    let filtered = bulkData.filter(r => {
+    const filtered = bulkData.filter(r => {
       if (filterText && !r.url.toLowerCase().includes(filterText) && !r.title.toLowerCase().includes(filterText) && !(r.category && r.category.label.toLowerCase().includes(filterText))) return false;
       if (threatFilter === 'safe' && r.threat && r.threat.level !== 'safe') return false;
       if (threatFilter === 'risk' && (!r.threat || !['high', 'critical'].includes(r.threat.level))) return false;
@@ -1911,7 +1784,7 @@ document.addEventListener('DOMContentLoaded', () => {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(err => {
-      console.log('Service worker registration failed: ', err);
+      logWarn('main:serviceWorker', err);
     });
   });
 }

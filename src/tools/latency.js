@@ -1,5 +1,11 @@
+// @ts-check
 // latency.js — Multi-Probe Latency Tester Module
 
+/**
+ * HEAD-probe a URL once and measure round-trip time in ms.
+ * @param {string} url
+ * @returns {Promise<number>}
+ */
 export async function measureLatencySingle(url) {
   const start = performance.now();
   try {
@@ -10,13 +16,19 @@ export async function measureLatencySingle(url) {
       cache: 'no-store',
       signal: AbortSignal.timeout(5000)
     });
-  } catch (e) {
-    // Rejection or timeouts
+  } catch {
+    // Rejection or timeouts — latency is still measured (elapsed time to failure)
   }
   return performance.now() - start;
 }
 
+/**
+ * @param {string} url
+ * @param {number} [trialsCount]
+ * @returns {Promise<number[]>}
+ */
 export async function runLatencySuite(url, trialsCount = 5) {
+  /** @type {number[]} */
   const trials = [];
   for (let i = 0; i < trialsCount; i++) {
     const time = await measureLatencySingle(url);
@@ -27,6 +39,11 @@ export async function runLatencySuite(url, trialsCount = 5) {
   return trials;
 }
 
+/**
+ * @param {number[] | null} trials
+ * @param {HTMLElement | null} containerEl
+ * @returns {void}
+ */
 export function renderLatencyPanel(trials, containerEl) {
   if (!containerEl) return;
 
@@ -35,8 +52,6 @@ export function renderLatencyPanel(trials, containerEl) {
     return;
   }
 
-  const min = Math.min(...trials);
-  const max = Math.max(...trials);
   const avg = Math.round(trials.reduce((sum, t) => sum + t, 0) / trials.length);
 
   // Compute 95th percentile (simple interpolation)

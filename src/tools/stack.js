@@ -1,7 +1,18 @@
+// @ts-check
 // stack.js — Web Technology Fingerprinting Module
 
 import { escapeHtml } from '../utils/helpers.js';
 
+/**
+ * @typedef {{ name:string, category:string, icon:string }} DetectedTech
+ */
+
+/**
+ * Fingerprint a site's technology stack from its HTML source and HTTP headers.
+ * @param {string} html
+ * @param {Record<string, string> | null | undefined} headers
+ * @returns {DetectedTech[]}
+ */
 export function detectTechnologies(html, headers) {
   const detected = [];
   const htmlLower = (html || '').toLowerCase();
@@ -106,6 +117,11 @@ export function detectTechnologies(html, headers) {
   return detected;
 }
 
+/**
+ * @param {DetectedTech[]} techList
+ * @param {HTMLElement | null} containerEl
+ * @returns {void}
+ */
 export function renderStackPanel(techList, containerEl) {
   if (!containerEl) return;
 

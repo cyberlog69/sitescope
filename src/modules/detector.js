@@ -1,9 +1,20 @@
+// @ts-check
 // ── detector.js — Reliable Down Detection via Official APIs + DNS-over-HTTPS ──
 // Strategy:
 //   Tier 1 (popular services with official Statuspage.io): query the service's
 //           own status API — authoritative, CORS-friendly, zero false positives.
 //   Tier 2 (all other domains): DNS-over-HTTPS (dns.google) + allorigins proxy
 //           run in parallel, majority-vote verdict.
+
+import { logWarn } from '../utils/logger.js';
+
+/**
+ * @typedef {{ name:string, domain:string, color:string, statusApi:string|null, statusPage:string|null }} ServiceEntry
+ * @typedef {{ status:string, cssClass:string, badgeClass:string }} StatusMapping
+ * @typedef {{ domain:string, cleanKey:string, status:string, message:string, source:'official'|'probe',
+ *   officialDescription?:string, localLatency:number|null, isGloballyReachable:boolean,
+ *   reportsCount:number, reports:number[] }} WebsiteStatusResult
+ */
 
 const OUTAGE_KV_BUCKET = 'sitescope_v4_history';
 
@@ -81,7 +92,13 @@ const POPULAR_SERVICES = [
 let pollIntervalId = null;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function cleanDomainKey(urlOrDomain) {
+/**
+ * Normalize a URL or bare domain into a filesystem/key-safe identifier
+ * (lowercase, no scheme, no `www.`, non key-safe chars replaced with `_`).
+ * @param {string} urlOrDomain
+ * @returns {string}
+ */
+export function cleanDomainKey(urlOrDomain) {
   try {
     let h = urlOrDomain;
     if (/^https?:\/\//i.test(h)) h = new URL(h).hostname;
@@ -91,7 +108,12 @@ function cleanDomainKey(urlOrDomain) {
   }
 }
 
-function getHostname(urlOrDomain) {
+/**
+ * Extract a lowercase hostname (no scheme, no `www.`) from a URL or bare domain.
+ * @param {string} urlOrDomain
+ * @returns {string}
+ */
+export function getHostname(urlOrDomain) {
   try {
     let h = urlOrDomain;
     if (/^https?:\/\//i.test(h)) h = new URL(h).hostname;
@@ -101,7 +123,13 @@ function getHostname(urlOrDomain) {
   }
 }
 
-function findServiceByDomain(domain) {
+/**
+ * Find a well-known service entry whose domain matches or is a parent of
+ * the given domain.
+ * @param {string} domain
+ * @returns {ServiceEntry | null}
+ */
+export function findServiceByDomain(domain) {
   return POPULAR_SERVICES.find(s => s.domain === domain || domain.endsWith('.' + s.domain)) || null;
 }
 
@@ -123,8 +151,12 @@ async function fetchStatusPageApi(apiUrl) {
   }
 }
 
-// Maps Statuspage indicator → our status labels
-function indicatorToStatus(indicator) {
+/**
+ * Maps a Statuspage.io indicator value to our internal status labels/CSS classes.
+ * @param {string} indicator - 'none' | 'minor' | 'major' | 'critical' | other
+ * @returns {StatusMapping}
+ */
+export function indicatorToStatus(indicator) {
   switch (indicator) {
     case 'none':     return { status: 'Online',  cssClass: 'verdict-online', badgeClass: 'badge-online' };
     case 'minor':    return { status: 'Degraded', cssClass: 'verdict-slow',   badgeClass: 'badge-slow' };
@@ -194,6 +226,10 @@ async function checkDirectHead(domain) {
 }
 
 // ── Main Status Check ─────────────────────────────────────────────────────────
+/**
+ * @param {string} target - a URL or bare domain to check
+ * @returns {Promise<WebsiteStatusResult>}
+ */
 export async function checkWebsiteStatus(target) {
   const domain   = getHostname(target);
   const cleanKey = cleanDomainKey(target);
@@ -305,11 +341,14 @@ export async function fetchOutageReports(cleanKey) {
     const text = await res.text();
     if (!text || !text.trim()) return [];
     return JSON.parse(text).map(t => new Date(t).getTime()).filter(t => t > oneDayAgo);
-  } catch {
+  } catch (err) {
+    logWarn('detector:fetchOutageReports:kvdb', err);
     try {
       const raw = localStorage.getItem(`outages_${cleanKey}`);
       if (raw) return JSON.parse(raw).map(t => new Date(t).getTime()).filter(t => t > oneDayAgo);
-    } catch {}
+    } catch (localErr) {
+      logWarn('detector:fetchOutageReports:localStorage', localErr);
+    }
   }
   return [];
 }
@@ -323,8 +362,14 @@ export async function submitOutageReport(cleanKey) {
   const isoStrings = reports.map(t => new Date(t).toISOString());
   try {
     await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(isoStrings), signal: AbortSignal.timeout(4000) });
-  } catch {}
-  try { localStorage.setItem(`outages_${cleanKey}`, JSON.stringify(isoStrings)); } catch {}
+  } catch (err) {
+    logWarn('detector:submitOutageReport:kvdb', err);
+  }
+  try {
+    localStorage.setItem(`outages_${cleanKey}`, JSON.stringify(isoStrings));
+  } catch (err) {
+    logWarn('detector:submitOutageReport:localStorage', err);
+  }
   return reports;
 }
 
@@ -459,7 +504,6 @@ async function pollSingleService(service, index) {
     dot.className = 'status-dot';
 
     if (api) {
-      const mapped = indicatorToStatus(api.indicator);
       timeText.textContent = api.indicator === 'none' ? 'Operational' :
                              api.indicator === 'minor' ? 'Degraded' : 'Outage';
       dot.classList.add(
