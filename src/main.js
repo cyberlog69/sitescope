@@ -1609,36 +1609,31 @@ function renderHistoryItems(container, data) {
 
 
 function renderQrCode(url) {
-  const qrImage  = document.getElementById('qrImage');
+  const qrImage   = document.getElementById('qrImage');
   const showQrBtn = document.getElementById('showQrBtn');
   const qrUrlText = document.getElementById('qrUrlText');
+  const dlBtn     = document.getElementById('qrDownloadBtn');
   if (!qrImage || !showQrBtn) return;
 
-  // Build the QR API URL
   const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&data=' + encodeURIComponent(url);
 
-  // Show loading state in the image slot
-  qrImage.alt   = 'Generating QR code…';
-  qrImage.src   = '';
+  // Reset state
   qrImage.style.opacity = '0.4';
-
-  // Set the URL text
+  qrImage.alt           = 'Generating QR code…';
   if (qrUrlText) qrUrlText.textContent = url;
+  if (dlBtn) dlBtn.classList.add('hidden');
 
-  // Load the QR image
-  const probe = new Image();
-  probe.onload = () => {
-    qrImage.src           = qrSrc;
-    qrImage.alt           = 'QR Code for ' + url;
+  // Set handlers BEFORE setting src
+  qrImage.onload = () => {
     qrImage.style.opacity = '1';
+    qrImage.alt           = 'QR Code';
 
-    // Wire up download button if present
-    const dlBtn = document.getElementById('qrDownloadBtn');
+    // Wire download button
     if (dlBtn) {
       dlBtn.onclick = () => {
-        const a = document.createElement('a');
+        const a   = document.createElement('a');
         a.href     = qrSrc;
-        a.download = 'qrcode.png';
+        a.download = 'sitescope-qr.png';
         a.target   = '_blank';
         a.rel      = 'noopener';
         a.click();
@@ -1646,16 +1641,19 @@ function renderQrCode(url) {
       dlBtn.classList.remove('hidden');
     }
   };
-  probe.onerror = () => {
-    qrImage.alt           = 'QR generation failed — check your connection.';
+  qrImage.onerror = () => {
     qrImage.style.opacity = '1';
-    if (qrUrlText) qrUrlText.textContent = 'Could not generate QR code. Try again.';
+    qrImage.alt           = '⚠️ QR generation failed';
+    if (qrUrlText) qrUrlText.textContent = 'QR service unavailable. Try again later.';
   };
-  probe.src = qrSrc;
 
-  // Reveal the button
+  // Trigger the load
+  qrImage.src = qrSrc;
+
+  // Show the QR button in the result card
   showQrBtn.classList.remove('hidden');
 }
+
 
 async function fetchIpIntel(domain) {
   const ipEl = document.getElementById('intelIp');
