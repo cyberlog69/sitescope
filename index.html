@@ -942,13 +942,27 @@
   </div>
 
   <!-- QR Code Modal -->
-  <div id="qrModal" class="qr-modal hidden">
+  <div id="qrModal" class="qr-modal hidden" id="qrModalBackdrop">
     <div class="qr-card">
-      <img id="qrImage" src="" alt="QR Code" width="180" height="180" />
-      <div class="qr-url-text" id="qrUrlText"></div>
-      <button class="qr-close-btn" id="qrCloseBtn">Close</button>
+      <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px;letter-spacing:0.04em;text-transform:uppercase;">QR Code</div>
+      <div style="position:relative;width:220px;height:220px;margin:0 auto 14px;border-radius:10px;overflow:hidden;background:var(--card-background);border:1px solid var(--border);">
+        <img id="qrImage" src="" alt="Generating QR code…" width="220" height="220"
+          style="display:block;border-radius:10px;transition:opacity 0.3s;" />
+      </div>
+      <div class="qr-url-text" id="qrUrlText" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;">
+        <button id="qrDownloadBtn" class="check-btn hidden"
+          style="padding:8px 18px;font-size:0.8rem;background:linear-gradient(135deg,var(--violet),var(--cyan));gap:6px;display:flex;align-items:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download
+        </button>
+        <button class="qr-close-btn" id="qrCloseBtn">Close</button>
+      </div>
     </div>
   </div>
+
 
   <script type="module" src="/src/main.js"></script>
 </body>

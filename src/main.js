@@ -348,7 +348,7 @@ async function checkSite(url) {
     if (typeof fetchIpIntel === 'function') fetchIpIntel(domain);
     fetchWhois(domain);
     fetchHttpHeaders(domain);
-    if (typeof renderQrCode === 'function') renderQrCode(url);
+    renderQrCode(url);
 
     // DNS Resolver
     const dnsContainer = document.getElementById('intelDns');
@@ -1609,11 +1609,51 @@ function renderHistoryItems(container, data) {
 
 
 function renderQrCode(url) {
-  const qrImage = document.getElementById('qrImage');
+  const qrImage  = document.getElementById('qrImage');
   const showQrBtn = document.getElementById('showQrBtn');
+  const qrUrlText = document.getElementById('qrUrlText');
   if (!qrImage || !showQrBtn) return;
-  qrImage.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url);
-  document.getElementById('qrUrlText').textContent = url;
+
+  // Build the QR API URL
+  const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&data=' + encodeURIComponent(url);
+
+  // Show loading state in the image slot
+  qrImage.alt   = 'Generating QR code…';
+  qrImage.src   = '';
+  qrImage.style.opacity = '0.4';
+
+  // Set the URL text
+  if (qrUrlText) qrUrlText.textContent = url;
+
+  // Load the QR image
+  const probe = new Image();
+  probe.onload = () => {
+    qrImage.src           = qrSrc;
+    qrImage.alt           = 'QR Code for ' + url;
+    qrImage.style.opacity = '1';
+
+    // Wire up download button if present
+    const dlBtn = document.getElementById('qrDownloadBtn');
+    if (dlBtn) {
+      dlBtn.onclick = () => {
+        const a = document.createElement('a');
+        a.href     = qrSrc;
+        a.download = 'qrcode.png';
+        a.target   = '_blank';
+        a.rel      = 'noopener';
+        a.click();
+      };
+      dlBtn.classList.remove('hidden');
+    }
+  };
+  probe.onerror = () => {
+    qrImage.alt           = 'QR generation failed — check your connection.';
+    qrImage.style.opacity = '1';
+    if (qrUrlText) qrUrlText.textContent = 'Could not generate QR code. Try again.';
+  };
+  probe.src = qrSrc;
+
+  // Reveal the button
   showQrBtn.classList.remove('hidden');
 }
 
@@ -1701,6 +1741,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (showQrBtn) showQrBtn.addEventListener('click', () => qrModal.classList.remove('hidden'));
   if (qrCloseBtn) qrCloseBtn.addEventListener('click', () => qrModal.classList.add('hidden'));
+  // Close QR modal when clicking the dark backdrop (outside the card)
+  if (qrModal) qrModal.addEventListener('click', (e) => {
+    if (e.target === qrModal) qrModal.classList.add('hidden');
+  });
+
   
   if (linkExtHeader) linkExtHeader.addEventListener('click', () => linkExtList.classList.toggle('hidden'));
 
