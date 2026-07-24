@@ -19,8 +19,20 @@ export function downloadFile(content, filename, mimeType) {
 }
 
 /**
+ * @typedef {{
+ *   url?: string,
+ *   domain?: string,
+ *   timestamp?: string|number,
+ *   category?: { label?: string, emoji?: string },
+ *   security?: import('../modules/security.js').ScanResult,
+ *   scorecard?: import('../modules/scorecard.js').ScorecardResult,
+ *   httpHeaders?: Record<string, string>
+ * }} ReportData
+ */
+
+/**
  * Export scan report as structured JSON.
- * @param {object} reportData
+ * @param {ReportData} reportData
  */
 export function exportAsJson(reportData) {
   const domain   = reportData.domain || 'scan';
@@ -31,28 +43,28 @@ export function exportAsJson(reportData) {
 
 /**
  * Export scan report as Markdown documentation.
- * @param {object} reportData
+ * @param {ReportData} reportData
  */
 export function exportAsMarkdown(reportData) {
   const domain    = reportData.domain || 'Target Site';
   const timestamp = new Date(reportData.timestamp || Date.now()).toISOString();
-  const sc        = reportData.scorecard || {};
-  const sec       = reportData.security || {};
+  const sc  = reportData.scorecard;
+  const sec = reportData.security;
 
   let md = `# 🛡️ SiteScope Diagnostic Report — ${domain}\n\n`;
   md += `**Generated:** ${timestamp}  \n`;
   md += `**Target URL:** ${reportData.url || domain}  \n`;
-  md += `**Security Grade:** **${sc.grade || 'N/A'}** (${sc.score || 0}/100)  \n`;
+  md += `**Security Grade:** **${sc?.grade || 'N/A'}** (${sc?.score ?? 0}/100)  \n`;
   md += `**Category:** ${reportData.category?.label || 'General'} ${reportData.category?.emoji || '🌐'}  \n\n`;
 
   md += `---\n\n## 📊 Security Scorecard Summary\n\n`;
-  if (sc.strengths && sc.strengths.length) {
+  if (sc?.strengths && sc.strengths.length) {
     md += `### ✅ Strengths\n`;
     sc.strengths.forEach((st) => (md += `- ${st}\n`));
     md += `\n`;
   }
 
-  if (sc.remediations && sc.remediations.length) {
+  if (sc?.remediations && sc.remediations.length) {
     md += `### ⚠️ Remediation Checklist (${sc.remediations.length} action items)\n\n`;
     md += `| Severity | Issue | Remediation |\n`;
     md += `|---|---|---|\n`;
@@ -63,9 +75,9 @@ export function exportAsMarkdown(reportData) {
   }
 
   md += `## 🛡️ Threat Scanner Report\n\n`;
-  md += `**Threat Level:** ${sec.level || 'Unknown'}  \n`;
-  md += `**Database Status:** ${sec.dbStatus || 'Clean'}  \n\n`;
-  if (sec.findings && sec.findings.length) {
+  md += `**Threat Level:** ${sec?.level || 'Unknown'}  \n`;
+  md += `**Database Status:** ${sec?.dbStatus || 'Clean'}  \n\n`;
+  if (sec?.findings && sec.findings.length) {
     md += `### Findings:\n`;
     sec.findings.forEach((f) => (md += `- [${f.type.toUpperCase()}] ${f.text}\n`));
     md += `\n`;

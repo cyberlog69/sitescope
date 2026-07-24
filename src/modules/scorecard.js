@@ -28,8 +28,8 @@
  * @param {string} params.url
  * @param {import('./security.js').ScanResult} [params.securityScan]
  * @param {Record<string, string>} [params.headers]
- * @param {object} [params.sslInfo]
- * @param {object} [params.dnsInfo]
+ * @param {{ valid?: boolean, error?: string|boolean, daysRemaining?: number }} [params.sslInfo]
+ * @param {object} [params._dnsInfo]
  * @returns {ScorecardResult}
  */
 export function calculateSecurityScorecard({ url, securityScan, headers = {}, sslInfo, _dnsInfo }) {
