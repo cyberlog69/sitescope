@@ -24,11 +24,13 @@ describe('sanitizeForSandbox', () => {
     expect(result.stats.forms).toBe(1);
   });
 
-  it('strips inline event handlers', () => {
-    const html = '<html><body><button onclick="alert(1)">click</button></body></html>';
+  it('strips inline event handlers including custom on* attributes', () => {
+    const html = '<html><body><button onclick="alert(1)" oncustom="alert(2)" formaction="javascript:alert(3)">click</button></body></html>';
     const result = sanitizeForSandbox(html, 'https://example.com');
     expect(result.html).not.toContain('onclick');
-    expect(result.stats.handlers).toBeGreaterThanOrEqual(1);
+    expect(result.html).not.toContain('oncustom');
+    expect(result.html).not.toContain('formaction');
+    expect(result.stats.handlers).toBeGreaterThanOrEqual(2);
   });
 
   it('neutralizes javascript: URLs', () => {

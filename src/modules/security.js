@@ -101,15 +101,35 @@ function calculateEntropy(str) {
  * @returns {boolean}
  */
 export function isPrivateIP(ip) {
-  const parts = ip.split('.').map(Number);
-  if (parts.length !== 4 || parts.some(isNaN)) return false;
+  // Normalize IPv6 loopback / unique local / link-local / mapped IPv4
+  const lowerIp = ip.toLowerCase().trim();
+  if (lowerIp === '::1' || lowerIp === '::' || lowerIp.startsWith('fe80:') || lowerIp.startsWith('fd') || lowerIp.startsWith('fc')) {
+    return true;
+  }
+
+  // Handle dotted-quad IPv4 (including octal/hex normalized numbers)
+  const rawParts = lowerIp.replace(/^::ffff:/i, '').split('.');
+  if (rawParts.length !== 4) return false;
+  
+  const parts = rawParts.map(p => {
+    if (p.startsWith('0x') || p.startsWith('0X')) return parseInt(p, 16);
+    if (p.length > 1 && p.startsWith('0')) return parseInt(p, 8);
+    return Number(p);
+  });
+
+  if (parts.some(isNaN)) return false;
   const [p0, p1] = parts;
   if (p0 === 127) return true; // Loopback
-  if (p0 === 10) return true;  // Private Space
-  if (p0 === 172 && (p1 >= 16 && p1 <= 31)) return true; // Private Space
-  if (p0 === 192 && p1 === 168) return true; // Private Space
-  if (p0 === 169 && p1 === 254) return true; // Link-Local
-  if (p0 === 0) return true;   // Any IP
+  if (p0 === 10) return true;  // Private Space (10.0.0.0/8)
+  if (p0 === 172 && (p1 >= 16 && p1 <= 31)) return true; // Private Space (172.16.0.0/12)
+  if (p0 === 192 && p1 === 168) return true; // Private Space (192.168.0.0/16)
+  if (p0 === 169 && p1 === 254) return true; // Link-Local (169.254.0.0/16)
+  if (p0 === 100 && (p1 >= 64 && p1 <= 127)) return true; // Carrier-Grade NAT (100.64.0.0/10)
+  if (p0 === 198 && (p1 === 18 || p1 === 19)) return true; // Benchmark testing (198.18.0.0/15)
+  if (p0 === 192 && p1 === 0 && (parts[2] === 0 || parts[2] === 2)) return true; // IETF Protocol Assignments / TEST-NET-1
+  if (p0 === 198 && p1 === 51 && parts[2] === 100) return true; // TEST-NET-2
+  if (p0 === 203 && p1 === 0 && parts[2] === 113) return true; // TEST-NET-3
+  if (p0 === 0 || p0 >= 224) return true; // Broadcast / Multicast / Reserved
   return false;
 }
 

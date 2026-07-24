@@ -13,22 +13,6 @@ const TRACKER_DOMAINS = [
   'cloudflare-static','cdn.cookielaw'
 ];
 
-const DANGER_ATTRS = [
-  'onabort','onblur','oncanplay','oncanplaythrough','onchange','onclick',
-  'oncontextmenu','ondblclick','ondrag','ondragend','ondragenter',
-  'ondragleave','ondragover','ondragstart','ondrop','ondurationchange',
-  'onemptied','onended','onerror','onfocus','oninput','oninvalid',
-  'onkeydown','onkeypress','onkeyup','onload','onloadeddata',
-  'onloadedmetadata','onloadstart','onmousedown','onmouseenter',
-  'onmouseleave','onmousemove','onmouseout','onmouseover','onmouseup',
-  'onmousewheel','onpause','onplay','onplaying','onprogress',
-  'onratechange','onreset','onresize','onscroll','onseeked','onseeking',
-  'onselect','onshow','onstalled','onsubmit','onsuspend','ontimeupdate',
-  'onunload','onbeforeunload','onvolumechange','onwaiting','onpaste',
-  'oncopy','oncut','onpointerdown','onpointermove','onpointerup',
-  'onpointercancel','onwheel','ontouchstart','ontouchmove','ontouchend'
-];
-
 /**
  * Sanitize raw HTML for safe sandboxed rendering.
  * Strips scripts, iframes, event handlers, trackers; disables forms; injects CSP + base tag.
@@ -85,20 +69,29 @@ export function sanitizeForSandbox(rawHtml, baseUrl) {
     }
   });
 
-  // 6 — Strip event handlers
-  const elementsWithHandlers = doc.querySelectorAll(DANGER_ATTRS.map(a => `[${a}]`).join(','));
-  elementsWithHandlers.forEach(el => {
-    DANGER_ATTRS.forEach(attr => {
-      if (el.hasAttribute(attr)) { el.removeAttribute(attr); stats.handlers++; }
+  // 6 — Strip all inline event handlers (any attribute starting with "on")
+  doc.querySelectorAll('*').forEach(el => {
+    Array.from(el.attributes).forEach(attr => {
+      const attrName = attr.name.toLowerCase();
+      if (attrName.startsWith('on') || attrName.startsWith('formaction') || attrName.startsWith('xmlns:')) {
+        el.removeAttribute(attr.name);
+        stats.handlers++;
+      }
     });
   });
 
-  // Neutralise javascript: URLs
-  const elementsWithUrls = doc.querySelectorAll('[href^="javascript:" i], [src^="javascript:" i], [action^="javascript:" i], [formaction^="javascript:" i], [data^="javascript:" i], [href^="vbscript:" i], [src^="vbscript:" i], [href^="data:text/html" i]');
-  elementsWithUrls.forEach(el => {
-    ['href','src','action','formaction','data'].forEach(attr => {
+  // Neutralise unsafe URI schemes (javascript:, vbscript:, data:text/html, etc.)
+  doc.querySelectorAll('[href],[src],[action],[formaction],[data],[poster]').forEach(el => {
+    ['href','src','action','formaction','data','poster'].forEach(attr => {
+      if (!el.hasAttribute(attr)) return;
       const val = (el.getAttribute(attr) || '').trim().toLowerCase();
-      if (val.startsWith('javascript:') || val.startsWith('vbscript:') || val.startsWith('data:text/html')) {
+      if (
+        val.startsWith('javascript:') ||
+        val.startsWith('vbscript:') ||
+        val.startsWith('data:text/html') ||
+        val.startsWith('data:text/javascript') ||
+        val.startsWith('data:application/javascript')
+      ) {
         el.setAttribute(attr, '#');
       }
     });

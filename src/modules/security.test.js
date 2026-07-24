@@ -18,6 +18,17 @@ describe('isPrivateIP', () => {
     expect(isPrivateIP('172.16.0.1')).toBe(true);
   });
 
+  it('detects IPv6 loopback and link-local as private', () => {
+    expect(isPrivateIP('::1')).toBe(true);
+    expect(isPrivateIP('fe80::1')).toBe(true);
+    expect(isPrivateIP('fc00::1')).toBe(true);
+  });
+
+  it('detects CGNAT and benchmark ranges as private', () => {
+    expect(isPrivateIP('100.64.0.1')).toBe(true);
+    expect(isPrivateIP('198.18.0.1')).toBe(true);
+  });
+
   it('returns false for public IPs', () => {
     expect(isPrivateIP('8.8.8.8')).toBe(false);
     expect(isPrivateIP('1.1.1.1')).toBe(false);
