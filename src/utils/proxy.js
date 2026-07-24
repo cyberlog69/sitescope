@@ -60,7 +60,8 @@ export async function fetchViaCorsProxy(targetUrl, opts = {}) {
     try {
       let proxyUrl = proxy.build(targetUrl);
       if (cacheBust) {
-        proxyUrl += (proxyUrl.includes('?') ? '&' : '?') + `timestamp=${Date.now()}`;
+        const sep = proxyUrl.includes('?') ? '&' : '?';
+        proxyUrl = `${proxyUrl}${sep}timestamp=${Date.now()}`;
       }
       const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(timeout) });
       if (!res.ok) continue;

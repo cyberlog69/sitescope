@@ -3,12 +3,9 @@ import { exportAsJson, exportAsMarkdown } from './exporter.js';
 
 describe('exporter', () => {
   it('generates markdown report content correctly', () => {
-    let capturedContent = '';
-    let capturedFilename = '';
-
     // Mock URL.createObjectURL
-    global.URL.createObjectURL = vi.fn(() => 'blob:mock');
-    global.URL.revokeObjectURL = vi.fn();
+    globalThis.URL.createObjectURL = vi.fn(() => 'blob:mock');
+    globalThis.URL.revokeObjectURL = vi.fn();
 
     // Mock anchor click
     const mockAnchor = {
@@ -32,8 +29,10 @@ describe('exporter', () => {
     };
 
     exportAsMarkdown(sampleData);
-
     expect(mockAnchor.download).toContain('sitescope-report-example.com.md');
     expect(mockAnchor.click).toHaveBeenCalled();
+
+    exportAsJson(sampleData);
+    expect(mockAnchor.download).toContain('sitescope-report-example.com.json');
   });
 });

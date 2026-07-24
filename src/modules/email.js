@@ -144,7 +144,7 @@ export function emailScamScore(localPart, domain) {
   const domainLower = domain.toLowerCase();
   const localLower  = localPart.toLowerCase();
   const domainBase  = domainLower.split('.')[0];
-  const tld         = '.' + domainLower.split('.').slice(1).join('.');
+  const tld         = `.${domainLower.split('.').slice(1).join('.')}`;
 
   if (LEGIT_PROVIDERS.has(domainLower)) {
     score -= 20;

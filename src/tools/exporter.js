@@ -1,7 +1,6 @@
 // @ts-check
 // exporter.js — Diagnostic Report Exporter (JSON, Markdown, Print/PDF)
 
-import { escapeHtml } from '../utils/helpers.js';
 
 /**
  * Trigger browser file download.

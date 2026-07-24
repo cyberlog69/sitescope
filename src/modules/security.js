@@ -103,7 +103,7 @@ function calculateEntropy(str) {
 export function isPrivateIP(ip) {
   const parts = ip.split('.').map(Number);
   if (parts.length !== 4 || parts.some(isNaN)) return false;
-  const [p0, p1, p2, p3] = parts;
+  const [p0, p1] = parts;
   if (p0 === 127) return true; // Loopback
   if (p0 === 10) return true;  // Private Space
   if (p0 === 172 && (p1 >= 16 && p1 <= 31)) return true; // Private Space

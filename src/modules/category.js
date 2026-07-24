@@ -441,7 +441,7 @@ export function classifySite(url, title, description) {
     // ── 1. TLD match (+80, strongest)
     for (const tld of (cat.tlds || [])) {
       const tldNoSlash = tld.replace(/\//g, '');
-      if (domain.endsWith(tldNoSlash) || fullUrl.includes(tld + '/')) {
+      if (domain.endsWith(tldNoSlash) || fullUrl.includes(`${tld}/`)) {
         score += 80;
         hasDomainSignal = true;
         break;
@@ -450,7 +450,7 @@ export function classifySite(url, title, description) {
 
     // ── 2. Known domain exact match (+60)
     for (const d of (cat.domains || [])) {
-      if (domain === d || domain.endsWith('.' + d)) {
+      if (domain === d || domain.endsWith(`.${d}`)) {
         score += 60;
         hasDomainSignal = true;
         break;

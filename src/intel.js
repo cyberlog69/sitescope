@@ -2,7 +2,6 @@
 // intel.js — WHOIS & HTTP Header intel panel
 // SECURITY: All API-returned data is escaped via escapeHtml() before any DOM injection.
 
-import { escapeHtml } from './utils/helpers.js';
 import { fetchViaCorsProxy } from './utils/proxy.js';
 
 export async function fetchWhois(domain) {
@@ -42,7 +41,7 @@ export async function fetchWhois(domain) {
       const row = document.createElement('div');
       row.className = 'whois-row';
       const strong = document.createElement('strong');
-      strong.textContent = label + ': ';
+      strong.textContent = `${label}: `;
       const span = document.createElement('span');
       span.textContent = value;  // textContent — safe even if value contains HTML chars
       row.appendChild(strong);
@@ -50,7 +49,7 @@ export async function fetchWhois(domain) {
       whoisEl.appendChild(row);
     });
 
-  } catch (e) {
+  } catch {
     // Fallback to a CORS-proxied RDAP request if the direct fetch fails
     try {
       const result = await fetchViaCorsProxy(`https://rdap.verisign.com/com/v1/domain/${domain}`, {
@@ -100,7 +99,7 @@ export async function fetchHttpHeaders(domain) {
 
     if (!text || text.includes('error') || text.includes('rate limit') || text.includes('valid key required')) {
       headersEl.textContent = 'Headers unavailable (API rate-limit reached)';
-      return;
+      return {};
     }
 
     const lines = text.split(/\r?\n/);
@@ -119,7 +118,7 @@ export async function fetchHttpHeaders(domain) {
       const row = document.createElement('div');
       row.className = 'header-line';
       const strong = document.createElement('strong');
-      strong.textContent = key + ': ';     // textContent — XSS safe
+      strong.textContent = `${key}: `;     // textContent — XSS safe
       const span = document.createElement('span');
       span.textContent = val;              // textContent — XSS safe
       row.appendChild(strong);
@@ -139,7 +138,7 @@ export async function fetchHttpHeaders(domain) {
       }
     });
     return headerMap;
-  } catch (e) {
+  } catch {
     headersEl.textContent = 'Headers unavailable';
     return {};
   }

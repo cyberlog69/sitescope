@@ -86,7 +86,7 @@ export function sanitizeForSandbox(rawHtml, baseUrl) {
   });
 
   // 6 — Strip event handlers
-  const elementsWithHandlers = doc.querySelectorAll(DANGER_ATTRS.map(a => '[' + a + ']').join(','));
+  const elementsWithHandlers = doc.querySelectorAll(DANGER_ATTRS.map(a => `[${a}]`).join(','));
   elementsWithHandlers.forEach(el => {
     DANGER_ATTRS.forEach(attr => {
       if (el.hasAttribute(attr)) { el.removeAttribute(attr); stats.handlers++; }

@@ -1,16 +1,16 @@
 import { escapeHtml, normalizeUrl, getDomain, sleep, safeHref } from './utils/helpers.js';
 import { logWarn, logError } from './utils/logger.js';
 import { fetchWhois, fetchHttpHeaders } from './intel.js';
-import { classifySite, CATEGORIES } from './modules/category.js';
-import { scanSecurity, heuristicScan, THREAT_META } from './modules/security.js';
+import { classifySite } from './modules/category.js';
+import { scanSecurity, THREAT_META } from './modules/security.js';
 import { sanitizeForSandbox } from './modules/sandbox.js';
-import { checkEmail, isValidEmailFormat, emailScoreFillCls, EMAIL_VERDICT } from './modules/email.js';
+import { checkEmail, emailScoreFillCls } from './modules/email.js';
 import { fetchAllDns, renderDnsPanel } from './tools/dns.js';
 import { fetchSslInfo, renderSslPanel } from './tools/ssl.js';
 import { detectTechnologies, renderStackPanel } from './tools/stack.js';
 import { fetchRobotsTxt, parseRobotsTxt, renderRobotsPanel } from './tools/robots.js';
 import { runLatencySuite, renderLatencyPanel } from './tools/latency.js';
-import { checkWebsiteStatus, submitOutageReport, fetchOutageReports, renderOutageChart, renderPopularGrid, startBackgroundGridPoll, stopBackgroundGridPoll } from './modules/detector.js';
+import { checkWebsiteStatus, submitOutageReport, renderOutageChart, renderPopularGrid, startBackgroundGridPoll, stopBackgroundGridPoll } from './modules/detector.js';
 import { loadMergedHistory, saveHistoryEntry, clearHistory as clearHistoryStore } from './main/history.js';
 import { MAX_BULK_URLS, parseBulkUrls, fetchSiteData, fallbackSiteData } from './main/bulk.js';
 import { calculateSecurityScorecard } from './modules/scorecard.js';
@@ -646,7 +646,6 @@ function renderCategory(url, title, description) {
 
 // ── DOM refs for security panel ─────────────────────────────
 const securityReport    = document.getElementById('securityReport');
-const secPlaceholder    = document.getElementById('secPlaceholder');
 const secScanningBadge  = document.getElementById('secScanningBadge');
 
 function resetSecurityPanel() {
@@ -659,7 +658,7 @@ function resetSecurityPanel() {
   show(secScanningBadge);
 }
 
-function renderSecurityReport(report, stage) {
+function renderSecurityReport(report, _stage) {
   const meta      = THREAT_META[report.level];
   const scoreDisp = Math.min(100, report.score);
   const fillCls   = `sec-fill-${report.level}`;
@@ -1072,7 +1071,7 @@ async function runBulkEmailCheck() {
 }
 
 function buildEmailTableRow(row) {
-  const { index, email, domain, formatOk, isDisp, mxOk, mxCount, score, verdict, verdictMeta } = row;
+  const { index, email, formatOk, isDisp, mxOk, mxCount, score, verdictMeta } = row;
 
   const svgOk  = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>`;
   const svgBad = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
@@ -1404,7 +1403,6 @@ const bulkBtnText      = document.getElementById('bulkBtnText');
 const bulkBtnLoader    = document.getElementById('bulkBtnLoader');
 
 const bulkResults      = document.getElementById('bulkResults');
-const bulkProgressWrap = document.getElementById('bulkProgressWrap');
 const bulkProgressLabel= document.getElementById('bulkProgressLabel');
 const bulkProgressFill = document.getElementById('bulkProgressFill');
 const bulkStopBtn      = document.getElementById('bulkStopBtn');
@@ -1480,7 +1478,7 @@ async function startBulkCheck() {
     const url = urls[i];
     const pct = Math.round((i / urls.length) * 100);
 
-    bulkProgressFill.style.width = pct + '%';
+    bulkProgressFill.style.width = `${pct}%`;
     bulkProgressLabel.textContent = `Checking ${i + 1} of ${urls.length}: ${getDomain(url)}`;
 
     const rowEl = document.getElementById(`bulk-row-${i}`);
@@ -1510,7 +1508,7 @@ async function startBulkCheck() {
   sumTotal.textContent = bulkData.length;
   sumOk.textContent    = okCount;
   sumErr.textContent   = errCount;
-  sumTime.textContent  = elapsed + 's';
+  sumTime.textContent  = `${elapsed}s`;
   show(bulkSummary);
 
   bulkRunning = false;
@@ -1521,7 +1519,7 @@ async function startBulkCheck() {
   if (window.updateBulkTableFilters) window.updateBulkTableFilters();
 }
 
-function makeSkeletonRow(num, url) {
+function makeSkeletonRow(num, _url) {
   const tr = document.createElement('tr');
   tr.id = `bulk-row-${num - 1}`;
   tr.className = 'sk-row';
@@ -1688,7 +1686,7 @@ function renderQrCode(url) {
   const dlBtn     = document.getElementById('qrDownloadBtn');
   if (!qrImage || !showQrBtn) return;
 
-  const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&data=' + encodeURIComponent(url);
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&data=${encodeURIComponent(url)}`;
 
   // Reset state
   qrImage.style.opacity = '0.4';
@@ -1736,7 +1734,7 @@ async function fetchIpIntel(domain) {
     ipEl.textContent = 'Fetching...';
     locEl.textContent = '...';
     document.getElementById('intelGrid').classList.remove('hidden');
-    const res = await fetch('https://dns.google/resolve?name=' + encodeURIComponent(domain));
+    const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}`);
     const data = await res.json();
     if (data.Answer && data.Answer.length > 0) {
       const ip = data.Answer.find(a => a.type === 1);
@@ -1781,7 +1779,7 @@ function renderExtractedLinks(links, baseUrl) {
     list.innerHTML = unique.map(l => {
       const isExternal = new URL(l.url).hostname !== baseHost;
       const badge = isExternal ? '<span class="link-ext-badge link-ext-external">EXT</span>' : '<span class="link-ext-badge link-ext-internal">INT</span>';
-      return '<div class="link-item">' + badge + '<a href="' + escapeHtml(l.url) + '" target="_blank">' + escapeHtml(l.text || l.url) + '</a></div>';
+      return `<div class="link-item">${badge}<a href="${escapeHtml(l.url)}" target="_blank">${escapeHtml(l.text || l.url)}</a></div>`;
     }).join('');
   } catch (err) {
     logWarn('main:renderExtractedLinks', err);

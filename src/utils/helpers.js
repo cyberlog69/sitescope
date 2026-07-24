@@ -22,7 +22,7 @@ export function escapeHtml(str) {
 export function normalizeUrl(raw) {
   raw = raw.trim();
   if (!raw) return null;
-  if (!/^https?:\/\//i.test(raw)) raw = 'https://' + raw;
+  if (!/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
   try { return new URL(raw).href; }
   catch { return null; }
 }

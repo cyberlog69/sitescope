@@ -130,7 +130,7 @@ export function getHostname(urlOrDomain) {
  * @returns {ServiceEntry | null}
  */
 export function findServiceByDomain(domain) {
-  return POPULAR_SERVICES.find(s => s.domain === domain || domain.endsWith('.' + s.domain)) || null;
+  return POPULAR_SERVICES.find(s => s.domain === domain || domain.endsWith(`.${s.domain}`)) || null;
 }
 
 // ── Tier 1: Official Statuspage API ──────────────────────────────────────────
@@ -194,7 +194,7 @@ async function checkDnsOverHttps(domain) {
 async function checkViaProxy(domain) {
   try {
     const res = await fetch(
-      `https://api.allorigins.win/get?url=${encodeURIComponent('https://' + domain)}&timestamp=${Date.now()}`,
+      `https://api.allorigins.win/get?url=${encodeURIComponent(`https://${domain}`)}&timestamp=${Date.now()}`,
       { signal: AbortSignal.timeout(8000) }
     );
     if (!res.ok) return { ok: false };
@@ -213,7 +213,7 @@ async function checkViaProxy(domain) {
 async function checkDirectHead(domain) {
   const start = performance.now();
   try {
-    await fetch('https://' + domain, {
+    await fetch(`https://${domain}`, {
       method: 'HEAD',
       mode: 'no-cors',
       cache: 'no-store',

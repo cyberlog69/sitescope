@@ -32,7 +32,7 @@
  * @param {object} [params.dnsInfo]
  * @returns {ScorecardResult}
  */
-export function calculateSecurityScorecard({ url, securityScan, headers = {}, sslInfo, dnsInfo }) {
+export function calculateSecurityScorecard({ url, securityScan, headers = {}, sslInfo, _dnsInfo }) {
   let score = 100;
   const strengths = [];
   /** @type {RemediationItem[]} */
@@ -191,8 +191,8 @@ export function calculateSecurityScorecard({ url, securityScan, headers = {}, ss
 
   // Calculate grade
   /** @type {SecurityGrade} */
-  let grade = 'F';
-  let badgeClass = 'grade-f';
+  let grade;
+  let badgeClass;
 
   if (score >= 95) {
     grade = 'A+'; badgeClass = 'grade-a-plus';
