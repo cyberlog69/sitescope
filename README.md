@@ -244,6 +244,118 @@ npm run dev
 npm run build
 ```
 
+**Windows shortcut:** Double-click **`start-local.bat`** in the project root — launches the Vite dev server automatically.
+
+---
+
+## 🌍 Deployment Options
+
+SiteScope is a **100% static Vite PWA** — no backend, no database, no server-side code. Deploy anywhere for free.
+
+### ▲ Vercel *(Current live deployment — Recommended)*
+
+1. Sign up at [vercel.com](https://vercel.com) with your GitHub account.
+2. Click **Add New Project** → Import `cyberlog69/sitescope`.
+3. Vercel auto-detects Vite — no settings needed.
+4. The `vercel.json` in the repo automatically applies all HTTP security headers.
+5. Click **Deploy**. Live globally in ~30 seconds.
+
+> **Auto-deploy:** Every `git push` to `master` triggers a fresh deployment automatically.
+
+**Live URL:** [sitescope-omega.vercel.app](https://sitescope-omega.vercel.app)
+
+---
+
+### 🟦 Netlify
+
+1. Sign up at [netlify.com](https://netlify.com) → **Add new site → Import an existing project**.
+2. Connect GitHub, select `cyberlog69/sitescope`.
+3. Build command: `npm run build` · Publish directory: `dist`
+4. Click **Deploy site**.
+
+> Add a `netlify.toml` to replicate security headers from `vercel.json`.
+
+---
+
+### 🐙 GitHub Pages
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to GitHub Pages
+on:
+  push:
+    branches: [master]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm run build
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+```
+
+> **Note:** GitHub Pages doesn't support custom HTTP headers — security headers from `vercel.json` won't apply.
+
+---
+
+### 🔷 Cloudflare Pages
+
+1. **Pages → Create a project** → connect GitHub → select `sitescope`.
+2. Framework preset: **Vite** · Build command: `npm run build` · Output: `dist`
+3. Click **Save and Deploy**.
+
+> Add a `public/_headers` file to apply security headers.
+
+---
+
+### 🐳 Docker
+
+```bash
+# Build
+docker build -t sitescope:latest .
+
+# Run (served by Nginx on port 8080)
+docker run -d -p 8080:80 --name sitescope sitescope:latest
+```
+
+Multi-stage build: Node 20 Alpine compiles the Vite app → Nginx Alpine serves the static output. Custom `nginx.conf` mirrors all production security headers (CSP, HSTS, XSS protection).
+
+---
+
+### ☁️ Deployment Comparison
+
+| Platform | Free Tier | Auto-Deploy | Security Headers | Custom Domain | Edge CDN |
+|---|---|---|---|---|---|
+| **Vercel** *(current)* | ✅ Unlimited | ✅ | ✅ via `vercel.json` | ✅ | ✅ Global |
+| **Netlify** | ✅ 100GB/mo | ✅ | ✅ via `netlify.toml` | ✅ | ✅ Global |
+| **GitHub Pages** | ✅ Unlimited | ✅ | ❌ Limited | ✅ | ✅ Partial |
+| **Cloudflare Pages** | ✅ Unlimited | ✅ | ✅ via `_headers` | ✅ | ✅ Best |
+| **Azure Static** | ✅ 100GB/mo | ✅ | ✅ via config | ✅ | ✅ Global |
+| **AWS Amplify** | ⚠️ Limited | ✅ | ✅ via console | ✅ | ✅ Global |
+| **Docker + Nginx** | Self-hosted | Manual | ✅ via `nginx.conf` | ✅ | — |
+
+---
+
+## ⚠️ Notes & Limitations
+
+| Limitation | Details |
+|---|---|
+| Screenshot Providers | WordPress mShots may take 5–18s for uncached/new sites. Thum.io and Microlink are tried automatically as fallbacks. |
+| Sandbox Proxy | 3-tier CORS proxy chain (`allorigins.win`, `corsproxy.io`, `codetabs`). If one is slow or down, fallback occurs automatically. |
+| URLhaus DB | Covers active and recent threats. Zero-day or brand-new threats may not yet appear. |
+| Bulk Rate Limit | 600ms delay between requests to respect free-tier API limits. |
+| Cloud History | History is stored in a public KV bucket — do not enter sensitive or private URLs. |
+| RDAP Coverage | `.com`/`.net`/`.org` domains have the best RDAP coverage. Some ccTLDs may fall back to "Unavailable". |
+| Down Detector — Services without official APIs | Google, YouTube, Netflix, Amazon, and X do not publish official Statuspage feeds. These are checked via DNS-over-HTTPS + network probes, which are accurate but not authoritative. |
+| Down Detector — Community Reports | Outage reports are stored in a shared public KV bucket. Do not use for private domains. |
+
 ---
 
 ## 🔗 Links
