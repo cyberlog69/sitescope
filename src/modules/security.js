@@ -49,6 +49,23 @@ const PHISHING_KEYWORDS = [
 
 const SUSPICIOUS_EXTS = ['.exe','.bat','.cmd','.msi','.vbs','.ps1','.jar','.apk','.dmg','.iso'];
 
+const HOMOGLYPH_MAP = {
+  '0': 'o', '1': 'l', '3': 'e', '4': 'a', '5': 's', '7': 't', '8': 'b', '@': 'a', '$': 's'
+};
+
+/**
+ * Normalize homoglyph character substitutions (e.g., 'g00gle' -> 'google').
+ * @param {string} str
+ * @returns {string}
+ */
+export function normalizeHomoglyphs(str) {
+  let normalized = str.toLowerCase();
+  for (const [key, val] of Object.entries(HOMOGLYPH_MAP)) {
+    normalized = normalized.replaceAll(key, val);
+  }
+  return normalized;
+}
+
 function levenshtein(a, b) {
   if (Math.abs(a.length - b.length) > 2) return 99; // Early exit
   const dp = Array.from({ length: a.length + 1 }, (_, i) =>
@@ -210,14 +227,25 @@ export function heuristicScan(url) {
       findings.push({ type: 'warn', text: `Multiple hyphens (${hyphenCount}) in domain base "${domainBase}" — frequently used to construct fake subdomains.` });
     }
 
-    // Levenshtein Typosquatting
-    const typoHit = KNOWN_BRANDS.find(brand => {
+    // Homoglyph & Levenshtein Typosquatting
+    const normalizedDomain = normalizeHomoglyphs(domainBase);
+    const homoglyphHit = KNOWN_BRANDS.find(brand => {
       if (domainBase === brand) return false;
-      return levenshtein(domainBase, brand) <= 2 && domainBase.length >= brand.length - 1;
+      return normalizedDomain === brand || (normalizedDomain.includes(brand) && domainBase !== brand);
     });
-    if (typoHit) {
-      score += 25;
-      findings.push({ type: 'danger', text: `Domain "${domainBase}" closely resembles "${typoHit}" — possible brand impersonation / typosquatting.` });
+
+    if (homoglyphHit) {
+      score += 35;
+      findings.push({ type: 'danger', text: `Domain "${domainBase}" uses character substitution (homoglyphs) to visually impersonate "${homoglyphHit}".` });
+    } else {
+      const typoHit = KNOWN_BRANDS.find(brand => {
+        if (domainBase === brand) return false;
+        return levenshtein(domainBase, brand) <= 2 && domainBase.length >= brand.length - 1;
+      });
+      if (typoHit) {
+        score += 25;
+        findings.push({ type: 'danger', text: `Domain "${domainBase}" closely resembles "${typoHit}" — possible brand impersonation / typosquatting.` });
+      }
     }
 
     // Subdomain brand spoofing check

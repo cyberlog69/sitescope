@@ -2255,3 +2255,144 @@ body {
   border-color: rgba(124, 58, 237, 0.3);
   color: #c4b5fd;
 }
+
+/* ── Security Grade Scorecard & Export Dropdown ────────────────────────────── */
+.scorecard-grade-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 2px 9px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  margin-left: 8px;
+  text-transform: uppercase;
+}
+
+.grade-a-plus {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.25);
+}
+
+.grade-a {
+  background: rgba(34, 197, 94, 0.14);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.grade-b {
+  background: rgba(6, 182, 212, 0.14);
+  color: #38bdf8;
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.grade-c {
+  background: rgba(253, 224, 71, 0.14);
+  color: #fde047;
+  border: 1px solid rgba(253, 224, 71, 0.3);
+}
+
+.grade-d {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fb923c;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.grade-f {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+}
+
+/* Export Dropdown Menu */
+.export-dropdown-wrapper {
+  position: relative;
+}
+
+.export-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 160px;
+  background: #0f172a;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 6px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.export-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 12px;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.export-opt:hover {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--text);
+}
+
+/* Scorecard Remediation List */
+.scorecard-remediation-card {
+  margin-top: 14px;
+  padding: 12px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+}
+
+.remediation-header {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.remediation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.remediation-severity-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.sev-critical { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+.sev-high { background: rgba(245, 158, 11, 0.2); color: #fb923c; border: 1px solid rgba(245, 158, 11, 0.3); }
+.sev-medium { background: rgba(253, 224, 71, 0.2); color: #fde047; border: 1px solid rgba(253, 224, 71, 0.3); }
+.sev-low { background: rgba(6, 182, 212, 0.2); color: #38bdf8; border: 1px solid rgba(6, 182, 212, 0.3); }
+

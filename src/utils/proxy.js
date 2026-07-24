@@ -29,6 +29,14 @@ const PROXIES = [
     }
   },
   {
+    // corsproxy.io passes the target response straight through
+    build: (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    extract: async (res) => {
+      const text = await res.text();
+      return text || null;
+    }
+  },
+  {
     // codetabs passes the target response straight through as text
     build: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
     extract: async (res) => {

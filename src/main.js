@@ -13,6 +13,8 @@ import { runLatencySuite, renderLatencyPanel } from './tools/latency.js';
 import { checkWebsiteStatus, submitOutageReport, fetchOutageReports, renderOutageChart, renderPopularGrid, startBackgroundGridPoll, stopBackgroundGridPoll } from './modules/detector.js';
 import { loadMergedHistory, saveHistoryEntry, clearHistory as clearHistoryStore } from './main/history.js';
 import { MAX_BULK_URLS, parseBulkUrls, fetchSiteData, fallbackSiteData } from './main/bulk.js';
+import { calculateSecurityScorecard } from './modules/scorecard.js';
+import { exportAsJson, exportAsMarkdown, triggerPrintReport } from './tools/exporter.js';
 
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js (Modularized)
@@ -76,10 +78,43 @@ let isLoading  = false;
 let cachedHtml = '';
 let cachedHtmlUrl = '';
 let proxyFetchPromise = null;
+let currentReportData = null;
 
 // ── Helpers ─────────────────────────────────────────────────
 function show(el) { el.classList.remove('hidden'); }
 function hide(el) { el.classList.add('hidden'); }
+
+function renderScorecardRemediation(scorecard) {
+  const container = document.getElementById('scorecardRemediation');
+  if (!container) return;
+  if (!scorecard || !scorecard.remediations || scorecard.remediations.length === 0) {
+    hide(container);
+    return;
+  }
+  container.innerHTML = '';
+  const card = document.createElement('div');
+  card.className = 'scorecard-remediation-card';
+  card.innerHTML = `
+    <div class="remediation-header">
+      <span>🛡️ Security Remediation Checklist</span>
+      <span style="font-size:0.7rem;color:var(--text-dim);">${scorecard.remediations.length} action items</span>
+    </div>
+  `;
+  scorecard.remediations.forEach(item => {
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'remediation-item';
+    itemDiv.innerHTML = `
+      <span class="remediation-severity-badge sev-${item.severity}">${item.severity}</span>
+      <div>
+        <div style="font-weight:600;font-size:0.75rem;color:var(--text);">${escapeHtml(item.title)}</div>
+        <div style="font-size:0.7rem;color:var(--text-muted);">${escapeHtml(item.description)}</div>
+      </div>
+    `;
+    card.appendChild(itemDiv);
+  });
+  container.appendChild(card);
+  show(container);
+}
 
 function setLoading(state) {
   isLoading = state;
@@ -314,7 +349,13 @@ async function checkSite(url) {
 
   // ── Category, security, intel ─────────────────────────────────────────────────
   renderCategory(url, title, desc || '');
-  
+
+  let fetchedHeaders = {};
+  let fetchedSslInfo = null;
+
+  const headersPromise = fetchHttpHeaders(domain).then(h => { fetchedHeaders = h || {}; });
+  const sslPromise     = fetchSslInfo(domain).then(ssl => { fetchedSslInfo = ssl; return ssl; });
+
   const scanPromise = scanSecurity(url).then(merged => {
     renderSecurityReport(merged, 'done');
     hide(secScanningBadge);
@@ -325,6 +366,39 @@ async function checkSite(url) {
       favicon: `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=32`,
       threatLevel: merged.level
     }).then(() => renderCloudHistory());
+
+    return merged;
+  });
+
+  Promise.all([scanPromise, headersPromise, sslPromise]).then(([merged]) => {
+    const scorecard = calculateSecurityScorecard({
+      url,
+      securityScan: merged,
+      headers: fetchedHeaders,
+      sslInfo: fetchedSslInfo
+    });
+
+    const gradeBadge = document.getElementById('scorecardGradeBadge');
+    if (gradeBadge) {
+      gradeBadge.textContent = `Grade ${scorecard.grade}`;
+      gradeBadge.className = `scorecard-grade-badge ${scorecard.badgeClass}`;
+      show(gradeBadge);
+    }
+
+    const exportBtn = document.getElementById('exportReportBtn');
+    if (exportBtn) show(exportBtn);
+
+    currentReportData = {
+      url,
+      domain,
+      timestamp: new Date().toISOString(),
+      category: classifySite(url, title, desc || '').category,
+      security: merged,
+      scorecard,
+      httpHeaders: fetchedHeaders
+    };
+
+    renderScorecardRemediation(scorecard);
   });
 
   // ── Status badge ──────────────────────────────────────────────────────────────
@@ -347,7 +421,6 @@ async function checkSite(url) {
     // Run basic WHOIS/Headers legacy check
     if (typeof fetchIpIntel === 'function') fetchIpIntel(domain);
     fetchWhois(domain);
-    fetchHttpHeaders(domain);
     renderQrCode(url);
 
     // DNS Resolver
@@ -1743,6 +1816,43 @@ document.addEventListener('DOMContentLoaded', () => {
   if (qrModal) qrModal.addEventListener('click', (e) => {
     if (e.target === qrModal) qrModal.classList.add('hidden');
   });
+
+  // Export Report Menu
+  const exportBtn     = document.getElementById('exportReportBtn');
+  const exportMenu    = document.getElementById('exportReportMenu');
+  const exportJsonOpt = document.getElementById('exportJsonOpt');
+  const exportMdOpt   = document.getElementById('exportMdOpt');
+  const exportPdfOpt  = document.getElementById('exportPdfOpt');
+
+  if (exportBtn && exportMenu) {
+    exportBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      exportMenu.classList.toggle('hidden');
+    });
+    document.addEventListener('click', () => exportMenu.classList.add('hidden'));
+    exportMenu.addEventListener('click', (e) => e.stopPropagation());
+  }
+
+  if (exportJsonOpt) {
+    exportJsonOpt.addEventListener('click', () => {
+      if (currentReportData) exportAsJson(currentReportData);
+      if (exportMenu) exportMenu.classList.add('hidden');
+    });
+  }
+
+  if (exportMdOpt) {
+    exportMdOpt.addEventListener('click', () => {
+      if (currentReportData) exportAsMarkdown(currentReportData);
+      if (exportMenu) exportMenu.classList.add('hidden');
+    });
+  }
+
+  if (exportPdfOpt) {
+    exportPdfOpt.addEventListener('click', () => {
+      triggerPrintReport();
+      if (exportMenu) exportMenu.classList.add('hidden');
+    });
+  }
 
   
   if (linkExtHeader) linkExtHeader.addEventListener('click', () => linkExtList.classList.toggle('hidden'));

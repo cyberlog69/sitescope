@@ -27,6 +27,8 @@
     connect-src 'self'
       https://api.microlink.io
       https://api.allorigins.win
+      https://corsproxy.io
+      https://api.codetabs.com
       https://urlhaus-api.abuse.ch
       https://dns.google
       https://cloudflare-dns.com
@@ -255,8 +257,31 @@
               <div class="result-url-pill" id="resultUrlPill">
                 <span class="status-dot" id="statusDot"></span>
                 <span id="resultUrlText"></span>
+                <span class="scorecard-grade-badge hidden" id="scorecardGradeBadge" title="Composite Security Grade">--</span>
               </div>
-              <div style="display:flex;gap:8px;">
+              <div style="display:flex;gap:8px;align-items:center;">
+                <div class="export-dropdown-wrapper" style="position:relative;">
+                  <button id="exportReportBtn" class="open-btn hidden" title="Export Diagnostic Report">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Export
+                  </button>
+                  <div class="export-menu hidden" id="exportReportMenu">
+                    <button class="export-opt" id="exportJsonOpt">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+                      JSON Format
+                    </button>
+                    <button class="export-opt" id="exportMdOpt">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M4 4h16v16H4z"/><path d="M7 15V9l3 3 3-3v6M17 15l-2-2m2 2l2-2"/></svg>
+                      Markdown (.md)
+                    </button>
+                    <button class="export-opt" id="exportPdfOpt">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                      Print / PDF
+                    </button>
+                  </div>
+                </div>
                 <button id="showQrBtn" class="open-btn hidden" title="Generate QR Code">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                     <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>

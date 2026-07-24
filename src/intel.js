@@ -130,7 +130,17 @@ export async function fetchHttpHeaders(domain) {
     if (found === 0) {
       headersEl.textContent = 'No significant security headers detected.';
     }
+
+    const headerMap = {};
+    lines.forEach(line => {
+      const colonIdx = line.indexOf(':');
+      if (colonIdx !== -1) {
+        headerMap[line.slice(0, colonIdx).trim().toLowerCase()] = line.slice(colonIdx + 1).trim();
+      }
+    });
+    return headerMap;
   } catch (e) {
     headersEl.textContent = 'Headers unavailable';
+    return {};
   }
 }
