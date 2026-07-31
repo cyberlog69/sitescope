@@ -19,6 +19,7 @@ import { fetchPageSpeed } from './tools/pagespeed.js';
 import { fetchSubdomains } from './tools/subdomains.js';
 import { compareSites } from './tools/comparison.js';
 import { calculateCarbonFootprint, isGreenHosting } from './tools/carbon.js';
+import { auditPrivacyAndConsent } from './tools/privacy.js';
 
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js (Modularized)
@@ -513,6 +514,23 @@ async function checkSite(url) {
         const carbonData = calculateCarbonFootprint(byteSize, false);
         if (currentReportData) currentReportData.carbon = carbonData;
         renderCarbonPanel(carbonData, carbonContainer);
+      });
+    }
+
+    // Cookie Consent & Privacy Policy Inspector
+    const privacyContainer = document.getElementById('intelPrivacy');
+    if (privacyContainer) {
+      proxyFetchPromise.then(json => {
+        const html = (json && json.contents) || cachedHtml || '';
+        fetchHttpHeaders(url).then(hdrs => {
+          const privacyData = auditPrivacyAndConsent(html, hdrs || {}, url);
+          if (currentReportData) currentReportData.privacy = privacyData;
+          renderPrivacyPanel(privacyData, privacyContainer);
+        }).catch(() => {
+          const privacyData = auditPrivacyAndConsent(html, {}, url);
+          if (currentReportData) currentReportData.privacy = privacyData;
+          renderPrivacyPanel(privacyData, privacyContainer);
+        });
       });
     }
 
@@ -1143,6 +1161,69 @@ function renderCarbonPanel(data, container) {
 
   data.tips.forEach((tip) => {
     html += `<li>${escapeHtml(tip)}</li>`;
+  });
+
+  html += `
+        </ul>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+// ── RENDER PRIVACY PANEL ─────────────────────────────────────
+function renderPrivacyPanel(data, container) {
+  if (!container || !data) return;
+
+  const lvlClass = `privacy-${data.complianceLevel.toLowerCase()}`;
+
+  let html = `
+    <div class="privacy-panel-wrap">
+      <div class="privacy-hero-card">
+        <span class="privacy-status-badge ${lvlClass}">${escapeHtml(data.complianceLevel)}</span>
+        <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
+          <div style="font-size:1rem;font-weight:800;color:var(--text);">GDPR / CCPA Privacy Score: ${data.complianceScore}/100</div>
+          <div style="font-size:0.78rem;color:var(--text-muted);">
+            Evaluates Cookie Consent Management Platforms (CMP), Privacy Policy links, and third-party trackers.
+          </div>
+        </div>
+      </div>
+
+      <div class="privacy-grid">
+        <div class="privacy-card">
+          <div class="privacy-card-title">Privacy Policy Link</div>
+          <div class="privacy-card-val">
+            ${data.hasPrivacyPolicy && data.privacyPolicyUrl
+              ? `<a href="${escapeHtml(data.privacyPolicyUrl)}" target="_blank" rel="noopener noreferrer" style="color:var(--cyan);text-decoration:none;">✅ Discovered</a>`
+              : '<span style="color:var(--red);">⚠️ Not Discovered</span>'}
+          </div>
+        </div>
+
+        <div class="privacy-card">
+          <div class="privacy-card-title">Cookie Consent Banner (CMP)</div>
+          <div class="privacy-card-val">
+            ${data.cmpDetected ? `✅ ${escapeHtml(data.cmpDetected.name)}` : '<span style="color:var(--amber);">⚠️ None Detected</span>'}
+          </div>
+        </div>
+
+        <div class="privacy-card">
+          <div class="privacy-card-title">Third-Party Trackers</div>
+          <div class="privacy-card-val">${data.thirdPartyTrackers.length} detected</div>
+          ${data.thirdPartyTrackers.length > 0 ? `
+            <div class="tracker-tag-list">
+              ${data.thirdPartyTrackers.map(t => `<span class="tracker-tag">${escapeHtml(t)}</span>`).join('')}
+            </div>` : ''}
+        </div>
+      </div>
+
+      <div class="carbon-tips-card">
+        <div class="carbon-tips-title" style="color:var(--cyan);">📜 Audit Findings &amp; Checklist</div>
+        <ul style="margin:0;padding-left:18px;font-size:0.74rem;color:var(--text-muted);display:flex;flex-direction:column;gap:4px;">
+  `;
+
+  data.findings.forEach((f) => {
+    html += `<li>[${f.severity.toUpperCase()}] ${escapeHtml(f.message)}</li>`;
   });
 
   html += `
@@ -2317,6 +2398,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (tabName === 'pagespeed') show(document.getElementById('intelTabPagespeed'));
       else if (tabName === 'subdomains') show(document.getElementById('intelTabSubdomains'));
       else if (tabName === 'carbon') show(document.getElementById('intelTabCarbon'));
+      else if (tabName === 'privacy') show(document.getElementById('intelTabPrivacy'));
     });
   });
 

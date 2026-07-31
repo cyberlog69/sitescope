@@ -29,7 +29,8 @@ export function downloadFile(content, filename, mimeType) {
  *   httpHeaders?: Record<string, string>,
  *   pagespeed?: import('./pagespeed.js').PageSpeedResult,
  *   subdomains?: import('./subdomains.js').SubdomainResult,
- *   carbon?: import('./carbon.js').CarbonResult
+ *   carbon?: import('./carbon.js').CarbonResult,
+ *   privacy?: import('./privacy.js').PrivacyAuditResult
  * }} ReportData
  */
 
@@ -120,6 +121,15 @@ export function exportAsMarkdown(reportData) {
     md += `**Annual CO₂ (10k monthly visits):** ${c.annualCo2KgFormatted}  \n`;
     md += `**Trees Needed / Year:** ${c.treesNeeded} mature tree(s) 🌳  \n`;
     md += `**Green Hosting:** ${c.isGreenHost ? '✅ Certified Green Host' : '⚠️ Standard Hosting'}  \n\n`;
+  }
+
+  if (reportData.privacy) {
+    const p = reportData.privacy;
+    md += `## 📜 Cookie Consent & Privacy Audit (GDPR / CCPA)\n\n`;
+    md += `**Compliance Level:** **${p.complianceLevel}** (${p.complianceScore}/100)  \n`;
+    md += `**Privacy Policy:** ${p.hasPrivacyPolicy ? `[Link](${p.privacyPolicyUrl})` : '⚠️ Missing'}  \n`;
+    md += `**Cookie Consent Banner:** ${p.cmpDetected ? `✅ ${p.cmpDetected.name}` : '⚠️ None Detected'}  \n`;
+    md += `**Trackers Detected:** ${p.thirdPartyTrackers.length > 0 ? p.thirdPartyTrackers.join(', ') : 'None'}  \n\n`;
   }
 
   if (reportData.httpHeaders) {
