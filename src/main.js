@@ -20,6 +20,7 @@ import { fetchSubdomains } from './tools/subdomains.js';
 import { compareSites } from './tools/comparison.js';
 import { calculateCarbonFootprint, isGreenHosting } from './tools/carbon.js';
 import { auditPrivacyAndConsent } from './tools/privacy.js';
+import { getWatchlist, addMonitoredSite, removeMonitoredSite, saveWatchlist, evaluateAlertConditions, requestNotificationPermission, sendNotification } from './tools/monitor.js';
 
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js (Modularized)
@@ -1543,6 +1544,11 @@ const views = {
     title: 'Domain Duel — Side-by-Side Comparison',
     el: document.getElementById('duelView'),
     nav: document.getElementById('navDuel')
+  },
+  monitor: {
+    title: 'SSL Expiry & Uptime Monitor',
+    el: document.getElementById('monitorView'),
+    nav: document.getElementById('navMonitor')
   }
 };
 
@@ -1563,6 +1569,10 @@ function setMode(mode) {
     renderCloudHistory();
   }
 
+  if (mode === 'monitor') {
+    renderWatchlistUI();
+  }
+
   if (mode === 'detector') {
     initDetectorTab();
   } else {
@@ -1572,13 +1582,24 @@ function setMode(mode) {
 
 if (document.getElementById('navSingle')) {
   document.getElementById('navSingle').addEventListener('click', () => setMode('single'));
+}
+if (document.getElementById('navBulk')) {
   document.getElementById('navBulk').addEventListener('click', () => setMode('bulk'));
+}
+if (document.getElementById('navEmail')) {
   document.getElementById('navEmail').addEventListener('click', () => setMode('email'));
+}
+if (document.getElementById('navHistory')) {
   document.getElementById('navHistory').addEventListener('click', () => setMode('history'));
+}
+if (document.getElementById('navDetector')) {
   document.getElementById('navDetector').addEventListener('click', () => setMode('detector'));
-  if (document.getElementById('navDuel')) {
-    document.getElementById('navDuel').addEventListener('click', () => setMode('duel'));
-  }
+}
+if (document.getElementById('navDuel')) {
+  document.getElementById('navDuel').addEventListener('click', () => setMode('duel'));
+}
+if (document.getElementById('navMonitor')) {
+  document.getElementById('navMonitor').addEventListener('click', () => setMode('monitor'));
 }
 
 // ── Down Detector Page Controller ────────────────────────────
@@ -2457,7 +2478,154 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   window.updateBulkTableFilters = renderBulkTable;
+
+  initMonitorListeners();
 });
+
+// ── UPTIME & SSL MONITOR MODULE ──────────────────────────────
+function renderWatchlistUI() {
+  const container = document.getElementById('monitorWatchlistContainer');
+  if (!container) return;
+
+  const watchlist = getWatchlist();
+
+  if (watchlist.length === 0) {
+    container.innerHTML = `
+      <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:0.85rem;background:rgba(15,23,42,0.4);border:1px dashed var(--border);border-radius:var(--radius-xs);">
+        No monitored websites in your watchlist yet. Add a domain above to start monitoring reachability and SSL expiration.
+      </div>
+    `;
+    return;
+  }
+
+  let html = '<div class="monitor-list-wrap">';
+  watchlist.forEach((site) => {
+    const dotClass = `status-dot-${site.status}`;
+    const sslStatusClass =
+      site.sslDaysLeft === null ? 'ssl-warn' :
+      site.sslDaysLeft > 30 ? 'ssl-good' :
+      site.sslDaysLeft > 7 ? 'ssl-warn' : 'ssl-danger';
+
+    const sslText = site.sslDaysLeft !== null ? `${site.sslDaysLeft} days left` : 'Checking...';
+
+    html += `
+      <div class="monitor-card" data-id="${site.id}">
+        <div class="monitor-domain">
+          <span class="status-dot ${dotClass}"></span>
+          <span>${escapeHtml(site.domain)}</span>
+        </div>
+        <div class="monitor-meta">
+          <div>Status: <strong style="text-transform:uppercase;color:var(--text);">${site.status}</strong></div>
+          <span class="ssl-badge ${sslStatusClass}">🔒 SSL: ${sslText}</span>
+          <button class="check-btn monitor-check-single-btn" data-id="${site.id}" style="padding:4px 10px;font-size:0.72rem;background:rgba(255,255,255,0.06);border:1px solid var(--border);">🔄 Check Now</button>
+          <button class="check-btn monitor-remove-btn" data-id="${site.id}" style="padding:4px 10px;font-size:0.72rem;background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);">🗑️ Remove</button>
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+
+  container.innerHTML = html;
+
+  container.querySelectorAll('.monitor-remove-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      if (id) {
+        removeMonitoredSite(id);
+        renderWatchlistUI();
+      }
+    });
+  });
+
+  container.querySelectorAll('.monitor-check-single-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      if (id) checkSingleMonitoredSite(id);
+    });
+  });
+}
+
+async function checkSingleMonitoredSite(id) {
+  const watchlist = getWatchlist();
+  const site = watchlist.find((s) => s.id === id);
+  if (!site) return;
+
+  site.status = 'checking';
+  saveWatchlist(watchlist);
+  renderWatchlistUI();
+
+  try {
+    const prevStatus = site.status;
+    const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(site.domain)}`);
+    const data = await res.json();
+    const isUp = Boolean(data && data.Answer && data.Answer.length > 0);
+    /** @type {'up'|'down'} */
+    const currentStatus = isUp ? 'up' : 'down';
+
+    let sslDays = site.sslDaysLeft;
+    try {
+      const sslInfo = await fetchSslInfo(site.domain);
+      if (sslInfo && sslInfo.validTo) {
+        const expMs = new Date(sslInfo.validTo).getTime();
+        const nowMs = Date.now();
+        sslDays = Math.max(0, Math.floor((expMs - nowMs) / (1000 * 60 * 60 * 24)));
+      }
+    } catch {
+      // Ignore SSL fetch error
+    }
+
+    site.status = currentStatus;
+    site.sslDaysLeft = sslDays;
+    site.lastChecked = new Date().toISOString();
+    saveWatchlist(watchlist);
+    renderWatchlistUI();
+
+    const alerts = evaluateAlertConditions(prevStatus, currentStatus, sslDays);
+    alerts.forEach((alert) => {
+      sendNotification(`${alert.title} — ${site.domain}`, alert.message);
+    });
+  } catch (err) {
+    logWarn('main:checkSingleMonitoredSite', err);
+    site.status = 'down';
+    saveWatchlist(watchlist);
+    renderWatchlistUI();
+  }
+}
+
+function initMonitorListeners() {
+  const addBtn = document.getElementById('monitorAddBtn');
+  const addInput = /** @type {HTMLInputElement|null} */ (document.getElementById('monitorAddUrl'));
+  const notifyBtn = document.getElementById('monitorNotifyBtn');
+
+  if (addBtn && addInput) {
+    addBtn.addEventListener('click', () => {
+      const raw = addInput.value.trim();
+      if (!raw) return;
+      const url = normalizeUrl(raw);
+      if (!url) {
+        alert('Please enter a valid URL or domain.');
+        return;
+      }
+      const domain = getDomain(url);
+      addMonitoredSite(url, domain);
+      addInput.value = '';
+      renderWatchlistUI();
+    });
+  }
+
+  if (notifyBtn) {
+    notifyBtn.addEventListener('click', async () => {
+      const granted = await requestNotificationPermission();
+      if (granted) {
+        notifyBtn.textContent = '🔔 Notifications Enabled';
+        notifyBtn.style.color = '#86efac';
+        sendNotification('SiteScope Monitor', 'Web notifications enabled successfully!');
+      } else {
+        alert('Notification permission was denied or is not supported by your browser.');
+      }
+    });
+  }
+}
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

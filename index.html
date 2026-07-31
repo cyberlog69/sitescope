@@ -143,6 +143,13 @@
           </svg>
           <span>Domain Duel</span>
         </button>
+        <button class="nav-item" id="navMonitor" data-view="monitor">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span>Uptime &amp; SSL</span>
+        </button>
       </nav>
 
       <div class="sidebar-footer">
@@ -1015,6 +1022,40 @@
 
             <div id="duelResultContainer" class="duel-results-wrap hidden">
               <!-- Results rendered dynamically via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 🔔 VIEW 7: UPTIME & SSL MONITOR -->
+        <div class="view-section hidden" id="monitorView">
+          <div class="panel" style="padding:24px;">
+            <div class="panel-header" style="margin-bottom:20px;border-bottom:none;padding:0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+              <div class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                SSL Expiry &amp; Uptime Monitor
+              </div>
+              <button id="monitorNotifyBtn" class="check-btn" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);font-size:0.78rem;padding:6px 14px;">
+                🔔 Enable Web Notifications
+              </button>
+            </div>
+
+            <div class="duel-input-card" style="margin-bottom:20px;">
+              <div style="font-size:0.8rem;font-weight:700;color:var(--text);margin-bottom:8px;">Add Site to Watchlist</div>
+              <div style="display:flex;gap:10px;">
+                <input type="text" id="monitorAddUrl" class="duel-input" placeholder="e.g. https://my-website.com" style="flex:1;" />
+                <button id="monitorAddBtn" class="check-btn" style="padding:0 20px;">+ Add Watchlist</button>
+              </div>
+            </div>
+
+            <div class="panel-header" style="margin-bottom:12px;border-bottom:none;padding:0;">
+              <div class="panel-title" style="font-size:0.88rem;">Monitored Websites</div>
+            </div>
+
+            <div id="monitorWatchlistContainer">
+              <!-- Rendered via JS -->
             </div>
           </div>
         </div>
