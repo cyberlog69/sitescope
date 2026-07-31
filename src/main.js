@@ -16,6 +16,7 @@ import { MAX_BULK_URLS, parseBulkUrls, fetchSiteData, fallbackSiteData } from '.
 import { calculateSecurityScorecard } from './modules/scorecard.js';
 import { exportAsJson, exportAsMarkdown, triggerPrintReport } from './tools/exporter.js';
 import { fetchPageSpeed } from './tools/pagespeed.js';
+import { fetchSubdomains } from './tools/subdomains.js';
 
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js (Modularized)
@@ -486,6 +487,16 @@ async function checkSite(url) {
       });
     }
 
+    // Subdomain Discovery Engine
+    const subdomainsContainer = document.getElementById('intelSubdomains');
+    if (subdomainsContainer) {
+      subdomainsContainer.innerHTML = '<div class="info-value">Discovering subdomains via Certificate Transparency (crt.sh)&hellip;</div>';
+      fetchSubdomains(domain).then(subData => {
+        if (currentReportData) currentReportData.subdomains = subData;
+        renderSubdomainsPanel(subData, subdomainsContainer);
+      });
+    }
+
   } else {
     handleFetchError('Site could not be reached. It may be down, blocked, or require authentication.');
   }
@@ -941,6 +952,127 @@ function renderPageSpeedPanel(data, container) {
 
   html += `</div>`;
   container.innerHTML = html;
+}
+
+// ── RENDER SUBDOMAINS PANEL ──────────────────────────────────
+function renderSubdomainsPanel(data, container) {
+  if (!container) return;
+
+  if (data.error || !data.subdomains || data.subdomains.length === 0) {
+    container.innerHTML = `
+      <div style="color:var(--text-muted);font-size:0.8rem;padding:8px;">
+        🕸️ <strong>Subdomain Discovery:</strong> ${escapeHtml(data.error || 'No public certificate subdomains found.')}
+      </div>`;
+    return;
+  }
+
+  const { subdomains, categories, totalCount } = data;
+
+  let activeCategory = 'all';
+  let filterSearch = '';
+
+  function renderGrid() {
+    const gridEl = container.querySelector('#subdomainsGrid');
+    if (!gridEl) return;
+
+    const filtered = subdomains.filter((sub) => {
+      if (filterSearch && !sub.includes(filterSearch.toLowerCase())) return false;
+      if (activeCategory !== 'all') {
+        const catSubs = categories[activeCategory] || [];
+        if (!catSubs.includes(sub)) return false;
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      gridEl.innerHTML = `<div style="grid-column:1/-1;color:var(--text-dim);font-size:0.75rem;padding:12px;text-align:center;">No matching subdomains.</div>`;
+      return;
+    }
+
+    let html = '';
+    filtered.forEach((sub) => {
+      let tag = 'Other';
+      for (const [catName, catList] of Object.entries(categories)) {
+        if (catList.includes(sub)) { tag = catName; break; }
+      }
+
+      html += `
+        <div class="subdomain-card">
+          <a class="subdomain-link" href="https://${escapeHtml(sub)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sub)}</a>
+          <span class="subdomain-cat-tag">${escapeHtml(tag)}</span>
+        </div>
+      `;
+    });
+
+    gridEl.innerHTML = html;
+  }
+
+  let html = `
+    <div class="subdomains-wrap">
+      <div class="subdomains-controls">
+        <div class="subdomains-search-wrap">
+          <input type="text" id="subdomainSearchInput" class="subdomains-search-input" placeholder="Search ${totalCount} subdomains..." />
+        </div>
+        <button id="subdomainsCopyBtn" class="subdomains-copy-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          <span id="subdomainsCopyText">Copy All (${totalCount})</span>
+        </button>
+      </div>
+
+      <div class="subdomains-pills-row" id="subdomainsPills">
+        <span class="subdomain-pill active" data-cat="all">All (${totalCount})</span>
+  `;
+
+  for (const [catName, catList] of Object.entries(categories)) {
+    if (catList.length > 0) {
+      html += `<span class="subdomain-pill" data-cat="${escapeHtml(catName)}">${escapeHtml(catName)} (${catList.length})</span>`;
+    }
+  }
+
+  html += `
+      </div>
+      <div class="subdomains-grid" id="subdomainsGrid"></div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+  renderGrid();
+
+  // Filter input listener
+  const searchInput = container.querySelector('#subdomainSearchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      // @ts-ignore
+      filterSearch = e.target.value.trim();
+      renderGrid();
+    });
+  }
+
+  // Copy button listener
+  const copyBtn = container.querySelector('#subdomainsCopyBtn');
+  const copyText = container.querySelector('#subdomainsCopyText');
+  if (copyBtn && copyText) {
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(subdomains.join('\n')).then(() => {
+        copyText.textContent = '✓ Copied!';
+        setTimeout(() => { copyText.textContent = `Copy All (${totalCount})`; }, 2000);
+      });
+    });
+  }
+
+  // Pills listener
+  const pills = container.querySelectorAll('.subdomain-pill');
+  pills.forEach((p) => {
+    p.addEventListener('click', () => {
+      pills.forEach((other) => other.classList.remove('active'));
+      p.classList.add('active');
+      activeCategory = p.getAttribute('data-cat') || 'all';
+      renderGrid();
+    });
+  });
 }
 
 // ── EMAIL CHECKER & SCAM DETECTION MODULE ────────────────────
@@ -1977,6 +2109,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (tabName === 'robots') show(document.getElementById('intelTabRobots'));
       else if (tabName === 'latency') show(document.getElementById('intelTabLatency'));
       else if (tabName === 'pagespeed') show(document.getElementById('intelTabPagespeed'));
+      else if (tabName === 'subdomains') show(document.getElementById('intelTabSubdomains'));
     });
   });
 

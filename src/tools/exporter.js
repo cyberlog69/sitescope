@@ -27,7 +27,8 @@ export function downloadFile(content, filename, mimeType) {
  *   security?: import('../modules/security.js').ScanResult,
  *   scorecard?: import('../modules/scorecard.js').ScorecardResult,
  *   httpHeaders?: Record<string, string>,
- *   pagespeed?: import('./pagespeed.js').PageSpeedResult
+ *   pagespeed?: import('./pagespeed.js').PageSpeedResult,
+ *   subdomains?: import('./subdomains.js').SubdomainResult
  * }} ReportData
  */
 
@@ -101,6 +102,13 @@ export function exportAsMarkdown(reportData) {
       });
       md += `\n`;
     }
+  }
+
+  if (reportData.subdomains && !reportData.subdomains.error && reportData.subdomains.totalCount > 0) {
+    const sub = reportData.subdomains;
+    md += `## 🕸️ Discovered Subdomains (${sub.totalCount})\n\n`;
+    sub.subdomains.forEach((s) => (md += `- \`${s}\`\n`));
+    md += `\n`;
   }
 
   if (reportData.httpHeaders) {
