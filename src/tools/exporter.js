@@ -28,7 +28,8 @@ export function downloadFile(content, filename, mimeType) {
  *   scorecard?: import('../modules/scorecard.js').ScorecardResult,
  *   httpHeaders?: Record<string, string>,
  *   pagespeed?: import('./pagespeed.js').PageSpeedResult,
- *   subdomains?: import('./subdomains.js').SubdomainResult
+ *   subdomains?: import('./subdomains.js').SubdomainResult,
+ *   carbon?: import('./carbon.js').CarbonResult
  * }} ReportData
  */
 
@@ -109,6 +110,16 @@ export function exportAsMarkdown(reportData) {
     md += `## 🕸️ Discovered Subdomains (${sub.totalCount})\n\n`;
     sub.subdomains.forEach((s) => (md += `- \`${s}\`\n`));
     md += `\n`;
+  }
+
+  if (reportData.carbon) {
+    const c = reportData.carbon;
+    md += `## 🌱 Digital Sustainability & Carbon Footprint\n\n`;
+    md += `**Eco-Score Grade:** **${c.ecoGrade}** (${c.cleanerThanPct}% cleaner than web average)  \n`;
+    md += `**CO₂ Emissions / Visit:** ${c.co2PerVisitGramsFormatted}  \n`;
+    md += `**Annual CO₂ (10k monthly visits):** ${c.annualCo2KgFormatted}  \n`;
+    md += `**Trees Needed / Year:** ${c.treesNeeded} mature tree(s) 🌳  \n`;
+    md += `**Green Hosting:** ${c.isGreenHost ? '✅ Certified Green Host' : '⚠️ Standard Hosting'}  \n\n`;
   }
 
   if (reportData.httpHeaders) {

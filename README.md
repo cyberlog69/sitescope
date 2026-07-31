@@ -24,6 +24,7 @@
 | ⚡ **PageSpeed & Vitals** | Real-time Google PageSpeed Insights integration: 4 Lighthouse score gauges (Performance, Accessibility, Best Practices, SEO), Core Web Vitals (LCP, FCP, CLS, INP, TBT), and top optimization opportunities. |
 | 🕸️ **Subdomains Engine** | Passive Certificate Transparency log enumeration (`crt.sh`) to discover exposed subdomains, categorized by function (Dev, Admin, API, Mail, Web App). |
 | ⚔️ **Domain Duel** | Head-to-head side-by-side site comparison engine comparing Security Scorecards, latency, SSL expiration, protocol encryption, threat levels, and technology stack counts with automatic winner resolution. |
+| 🌱 **Carbon & Eco-Score** | Digital sustainability calculator based on SWDM v4 model: measures CO₂ per visit, annual emissions, tree absorption equivalents, green hosting detection, and digital Eco-Grade (`A+` to `F`). |
 | 🛡️ **Security Scorecard (A+ to F)** | Composite security grade evaluation assessing HTTPS, HSTS, CSP, X-Frame-Options, SSL validity, and threat status with an owner remediation checklist. |
 | 🔍 **Typosquatting Detector** | Advanced homoglyph character substitution (`0`➔`o`, `1`➔`l`) and Levenshtein brand impersonation analysis. |
 | 🖼️ **Screenshot Waterfall** | Three-provider fallback chain (WordPress mShots → Thum.io → Microlink embed) fires immediately for instant sandboxed page previews — no API key needed. |

@@ -18,6 +18,7 @@ import { exportAsJson, exportAsMarkdown, triggerPrintReport } from './tools/expo
 import { fetchPageSpeed } from './tools/pagespeed.js';
 import { fetchSubdomains } from './tools/subdomains.js';
 import { compareSites } from './tools/comparison.js';
+import { calculateCarbonFootprint, isGreenHosting } from './tools/carbon.js';
 
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js (Modularized)
@@ -495,6 +496,23 @@ async function checkSite(url) {
       fetchSubdomains(domain).then(subData => {
         if (currentReportData) currentReportData.subdomains = subData;
         renderSubdomainsPanel(subData, subdomainsContainer);
+      });
+    }
+
+    // Carbon Footprint & Eco-Score Calculator
+    const carbonContainer = document.getElementById('intelCarbon');
+    if (carbonContainer) {
+      fetchHttpHeaders(url).then(fetchedHeaders => {
+        const isGreen = isGreenHosting(fetchedHeaders);
+        const byteSize = (cachedHtml || '').length || 150000;
+        const carbonData = calculateCarbonFootprint(byteSize, isGreen);
+        if (currentReportData) currentReportData.carbon = carbonData;
+        renderCarbonPanel(carbonData, carbonContainer);
+      }).catch(() => {
+        const byteSize = (cachedHtml || '').length || 150000;
+        const carbonData = calculateCarbonFootprint(byteSize, false);
+        if (currentReportData) currentReportData.carbon = carbonData;
+        renderCarbonPanel(carbonData, carbonContainer);
       });
     }
 
@@ -1074,6 +1092,66 @@ function renderSubdomainsPanel(data, container) {
       renderGrid();
     });
   });
+}
+
+// ── RENDER CARBON PANEL ──────────────────────────────────────
+function renderCarbonPanel(data, container) {
+  if (!container || !data) return;
+
+  const gradeClass = `eco-grade-${data.ecoGrade.toLowerCase().replace('+', 'plus')}`;
+
+  let html = `
+    <div class="carbon-panel-wrap">
+      <div class="carbon-hero-card">
+        <div class="eco-grade-ring ${gradeClass}">${escapeHtml(data.ecoGrade)}</div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+          <div style="font-size:1rem;font-weight:800;color:var(--text);">Digital Eco-Score Grade</div>
+          <div style="font-size:0.78rem;color:var(--text-muted);">
+            This page produces <strong>${data.co2PerVisitGramsFormatted}</strong> of CO₂ per visit and is cleaner than <strong>${data.cleanerThanPct}%</strong> of web pages tested.
+          </div>
+          <div style="margin-top:4px;">
+            <span class="vital-badge ${data.isGreenHost ? 'vital-good' : 'vital-needs-improvement'}">
+              ${data.isGreenHost ? '🌱 Certified Green Hosting' : '⚠️ Standard Hosting'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="carbon-metrics-grid">
+        <div class="carbon-metric-card">
+          <div class="carbon-metric-val">${escapeHtml(data.co2PerVisitGramsFormatted)}</div>
+          <div class="carbon-metric-lbl">CO₂ / Visit</div>
+        </div>
+        <div class="carbon-metric-card">
+          <div class="carbon-metric-val">${escapeHtml(data.annualCo2KgFormatted)}</div>
+          <div class="carbon-metric-lbl">Annual CO₂ (10k visits/mo)</div>
+        </div>
+        <div class="carbon-metric-card">
+          <div class="carbon-metric-val">🌳 ${data.treesNeeded}</div>
+          <div class="carbon-metric-lbl">Trees Needed / Year</div>
+        </div>
+        <div class="carbon-metric-card">
+          <div class="carbon-metric-val">${Math.round(data.bytes / 1024)} KB</div>
+          <div class="carbon-metric-lbl">Total Page Payload</div>
+        </div>
+      </div>
+
+      <div class="carbon-tips-card">
+        <div class="carbon-tips-title">🌱 Sustainability Recommendations</div>
+        <ul style="margin:0;padding-left:18px;font-size:0.74rem;color:var(--text-muted);display:flex;flex-direction:column;gap:4px;">
+  `;
+
+  data.tips.forEach((tip) => {
+    html += `<li>${escapeHtml(tip)}</li>`;
+  });
+
+  html += `
+        </ul>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
 }
 
 // ── EMAIL CHECKER & SCAM DETECTION MODULE ────────────────────
@@ -2238,6 +2316,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (tabName === 'latency') show(document.getElementById('intelTabLatency'));
       else if (tabName === 'pagespeed') show(document.getElementById('intelTabPagespeed'));
       else if (tabName === 'subdomains') show(document.getElementById('intelTabSubdomains'));
+      else if (tabName === 'carbon') show(document.getElementById('intelTabCarbon'));
     });
   });
 
