@@ -17,6 +17,7 @@ import { calculateSecurityScorecard } from './modules/scorecard.js';
 import { exportAsJson, exportAsMarkdown, triggerPrintReport } from './tools/exporter.js';
 import { fetchPageSpeed } from './tools/pagespeed.js';
 import { fetchSubdomains } from './tools/subdomains.js';
+import { compareSites } from './tools/comparison.js';
 
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js (Modularized)
@@ -1378,6 +1379,11 @@ const views = {
     title: 'Down Detector & Status Monitor',
     el: document.getElementById('detectorView'),
     nav: document.getElementById('navDetector')
+  },
+  duel: {
+    title: 'Domain Duel — Side-by-Side Comparison',
+    el: document.getElementById('duelView'),
+    nav: document.getElementById('navDuel')
   }
 };
 
@@ -1411,6 +1417,9 @@ if (document.getElementById('navSingle')) {
   document.getElementById('navEmail').addEventListener('click', () => setMode('email'));
   document.getElementById('navHistory').addEventListener('click', () => setMode('history'));
   document.getElementById('navDetector').addEventListener('click', () => setMode('detector'));
+  if (document.getElementById('navDuel')) {
+    document.getElementById('navDuel').addEventListener('click', () => setMode('duel'));
+  }
 }
 
 // ── Down Detector Page Controller ────────────────────────────
@@ -2022,7 +2031,126 @@ function renderExtractedLinks(links, baseUrl) {
   }
 }
 
+// ── DOMAIN DUEL RUNNER & RENDERER ────────────────────────────
+async function runDomainDuel() {
+  const urlAInput = document.getElementById('duelUrlA');
+  const urlBInput = document.getElementById('duelUrlB');
+  const runBtn = document.getElementById('duelRunBtn');
+  const container = document.getElementById('duelResultContainer');
+  if (!urlAInput || !urlBInput || !container || !runBtn) return;
+
+  // @ts-ignore
+  const normA = normalizeUrl(urlAInput.value);
+  // @ts-ignore
+  const normB = normalizeUrl(urlBInput.value);
+
+  if (!normA || !normB) {
+    alert('Please enter valid URLs for both Site A and Site B.');
+    return;
+  }
+
+  // @ts-ignore
+  runBtn.disabled = true;
+  runBtn.innerHTML = '⚔️ Comparing Domains&hellip;';
+  container.classList.remove('hidden');
+  container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted);">Fetching diagnostic metadata for both domains in parallel&hellip;</div>';
+
+  try {
+    const [dataA, dataB] = await Promise.all([
+      fetchSiteData(normA).catch(() => fallbackSiteData(normA)),
+      fetchSiteData(normB).catch(() => fallbackSiteData(normB))
+    ]);
+
+    const domainA = getDomain(normA);
+    const domainB = getDomain(normB);
+
+    const [secA, secB, latA, latB, sslA, sslB] = await Promise.all([
+      scanSecurity(normA, dataA.html || '').catch(() => ({ level: 'safe', score: 0, dbStatus: 'Clean', findings: [] })),
+      scanSecurity(normB, dataB.html || '').catch(() => ({ level: 'safe', score: 0, dbStatus: 'Clean', findings: [] })),
+      runLatencySuite(normA).then(t => t.find(r => r.ok)?.latencyMs ?? null).catch(() => null),
+      runLatencySuite(normB).then(t => t.find(r => r.ok)?.latencyMs ?? null).catch(() => null),
+      fetchSslInfo(domainA).catch(() => null),
+      fetchSslInfo(domainB).catch(() => null)
+    ]);
+
+    const stackA = dataA.html ? detectTechnologies(dataA.html) : [];
+    const stackB = dataB.html ? detectTechnologies(dataB.html) : [];
+
+    const scA = calculateSecurityScorecard({ url: normA, securityScan: secA, sslInfo: sslA });
+    const scB = calculateSecurityScorecard({ url: normB, securityScan: secB, sslInfo: sslB });
+
+    const duelResult = compareSites(
+      { url: normA, domain: domainA, scorecard: scA, security: secA, sslInfo: sslA, latencyMs: latA, techCount: stackA.length },
+      { url: normB, domain: domainB, scorecard: scB, security: secB, sslInfo: sslB, latencyMs: latB, techCount: stackB.length }
+    );
+
+    renderDuelResults(duelResult, container);
+  } catch (err) {
+    logError('main:runDomainDuel', err);
+    container.innerHTML = `<div style="padding:16px;color:var(--red);">Error comparing domains: ${escapeHtml(err instanceof Error ? err.message : String(err))}</div>`;
+  } finally {
+    // @ts-ignore
+    runBtn.disabled = false;
+    runBtn.innerHTML = '⚔️ Fight! Compare Domains';
+  }
+}
+
+function renderDuelResults(result, container) {
+  const { siteA, siteB, comparisons, overallWinner, scoreA, scoreB } = result;
+
+  const isWinnerA = overallWinner === 'A';
+  const isWinnerB = overallWinner === 'B';
+
+  let html = `
+    <div class="duel-head-cards">
+      <div class="duel-card ${isWinnerA ? 'is-winner' : ''}">
+        ${isWinnerA ? '<div class="duel-crown-badge">👑 WINNER</div>' : ''}
+        <div class="duel-domain-title">${escapeHtml(siteA.domain)}</div>
+        <div class="duel-score-badge">${scoreA} <span style="font-size:0.9rem;font-weight:600;color:var(--text-muted);">pts</span></div>
+      </div>
+      <div class="duel-card ${isWinnerB ? 'is-winner' : ''}">
+        ${isWinnerB ? '<div class="duel-crown-badge">👑 WINNER</div>' : ''}
+        <div class="duel-domain-title">${escapeHtml(siteB.domain)}</div>
+        <div class="duel-score-badge">${scoreB} <span style="font-size:0.9rem;font-weight:600;color:var(--text-muted);">pts</span></div>
+      </div>
+    </div>
+
+    <table class="duel-table">
+      <thead>
+        <tr>
+          <th style="text-align:left;">${escapeHtml(siteA.domain)}</th>
+          <th>Metric</th>
+          <th style="text-align:right;">${escapeHtml(siteB.domain)}</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  comparisons.forEach(c => {
+    const winA = c.winner === 'A' ? 'duel-win-cell' : '';
+    const winB = c.winner === 'B' ? 'duel-win-cell' : '';
+
+    html += `
+      <tr>
+        <td class="${winA}" style="text-align:left;">${c.winner === 'A' ? '🏆 ' : ''}${escapeHtml(String(c.valA))}</td>
+        <td style="font-weight:700;color:var(--text-muted);">${escapeHtml(c.label)}</td>
+        <td class="${winB}" style="text-align:right;">${escapeHtml(String(c.valB))}${c.winner === 'B' ? ' 🏆' : ''}</td>
+      </tr>
+    `;
+  });
+
+  html += `
+      </tbody>
+    </table>
+  `;
+
+  container.innerHTML = html;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  const duelRunBtn = document.getElementById('duelRunBtn');
+  if (duelRunBtn) duelRunBtn.addEventListener('click', runDomainDuel);
+
   const historyBtn = document.getElementById('historyBtn');
   const historyDropdown = document.getElementById('historyDropdown');
   const historyClearBtn = document.getElementById('historyClearBtn');

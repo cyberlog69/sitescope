@@ -135,6 +135,14 @@
           </svg>
           <span>Down Detector</span>
         </button>
+        <button class="nav-item" id="navDuel" data-view="duel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="m14.5 17.5 5 5M4 4l5 5m.5 8.5-5 5M19.5 4.5l-5 5"/>
+            <path d="M14.5 4.5 20 10l-6 6-5.5-5.5"/>
+            <path d="M9.5 19.5 4 14l6-6 5.5 5.5"/>
+          </svg>
+          <span>Domain Duel</span>
+        </button>
       </nav>
 
       <div class="sidebar-footer">
@@ -962,6 +970,43 @@
             <div id="historyList" class="history-list-pane">
               <!-- Rendered via JS -->
               <div class="history-loading">Fetching logs...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ⚔️ VIEW 6: DOMAIN DUEL -->
+        <div class="view-section hidden" id="duelView">
+          <div class="panel" style="padding:24px;">
+            <div class="panel-header" style="margin-bottom:20px;border-bottom:none;padding:0;">
+              <div class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path d="m14.5 17.5 5 5M4 4l5 5m.5 8.5-5 5M19.5 4.5l-5 5"/>
+                  <path d="M14.5 4.5 20 10l-6 6-5.5-5.5"/>
+                  <path d="M9.5 19.5 4 14l6-6 5.5 5.5"/>
+                </svg>
+                Domain Duel — Head-to-Head Site Comparison
+              </div>
+            </div>
+
+            <div class="duel-input-card">
+              <div class="duel-inputs-row">
+                <div class="duel-input-group">
+                  <label for="duelUrlA" class="duel-input-label">Site A (Challenger 1)</label>
+                  <input type="text" id="duelUrlA" class="duel-input" placeholder="e.g. github.com" value="github.com" />
+                </div>
+                <div class="duel-vs-badge">VS</div>
+                <div class="duel-input-group">
+                  <label for="duelUrlB" class="duel-input-label">Site B (Challenger 2)</label>
+                  <input type="text" id="duelUrlB" class="duel-input" placeholder="e.g. wikipedia.org" value="wikipedia.org" />
+                </div>
+              </div>
+              <button id="duelRunBtn" class="check-btn" style="margin-top:16px;width:100%;justify-content:center;font-size:0.9rem;padding:12px;">
+                ⚔️ Fight! Compare Domains
+              </button>
+            </div>
+
+            <div id="duelResultContainer" class="duel-results-wrap hidden">
+              <!-- Results rendered dynamically via JS -->
             </div>
           </div>
         </div>
