@@ -6,7 +6,7 @@
 ![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)
 ![PWA Ready](https://img.shields.io/badge/PWA-Ready-06b6d4?style=for-the-badge)
 ![Vite](https://img.shields.io/badge/Build-Vite%208-f59e0b?style=for-the-badge)
-![Tests](https://img.shields.io/badge/Tests-129%20Passed-22c55e?style=for-the-badge&logo=vitest)
+![Tests](https://img.shields.io/badge/Tests-144%20Passed-22c55e?style=for-the-badge&logo=vitest)
 ![PageSpeed](https://img.shields.io/badge/PageSpeed-Insights-3b82f6?style=for-the-badge&logo=google)
 ![Security Hardened](https://img.shields.io/badge/Security-Hardened-ef4444?style=for-the-badge)
 
@@ -208,12 +208,19 @@ sitescope/
 │   │   ├── email.js        # RFC 5322 validator + scam scorer (unit-tested)
 │   │   └── detector.js     # Down Detector — Statuspage APIs, DNS-over-HTTPS (unit-tested)
 │   ├── tools/
-│   │   ├── exporter.js     # Diagnostic Report Exporter (JSON/MD/PDF) (unit-tested)
-│   │   ├── dns.js          # DNS-over-HTTPS multi-record resolver
-│   │   ├── ssl.js          # Certificate Transparency (crt.sh) inspector
-│   │   ├── stack.js        # Technology fingerprinting (unit-tested)
-│   │   ├── robots.js       # robots.txt fetcher + parser (unit-tested)
-│   │   └── latency.js      # 5-probe HEAD latency suite
+│   │   ├── pagespeed.js     # Google PageSpeed Insights & Core Web Vitals (unit-tested)
+│   │   ├── subdomains.js    # Passive crt.sh certificate subdomain discovery (unit-tested)
+│   │   ├── comparison.js    # Side-by-side Domain Duel comparison engine (unit-tested)
+│   │   ├── carbon.js        # Sustainable Web Design Model v4 calculator (unit-tested)
+│   │   ├── privacy.js       # GDPR/CCPA Privacy & Cookie Consent inspector (unit-tested)
+│   │   ├── monitor.js       # SSL Expiry & Uptime Monitor with notifications (unit-tested)
+│   │   ├── specExporter.js  # Postman Collection & OpenAPI 3.0 Spec Exporter (unit-tested)
+│   │   ├── exporter.js      # Diagnostic Report Exporter (JSON/MD/PDF) (unit-tested)
+│   │   ├── dns.js           # DNS-over-HTTPS multi-record resolver
+│   │   ├── ssl.js           # Certificate Transparency inspector
+│   │   ├── stack.js         # Technology fingerprinting (unit-tested)
+│   │   ├── robots.js        # robots.txt fetcher + parser (unit-tested)
+│   │   └── latency.js       # 5-probe HEAD latency suite
 │   └── utils/
 │       ├── helpers.js      # escapeHtml, normalizeUrl, getDomain, sleep, safeHref (unit-tested)
 │       ├── proxy.js        # 3-tier CORS proxy fallback chain (allorigins → corsproxy → codetabs)
