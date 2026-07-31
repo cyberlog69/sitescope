@@ -21,6 +21,7 @@ import { compareSites } from './tools/comparison.js';
 import { calculateCarbonFootprint, isGreenHosting } from './tools/carbon.js';
 import { auditPrivacyAndConsent } from './tools/privacy.js';
 import { getWatchlist, addMonitoredSite, removeMonitoredSite, saveWatchlist, evaluateAlertConditions, requestNotificationPermission, sendNotification } from './tools/monitor.js';
+import { exportPostmanCollection, exportOpenApiSpec } from './tools/specExporter.js';
 
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js (Modularized)
@@ -2178,6 +2179,8 @@ async function fetchIpIntel(domain) {
 }
 
 function renderExtractedLinks(links, baseUrl) {
+  // @ts-ignore
+  window.extractedLinks = links || [];
   const panel = document.getElementById('linkExtractorPanel');
   const countSpan = document.getElementById('linkExtCount');
   const list = document.getElementById('linkExtList');
@@ -2392,6 +2395,31 @@ document.addEventListener('DOMContentLoaded', () => {
   if (exportPdfOpt) {
     exportPdfOpt.addEventListener('click', () => {
       triggerPrintReport();
+      if (exportMenu) exportMenu.classList.add('hidden');
+    });
+  }
+
+  const exportPostmanOpt = document.getElementById('exportPostmanOpt');
+  const exportOpenApiOpt = document.getElementById('exportOpenApiOpt');
+
+  if (exportPostmanOpt) {
+    exportPostmanOpt.addEventListener('click', () => {
+      const domain = (currentReportData && currentReportData.domain) || 'example.com';
+      const url = currentUrl || `https://${domain}`;
+      // @ts-ignore
+      const links = window.extractedLinks || [];
+      exportPostmanCollection(domain, links, url);
+      if (exportMenu) exportMenu.classList.add('hidden');
+    });
+  }
+
+  if (exportOpenApiOpt) {
+    exportOpenApiOpt.addEventListener('click', () => {
+      const domain = (currentReportData && currentReportData.domain) || 'example.com';
+      const url = currentUrl || `https://${domain}`;
+      // @ts-ignore
+      const links = window.extractedLinks || [];
+      exportOpenApiSpec(domain, links, url);
       if (exportMenu) exportMenu.classList.add('hidden');
     });
   }
