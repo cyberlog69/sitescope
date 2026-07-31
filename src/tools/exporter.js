@@ -26,7 +26,8 @@ export function downloadFile(content, filename, mimeType) {
  *   category?: { label?: string, emoji?: string },
  *   security?: import('../modules/security.js').ScanResult,
  *   scorecard?: import('../modules/scorecard.js').ScorecardResult,
- *   httpHeaders?: Record<string, string>
+ *   httpHeaders?: Record<string, string>,
+ *   pagespeed?: import('./pagespeed.js').PageSpeedResult
  * }} ReportData
  */
 
@@ -81,6 +82,25 @@ export function exportAsMarkdown(reportData) {
     md += `### Findings:\n`;
     sec.findings.forEach((f) => (md += `- [${f.type.toUpperCase()}] ${f.text}\n`));
     md += `\n`;
+  }
+
+  if (reportData.pagespeed && !reportData.pagespeed.error) {
+    const ps = reportData.pagespeed;
+    md += `## ⚡ Google PageSpeed Insights & Core Web Vitals\n\n`;
+    md += `| Category | Score |\n|---|---|\n`;
+    md += `| **Performance** | ${ps.scores.performance ?? 'N/A'}/100 |\n`;
+    md += `| **Accessibility** | ${ps.scores.accessibility ?? 'N/A'}/100 |\n`;
+    md += `| **Best Practices** | ${ps.scores.bestPractices ?? 'N/A'}/100 |\n`;
+    md += `| **SEO** | ${ps.scores.seo ?? 'N/A'}/100 |\n\n`;
+
+    if (ps.metrics.length) {
+      md += `### Core Web Vitals\n\n`;
+      md += `| Metric | Value | Rating |\n|---|---|---|\n`;
+      ps.metrics.forEach((m) => {
+        md += `| **${m.title} (${m.name})** | ${m.value} | ${m.rating.toUpperCase()} |\n`;
+      });
+      md += `\n`;
+    }
   }
 
   if (reportData.httpHeaders) {

@@ -15,6 +15,7 @@ import { loadMergedHistory, saveHistoryEntry, clearHistory as clearHistoryStore 
 import { MAX_BULK_URLS, parseBulkUrls, fetchSiteData, fallbackSiteData } from './main/bulk.js';
 import { calculateSecurityScorecard } from './modules/scorecard.js';
 import { exportAsJson, exportAsMarkdown, triggerPrintReport } from './tools/exporter.js';
+import { fetchPageSpeed } from './tools/pagespeed.js';
 
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js (Modularized)
@@ -475,6 +476,16 @@ async function checkSite(url) {
       });
     }
 
+    // PageSpeed Insights & Core Web Vitals
+    const pagespeedContainer = document.getElementById('intelPagespeed');
+    if (pagespeedContainer) {
+      pagespeedContainer.innerHTML = '<div class="info-value">Fetching Google PageSpeed Insights &amp; Core Web Vitals&hellip;</div>';
+      fetchPageSpeed(url, 'mobile').then(psData => {
+        if (currentReportData) currentReportData.pagespeed = psData;
+        renderPageSpeedPanel(psData, pagespeedContainer);
+      });
+    }
+
   } else {
     handleFetchError('Site could not be reached. It may be down, blocked, or require authentication.');
   }
@@ -837,6 +848,99 @@ async function loadSandbox(url) {
     sandboxStatusSub.textContent = 'Could not load sandbox preview';
     sandboxLiveBadge.innerHTML   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Failed`;
   }
+}
+
+// ── RENDER PAGESPEED PANEL ──────────────────────────────────
+function renderPageSpeedPanel(data, container) {
+  if (!container) return;
+
+  if (data.error) {
+    container.innerHTML = `
+      <div style="color:var(--text-muted);font-size:0.8rem;padding:8px;">
+        ⚠️ <strong>PageSpeed Data Unavailable:</strong> ${escapeHtml(data.error)}
+      </div>`;
+    return;
+  }
+
+  const { scores, metrics, opportunities } = data;
+
+  function getScoreClass(score) {
+    if (score === null) return 'ps-gauge-unknown';
+    if (score >= 90) return 'ps-gauge-good';
+    if (score >= 50) return 'ps-gauge-needs-improvement';
+    return 'ps-gauge-poor';
+  }
+
+  function getVitalBadgeClass(rating) {
+    if (rating === 'good') return 'vital-good';
+    if (rating === 'needs-improvement') return 'vital-needs-improvement';
+    if (rating === 'poor') return 'vital-poor';
+    return '';
+  }
+
+  let html = `
+    <div class="pagespeed-wrap">
+      <div class="pagespeed-gauges-grid">
+        <div class="ps-gauge-card">
+          <div class="ps-gauge-ring ${getScoreClass(scores.performance)}">${scores.performance ?? 'N/A'}</div>
+          <div class="ps-gauge-label">Performance</div>
+        </div>
+        <div class="ps-gauge-card">
+          <div class="ps-gauge-ring ${getScoreClass(scores.accessibility)}">${scores.accessibility ?? 'N/A'}</div>
+          <div class="ps-gauge-label">Accessibility</div>
+        </div>
+        <div class="ps-gauge-card">
+          <div class="ps-gauge-ring ${getScoreClass(scores.bestPractices)}">${scores.bestPractices ?? 'N/A'}</div>
+          <div class="ps-gauge-label">Best Practices</div>
+        </div>
+        <div class="ps-gauge-card">
+          <div class="ps-gauge-ring ${getScoreClass(scores.seo)}">${scores.seo ?? 'N/A'}</div>
+          <div class="ps-gauge-label">SEO</div>
+        </div>
+      </div>
+  `;
+
+  if (metrics.length) {
+    html += `
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text);margin-top:4px;">Core Web Vitals & Real-User Metrics</div>
+      <div class="vitals-grid">
+    `;
+    metrics.forEach((m) => {
+      html += `
+        <div class="vital-card">
+          <div class="vital-title">${escapeHtml(m.title)} (${escapeHtml(m.name)})</div>
+          <div class="vital-value-row">
+            <span class="vital-value">${escapeHtml(m.value)}</span>
+            <span class="vital-badge ${getVitalBadgeClass(m.rating)}">${escapeHtml(m.rating.replace('-', ' '))}</span>
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+
+  if (opportunities.length) {
+    html += `
+      <div class="ps-opp-card">
+        <div style="font-size:0.78rem;font-weight:600;color:var(--text);margin-bottom:8px;">💡 Top Optimization Opportunities</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+    `;
+    opportunities.forEach((o) => {
+      html += `
+        <div class="ps-opp-item">
+          <div class="ps-opp-title">
+            <span>${escapeHtml(o.title)}</span>
+            ${o.displayValue ? `<span style="font-weight:700;color:#fb923c;">${escapeHtml(o.displayValue)}</span>` : ''}
+          </div>
+          <div class="ps-opp-desc">${escapeHtml(o.description)}</div>
+        </div>
+      `;
+    });
+    html += `</div></div>`;
+  }
+
+  html += `</div>`;
+  container.innerHTML = html;
 }
 
 // ── EMAIL CHECKER & SCAM DETECTION MODULE ────────────────────
@@ -1872,6 +1976,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (tabName === 'stack') show(document.getElementById('intelTabStack'));
       else if (tabName === 'robots') show(document.getElementById('intelTabRobots'));
       else if (tabName === 'latency') show(document.getElementById('intelTabLatency'));
+      else if (tabName === 'pagespeed') show(document.getElementById('intelTabPagespeed'));
     });
   });
 
