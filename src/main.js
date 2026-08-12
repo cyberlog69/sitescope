@@ -23,6 +23,7 @@ import { auditPrivacyAndConsent } from './tools/privacy.js';
 import { getWatchlist, addMonitoredSite, removeMonitoredSite, saveWatchlist, evaluateAlertConditions, requestNotificationPermission, sendNotification } from './tools/monitor.js';
 import { exportPostmanCollection, exportOpenApiSpec } from './tools/specExporter.js';
 import { extractSeoMetadata } from './tools/seo.js';
+import { fetchEmailSecurity } from './tools/emailSecurity.js';
 
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js (Modularized)
@@ -549,6 +550,19 @@ async function checkSite(url) {
         const seoData = extractSeoMetadata(cachedHtml || '', url, domain);
         if (currentReportData) currentReportData.seo = seoData;
         renderSeoPanel(seoData, seoContainer);
+      });
+    }
+
+    // Email Security & Domain Authentication Auditor
+    const emailSecContainer = document.getElementById('intelEmailSecurity');
+    if (emailSecContainer) {
+      fetchEmailSecurity(domain).then(emailSecData => {
+        if (currentReportData) currentReportData.emailSecurity = emailSecData;
+        renderEmailSecurityPanel(emailSecData, emailSecContainer);
+      }).catch(() => {
+        if (emailSecContainer) {
+          emailSecContainer.innerHTML = '<div style="padding:14px;color:var(--text-muted);">Could not load Email Security DNS records.</div>';
+        }
       });
     }
 
@@ -1381,6 +1395,154 @@ function renderSeoPanel(data, container) {
         copyBtn.textContent = '✅ Copied to Clipboard!';
         setTimeout(() => {
           copyBtn.textContent = '📋 Copy Recommended Meta Tags Snippet';
+        }, 2000);
+      });
+    });
+  }
+}
+
+// ── RENDER EMAIL SECURITY & AUTHENTICATION PANEL ──────────────
+function renderEmailSecurityPanel(data, container) {
+  if (!container || !data) return;
+
+  const gradeClass = `seo-grade-${data.authGrade.toLowerCase().replace('+', 'plus')}`;
+  let riskClass = 'risk-low';
+  let riskLabel = 'Low Phishing Risk';
+  if (data.spoofingRiskScore >= 60) {
+    riskClass = 'risk-high';
+    riskLabel = 'Critical Phishing Risk';
+  } else if (data.spoofingRiskScore >= 25) {
+    riskClass = 'risk-med';
+    riskLabel = 'Moderate Spoofing Risk';
+  }
+
+  const dmarcBadgeCls = `dmarc-badge-${data.dmarc.policy}`;
+  const dnssecBadgeCls = data.dnssec.enabled ? 'dnssec-badge-active' : 'dnssec-badge-inactive';
+
+  let html = `
+    <div class="seo-panel-wrap">
+      <div class="seo-score-hero">
+        <div class="seo-grade-badge ${gradeClass}">${escapeHtml(data.authGrade)}</div>
+        <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:1.05rem;font-weight:800;color:var(--text);">Domain Authentication: ${escapeHtml(data.authGrade)}</span>
+            <span class="risk-pill ${riskClass}">${escapeHtml(riskLabel)} (${data.spoofingRiskScore}/100)</span>
+          </div>
+          <div style="font-size:0.78rem;color:var(--text-muted);">
+            Cryptographic DNS audit evaluating DMARC policy, SPF alignment, DNSSEC integrity, and BIMI brand protection.
+          </div>
+        </div>
+      </div>
+
+      <div class="email-sec-grid">
+        <!-- DMARC Card -->
+        <div class="email-sec-card">
+          <div class="email-sec-title">
+            <span>DMARC Enforcement</span>
+            <span class="${dmarcBadgeCls}">${data.dmarc.present ? escapeHtml(data.dmarc.policy.toUpperCase()) : 'MISSING'}</span>
+          </div>
+          <div class="email-sec-val">${data.dmarc.present ? `Policy: p=${data.dmarc.policy}` : '⚠️ Domain Unprotected'}</div>
+          <div class="email-sec-desc">
+            ${data.dmarc.rua ? `Reports to: ${escapeHtml(data.dmarc.rua)}` : 'Forensic reporting (rua=) not configured.'}
+          </div>
+        </div>
+
+        <!-- SPF Card -->
+        <div class="email-sec-card">
+          <div class="email-sec-title">
+            <span>SPF Qualifier</span>
+            <span class="ssl-badge ${data.spf.qualifier === '-all' || data.spf.qualifier === '~all' ? 'ssl-good' : 'ssl-danger'}">${escapeHtml(data.spf.qualifier.toUpperCase())}</span>
+          </div>
+          <div class="email-sec-val">${data.spf.present ? `${data.spf.mechanisms.length} Mechanisms` : '⚠️ No SPF Record'}</div>
+          <div class="email-sec-desc">
+            ${data.spf.present ? `Estimated DNS lookups: ${data.spf.lookupCountEstimate}/10 (RFC 7208 compliant)` : 'Anyone can send emails claiming to be from this domain.'}
+          </div>
+        </div>
+
+        <!-- DNSSEC Card -->
+        <div class="email-sec-card">
+          <div class="email-sec-title">
+            <span>DNSSEC Cryptography</span>
+            <span class="${dnssecBadgeCls}">${data.dnssec.enabled ? 'ACTIVE' : 'INACTIVE'}</span>
+          </div>
+          <div class="email-sec-val">${data.dnssec.enabled ? 'Authenticated (AD Flag)' : 'Unsigned DNS Zone'}</div>
+          <div class="email-sec-desc">
+            ${data.dnssec.enabled ? 'Cryptographic DNS responses protect against DNS hijacking and cache poisoning.' : 'DNS responses are not cryptographically signed.'}
+          </div>
+        </div>
+
+        <!-- Mail Provider Card -->
+        <div class="email-sec-card">
+          <div class="email-sec-title">
+            <span>Mail Infrastructure</span>
+            <span class="ssl-badge ssl-good">MX DETECTED</span>
+          </div>
+          <div class="email-sec-val">${escapeHtml(data.mailProvider)}</div>
+          <div class="email-sec-desc">
+            ${data.mxRecords.length > 0 ? `${data.mxRecords.length} MX host(s) configured.` : 'No mail exchanger records found.'}
+          </div>
+        </div>
+
+        <!-- BIMI Card -->
+        <div class="email-sec-card">
+          <div class="email-sec-title">
+            <span>BIMI Brand Indicator</span>
+            <span class="ssl-badge ${data.bimi.present ? 'ssl-good' : 'ssl-warn'}">${data.bimi.present ? 'CONFIGURED' : 'NONE'}</span>
+          </div>
+          <div class="email-sec-val">${data.bimi.present ? (data.bimi.hasVmc ? 'Verified Mark (VMC)' : 'Logo Configured') : 'Not Configured'}</div>
+          <div class="email-sec-desc">
+            Displays verified brand logo in supporting email clients (Gmail, Apple Mail, Yahoo).
+          </div>
+        </div>
+
+        <!-- MTA-STS Card -->
+        <div class="email-sec-card">
+          <div class="email-sec-title">
+            <span>MTA-STS Encryption</span>
+            <span class="ssl-badge ${data.mtaSts.present ? 'ssl-good' : 'ssl-warn'}">${data.mtaSts.present ? 'ENFORCED' : 'NONE'}</span>
+          </div>
+          <div class="email-sec-val">${data.mtaSts.present ? 'TLS Enforced in Transit' : 'Standard SMTP'}</div>
+          <div class="email-sec-desc">
+            Guarantees incoming mail transit over encrypted TLS connections.
+          </div>
+        </div>
+      </div>
+
+      <div class="carbon-tips-card">
+        <div class="carbon-tips-title" style="color:var(--cyan);">🛡️ Security Findings &amp; Hardening Recommendations</div>
+        <ul style="margin:0;padding-left:18px;font-size:0.74rem;color:var(--text-muted);display:flex;flex-direction:column;gap:4px;">
+  `;
+
+  data.checklist.forEach((c) => {
+    let icon = '✅';
+    if (c.severity === 'critical') icon = '🚨';
+    else if (c.severity === 'warning') icon = '⚠️';
+    else if (c.severity === 'info') icon = 'ℹ️';
+
+    html += `<li>${icon} <strong>${escapeHtml(c.label)}</strong>: ${escapeHtml(c.hint)}</li>`;
+  });
+
+  html += `
+        </ul>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+        <button id="copyDmarcBtn" class="check-btn" style="padding:6px 14px;font-size:0.75rem;background:rgba(255,255,255,0.06);border:1px solid var(--border);">
+          📋 Copy Recommended DMARC Record
+        </button>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  const copyDmarcBtn = container.querySelector('#copyDmarcBtn');
+  if (copyDmarcBtn) {
+    copyDmarcBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(data.recommendedDmarc).then(() => {
+        copyDmarcBtn.textContent = '✅ Copied DMARC Record!';
+        setTimeout(() => {
+          copyDmarcBtn.textContent = '📋 Copy Recommended DMARC Record';
         }, 2000);
       });
     });
@@ -2599,6 +2761,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (tabName === 'carbon') show(document.getElementById('intelTabCarbon'));
       else if (tabName === 'privacy') show(document.getElementById('intelTabPrivacy'));
       else if (tabName === 'seo') show(document.getElementById('intelTabSeo'));
+      else if (tabName === 'emailSecurity') show(document.getElementById('intelTabEmailSecurity'));
     });
   });
 

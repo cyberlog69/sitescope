@@ -31,7 +31,8 @@ export function downloadFile(content, filename, mimeType) {
  *   subdomains?: import('./subdomains.js').SubdomainResult,
  *   carbon?: import('./carbon.js').CarbonResult,
  *   privacy?: import('./privacy.js').PrivacyAuditResult,
- *   seo?: import('./seo.js').SeoMetadataResult
+ *   seo?: import('./seo.js').SeoMetadataResult,
+ *   emailSecurity?: import('./emailSecurity.js').EmailSecurityResult
  * }} ReportData
  */
 
@@ -142,6 +143,17 @@ export function exportAsMarkdown(reportData) {
     md += `**Open Graph Image:** ${s.og.image ? `✅ [View Image](${s.og.image})` : '⚠️ Missing'}  \n`;
     md += `**Twitter Card Type:** ${s.twitter.card || '⚠️ None'}  \n`;
     md += `**Structured Data:** ${s.jsonLdSchemas.length > 0 ? s.jsonLdSchemas.join(', ') : 'None'}  \n\n`;
+  }
+
+  if (reportData.emailSecurity) {
+    const e = reportData.emailSecurity;
+    md += `## 🛡️ Email Security & Domain Authentication\n\n`;
+    md += `**Domain Auth Grade:** **${e.authGrade}** (Spoofing Risk: ${e.spoofingRiskScore}/100)  \n`;
+    md += `**Mail Provider:** ${e.mailProvider}  \n`;
+    md += `**DMARC Policy:** ${e.dmarc.present ? `✅ ${e.dmarc.policy.toUpperCase()}` : '⚠️ Missing (Spoofable)'}  \n`;
+    md += `**SPF Qualifier:** ${e.spf.present ? `✅ ${e.spf.qualifier}` : '⚠️ Missing'}  \n`;
+    md += `**DNSSEC Status:** ${e.dnssec.enabled ? '✅ Active' : '⚠️ Inactive'}  \n`;
+    md += `**BIMI Brand Indicator:** ${e.bimi.present ? '✅ Configured' : 'None'}  \n\n`;
   }
 
   if (reportData.httpHeaders) {
