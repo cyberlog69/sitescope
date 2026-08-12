@@ -30,7 +30,8 @@ export function downloadFile(content, filename, mimeType) {
  *   pagespeed?: import('./pagespeed.js').PageSpeedResult,
  *   subdomains?: import('./subdomains.js').SubdomainResult,
  *   carbon?: import('./carbon.js').CarbonResult,
- *   privacy?: import('./privacy.js').PrivacyAuditResult
+ *   privacy?: import('./privacy.js').PrivacyAuditResult,
+ *   seo?: import('./seo.js').SeoMetadataResult
  * }} ReportData
  */
 
@@ -130,6 +131,17 @@ export function exportAsMarkdown(reportData) {
     md += `**Privacy Policy:** ${p.hasPrivacyPolicy ? `[Link](${p.privacyPolicyUrl})` : '⚠️ Missing'}  \n`;
     md += `**Cookie Consent Banner:** ${p.cmpDetected ? `✅ ${p.cmpDetected.name}` : '⚠️ None Detected'}  \n`;
     md += `**Trackers Detected:** ${p.thirdPartyTrackers.length > 0 ? p.thirdPartyTrackers.join(', ') : 'None'}  \n\n`;
+  }
+
+  if (reportData.seo) {
+    const s = reportData.seo;
+    md += `## 🔍 Visual SEO & Social Card Audit\n\n`;
+    md += `**SEO Health Grade:** **${s.seoGrade}** (${s.seoScore}/100)  \n`;
+    md += `**Page Title:** ${s.title || '⚠️ Missing'}  \n`;
+    md += `**Meta Description:** ${s.description || '⚠️ Missing'}  \n`;
+    md += `**Open Graph Image:** ${s.og.image ? `✅ [View Image](${s.og.image})` : '⚠️ Missing'}  \n`;
+    md += `**Twitter Card Type:** ${s.twitter.card || '⚠️ None'}  \n`;
+    md += `**Structured Data:** ${s.jsonLdSchemas.length > 0 ? s.jsonLdSchemas.join(', ') : 'None'}  \n\n`;
   }
 
   if (reportData.httpHeaders) {

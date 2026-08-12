@@ -22,6 +22,7 @@ import { calculateCarbonFootprint, isGreenHosting } from './tools/carbon.js';
 import { auditPrivacyAndConsent } from './tools/privacy.js';
 import { getWatchlist, addMonitoredSite, removeMonitoredSite, saveWatchlist, evaluateAlertConditions, requestNotificationPermission, sendNotification } from './tools/monitor.js';
 import { exportPostmanCollection, exportOpenApiSpec } from './tools/specExporter.js';
+import { extractSeoMetadata } from './tools/seo.js';
 
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js (Modularized)
@@ -533,6 +534,21 @@ async function checkSite(url) {
           if (currentReportData) currentReportData.privacy = privacyData;
           renderPrivacyPanel(privacyData, privacyContainer);
         });
+      });
+    }
+
+    // Visual SEO & Social Card Simulator
+    const seoContainer = document.getElementById('intelSeo');
+    if (seoContainer) {
+      proxyFetchPromise.then(json => {
+        const html = (json && json.contents) || cachedHtml || '';
+        const seoData = extractSeoMetadata(html, url, domain);
+        if (currentReportData) currentReportData.seo = seoData;
+        renderSeoPanel(seoData, seoContainer);
+      }).catch(() => {
+        const seoData = extractSeoMetadata(cachedHtml || '', url, domain);
+        if (currentReportData) currentReportData.seo = seoData;
+        renderSeoPanel(seoData, seoContainer);
       });
     }
 
@@ -1235,6 +1251,140 @@ function renderPrivacyPanel(data, container) {
   `;
 
   container.innerHTML = html;
+}
+
+// ── RENDER VISUAL SEO & SOCIAL SIMULATOR PANEL ────────────────
+function renderSeoPanel(data, container) {
+  if (!container || !data) return;
+
+  const gradeClass = `seo-grade-${data.seoGrade.toLowerCase().replace('+', 'plus')}`;
+  const rawUrl = data.canonical || data.og.url || 'https://example.com';
+  const domain = getDomain(rawUrl) || 'example.com';
+
+  let html = `
+    <div class="seo-panel-wrap">
+      <div class="seo-score-hero">
+        <div class="seo-grade-badge ${gradeClass}">${escapeHtml(data.seoGrade)}</div>
+        <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
+          <div style="font-size:1.05rem;font-weight:800;color:var(--text);">SEO &amp; Social Health: ${data.seoScore}/100</div>
+          <div style="font-size:0.78rem;color:var(--text-muted);">
+            Evaluates Open Graph, Twitter/X cards, canonical URLs, and Google search snippet optimization.
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-header" style="margin-bottom:0;border-bottom:none;padding:0;">
+        <div class="panel-title" style="font-size:0.88rem;">📱 Interactive Social Card &amp; Search Simulator</div>
+      </div>
+
+      <div class="seo-sim-nav">
+        <button class="seo-sim-btn active" data-sim="google">🌐 Google SERP</button>
+        <button class="seo-sim-btn" data-sim="twitter">🐦 X / Twitter</button>
+        <button class="seo-sim-btn" data-sim="facebook">👥 Facebook / LinkedIn</button>
+        <button class="seo-sim-btn" data-sim="discord">💬 Discord / Slack</button>
+      </div>
+
+      <div class="seo-card-preview" id="seoPreviewBox">
+        <!-- Google SERP Default -->
+        <div class="serp-box" id="simGoogle">
+          <div class="serp-url">
+            <span style="font-size:0.85rem;">🌐</span>
+            <span>${escapeHtml(rawUrl)}</span>
+          </div>
+          <a class="serp-title" href="${escapeHtml(rawUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(data.title || domain)}</a>
+          <div class="serp-snippet">${escapeHtml(data.description || 'No meta description provided. Google will generate an automated snippet from page body content.')}</div>
+        </div>
+
+        <!-- Twitter Card -->
+        <div class="twitter-card-box hidden" id="simTwitter">
+          ${data.twitter.image ? `<img src="${escapeHtml(data.twitter.image)}" class="twitter-card-img" alt="Twitter Card Preview" onerror="this.style.display='none'" />` : '<div class="twitter-card-img" style="display:flex;align-items:center;justify-content:center;color:#71767b;font-size:0.8rem;">No Twitter preview image (twitter:image / og:image)</div>'}
+          <div class="twitter-card-content">
+            <div class="twitter-card-domain">${escapeHtml(domain)}</div>
+            <div class="twitter-card-title">${escapeHtml(data.twitter.title || data.title || domain)}</div>
+            <div class="twitter-card-desc">${escapeHtml(data.twitter.description || data.description || '')}</div>
+          </div>
+        </div>
+
+        <!-- Facebook / LinkedIn -->
+        <div class="twitter-card-box hidden" id="simFacebook" style="background:#242526;border-color:#3a3b3c;">
+          ${data.og.image ? `<img src="${escapeHtml(data.og.image)}" class="twitter-card-img" alt="OG Preview" onerror="this.style.display='none'" />` : '<div class="twitter-card-img" style="display:flex;align-items:center;justify-content:center;color:#b0b3b8;font-size:0.8rem;">No Open Graph preview image (og:image)</div>'}
+          <div class="twitter-card-content">
+            <div class="twitter-card-domain" style="color:#b0b3b8;">${escapeHtml(domain)}</div>
+            <div class="twitter-card-title" style="color:#e4e6eb;">${escapeHtml(data.og.title || data.title || domain)}</div>
+            <div class="twitter-card-desc" style="color:#b0b3b8;">${escapeHtml(data.og.description || data.description || '')}</div>
+          </div>
+        </div>
+
+        <!-- Discord Embed -->
+        <div class="discord-embed-box hidden" id="simDiscord">
+          <div class="discord-provider">${escapeHtml(data.og.siteName || domain)}</div>
+          <a class="discord-title" href="${escapeHtml(rawUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(data.og.title || data.title || domain)}</a>
+          <div class="discord-desc">${escapeHtml(data.og.description || data.description || '')}</div>
+          ${data.og.image ? `<img src="${escapeHtml(data.og.image)}" class="discord-img" alt="Discord embed preview" onerror="this.style.display='none'" />` : ''}
+        </div>
+      </div>
+
+      <div class="carbon-tips-card">
+        <div class="carbon-tips-title" style="color:var(--cyan);">🔍 SEO Audit Checklist &amp; Recommendations</div>
+        <ul style="margin:0;padding-left:18px;font-size:0.74rem;color:var(--text-muted);display:flex;flex-direction:column;gap:4px;">
+  `;
+
+  data.checklist.forEach((item) => {
+    const icon = item.pass ? '✅' : '⚠️';
+    html += `<li>${icon} <strong>${escapeHtml(item.label)}</strong>: ${escapeHtml(item.hint)}</li>`;
+  });
+
+  html += `
+        </ul>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;">
+        <button id="copySeoSnippetBtn" class="check-btn" style="padding:6px 14px;font-size:0.75rem;background:rgba(255,255,255,0.06);border:1px solid var(--border);">
+          📋 Copy Recommended Meta Tags Snippet
+        </button>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  // Simulator tab switching
+  const simBtns = container.querySelectorAll('.seo-sim-btn');
+  const simBoxes = {
+    google: container.querySelector('#simGoogle'),
+    twitter: container.querySelector('#simTwitter'),
+    facebook: container.querySelector('#simFacebook'),
+    discord: container.querySelector('#simDiscord')
+  };
+
+  simBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      simBtns.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      const target = btn.getAttribute('data-sim');
+
+      Object.keys(simBoxes).forEach((key) => {
+        if (simBoxes[key]) simBoxes[key].classList.add('hidden');
+      });
+
+      if (target && simBoxes[target]) {
+        simBoxes[target].classList.remove('hidden');
+      }
+    });
+  });
+
+  // Copy Recommended Meta Tags button
+  const copyBtn = container.querySelector('#copySeoSnippetBtn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(data.recommendedMetaTagsSnippet).then(() => {
+        copyBtn.textContent = '✅ Copied to Clipboard!';
+        setTimeout(() => {
+          copyBtn.textContent = '📋 Copy Recommended Meta Tags Snippet';
+        }, 2000);
+      });
+    });
+  }
 }
 
 // ── EMAIL CHECKER & SCAM DETECTION MODULE ────────────────────
@@ -2448,6 +2598,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (tabName === 'subdomains') show(document.getElementById('intelTabSubdomains'));
       else if (tabName === 'carbon') show(document.getElementById('intelTabCarbon'));
       else if (tabName === 'privacy') show(document.getElementById('intelTabPrivacy'));
+      else if (tabName === 'seo') show(document.getElementById('intelTabSeo'));
     });
   });
 
