@@ -6,7 +6,7 @@
 ![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)
 ![PWA Ready](https://img.shields.io/badge/PWA-Ready-06b6d4?style=for-the-badge)
 ![Vite](https://img.shields.io/badge/Build-Vite%208-f59e0b?style=for-the-badge)
-![Tests](https://img.shields.io/badge/Tests-149%20Passed-22c55e?style=for-the-badge&logo=vitest)
+![Tests](https://img.shields.io/badge/Tests-152%20Passed-22c55e?style=for-the-badge&logo=vitest)
 ![PageSpeed](https://img.shields.io/badge/PageSpeed-Insights-3b82f6?style=for-the-badge&logo=google)
 ![Security Hardened](https://img.shields.io/badge/Security-Hardened-ef4444?style=for-the-badge)
 
@@ -21,6 +21,7 @@
 | 🎨 **Cosmic UI** | Dark cosmic theme, glassmorphic panels, animated gradient mesh, and neon accents with GPU-accelerated rendering. |
 | 📱 **PWA Ready** | Installable as a standalone app on desktop and mobile. Hardened Service Worker with stale-while-revalidate caching and 5 MB cache cap. |
 | ☁️ **Cloud & Local History** | Recent scans are synchronized across sessions via `kvdb.io` with instant `localStorage` fallbacks. |
+| 🤖 **AI & LLM Scraper Control** | Audits permissions for 12+ AI crawlers (`GPTBot`, `ClaudeBot`, `Google-Extended`, `PerplexityBot`, `CCBot`, `Meta-ExternalAgent`, `ByteSpider`, `Applebot-Extended`) across `robots.txt`, `ai.txt`, and HTML `noai` meta directives with a 1-click AI blocklist generator. |
 | 🛡️ **Email Security & Auth** | Deep DNS-over-HTTPS cryptographic audit: evaluates DMARC policy (`reject`/`quarantine`/`none`), SPF lookup limits & qualifiers, DNSSEC authenticated data, BIMI verified mark certificates, MTA-STS transport encryption, and computes an overall **Email Phishing & Domain Spoofing Risk Score (0–100)**. |
 | 🔍 **Visual SEO & Social Simulator** | Pixel-accurate preview simulator for **Google Search (SERP)**, **X / Twitter Cards**, **Facebook / LinkedIn**, and **Discord / Slack** embeds with meta tags health score and 1-click HTML fix snippet generator. |
 | ⚡ **PageSpeed & Vitals** | Real-time Google PageSpeed Insights integration: 4 Lighthouse score gauges (Performance, Accessibility, Best Practices, SEO), Core Web Vitals (LCP, FCP, CLS, INP, TBT), and top optimization opportunities. |
@@ -210,6 +211,7 @@ sitescope/
 │   │   ├── email.js        # RFC 5322 validator + scam scorer (unit-tested)
 │   │   └── detector.js     # Down Detector — Statuspage APIs, DNS-over-HTTPS (unit-tested)
 │   ├── tools/
+│   │   ├── aiPolicy.js      # AI Scraper & LLM Crawler Policy Inspector (unit-tested)
 │   │   ├── emailSecurity.js # Email Security & Domain Authentication auditor (unit-tested)
 │   │   ├── seo.js           # Visual SEO & Social Card Simulator (unit-tested)
 │   │   ├── pagespeed.js     # Google PageSpeed Insights & Core Web Vitals (unit-tested)

@@ -24,6 +24,7 @@ import { getWatchlist, addMonitoredSite, removeMonitoredSite, saveWatchlist, eva
 import { exportPostmanCollection, exportOpenApiSpec } from './tools/specExporter.js';
 import { extractSeoMetadata } from './tools/seo.js';
 import { fetchEmailSecurity } from './tools/emailSecurity.js';
+import { fetchAiPolicy } from './tools/aiPolicy.js';
 
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js (Modularized)
@@ -563,6 +564,30 @@ async function checkSite(url) {
         if (emailSecContainer) {
           emailSecContainer.innerHTML = '<div style="padding:14px;color:var(--text-muted);">Could not load Email Security DNS records.</div>';
         }
+      });
+    }
+
+    // AI Scraper & LLM Crawler Policy Inspector
+    const aiPolicyContainer = document.getElementById('intelAiPolicy');
+    if (aiPolicyContainer) {
+      fetchRobotsTxt(domain).then(robotsContent => {
+        proxyFetchPromise.then(json => {
+          const html = (json && json.contents) || cachedHtml || '';
+          fetchAiPolicy(domain, robotsContent || '', html).then(aiData => {
+            if (currentReportData) currentReportData.aiPolicy = aiData;
+            renderAiPolicyPanel(aiData, aiPolicyContainer);
+          });
+        }).catch(() => {
+          fetchAiPolicy(domain, robotsContent || '', cachedHtml || '').then(aiData => {
+            if (currentReportData) currentReportData.aiPolicy = aiData;
+            renderAiPolicyPanel(aiData, aiPolicyContainer);
+          });
+        });
+      }).catch(() => {
+        fetchAiPolicy(domain, '', cachedHtml || '').then(aiData => {
+          if (currentReportData) currentReportData.aiPolicy = aiData;
+          renderAiPolicyPanel(aiData, aiPolicyContainer);
+        });
       });
     }
 
@@ -1543,6 +1568,117 @@ function renderEmailSecurityPanel(data, container) {
         copyDmarcBtn.textContent = '✅ Copied DMARC Record!';
         setTimeout(() => {
           copyDmarcBtn.textContent = '📋 Copy Recommended DMARC Record';
+        }, 2000);
+      });
+    });
+  }
+}
+
+// ── RENDER AI SCRAPER & LLM CRAWLER POLICY PANEL ──────────────
+function renderAiPolicyPanel(data, container) {
+  if (!container || !data) return;
+
+  let postureBadge = '<span class="risk-pill risk-low">🌐 OPEN ACCESS</span>';
+  let postureDesc = 'No blocking directives found. AI models & scrapers can crawl and index this website.';
+  if (data.posture === 'FULLY_BLOCKED') {
+    postureBadge = '<span class="risk-pill risk-high">🛡️ ALL AI BOTS BLOCKED</span>';
+    postureDesc = 'Strict blocking rules active. Major LLM scrapers and model training crawlers are disallowed.';
+  } else if (data.posture === 'PARTIALLY_RESTRICTED') {
+    postureBadge = '<span class="risk-pill risk-med">⚠️ PARTIALLY RESTRICTED</span>';
+    postureDesc = 'Selective crawler blocking detected. Some AI agents are blocked or path-restricted.';
+  }
+
+  let html = `
+    <div class="seo-panel-wrap">
+      <div class="seo-score-hero">
+        <div style="font-size:2rem;width:56px;height:56px;display:flex;align-items:center;justify-content:center;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.4);border-radius:12px;">🤖</div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:1.05rem;font-weight:800;color:var(--text);">AI Scraping Posture:</span>
+            ${postureBadge}
+            <span style="font-size:0.75rem;color:var(--text-muted);">(${data.blockedCount}/${data.totalAiBots} AI Crawlers Blocked)</span>
+          </div>
+          <div style="font-size:0.78rem;color:var(--text-muted);">${escapeHtml(postureDesc)}</div>
+        </div>
+      </div>
+
+      <div class="email-sec-grid">
+        <div class="email-sec-card">
+          <div class="email-sec-title">
+            <span>HTML &lt;meta name="noai"&gt;</span>
+            <span class="ssl-badge ${data.hasNoAiMeta ? 'ssl-good' : 'ssl-warn'}">${data.hasNoAiMeta ? 'ACTIVE' : 'NONE'}</span>
+          </div>
+          <div class="email-sec-val">${data.hasNoAiMeta ? 'noai / noimageai Meta Tag' : 'No HTML AI Directives'}</div>
+          <div class="email-sec-desc">
+            Signals web crawlers not to use page content for artificial intelligence training.
+          </div>
+        </div>
+
+        <div class="email-sec-card">
+          <div class="email-sec-title">
+            <span>ai.txt Specification</span>
+            <span class="ssl-badge ${data.hasAiTxt ? 'ssl-good' : 'ssl-warn'}">${data.hasAiTxt ? 'FOUND' : 'NONE'}</span>
+          </div>
+          <div class="email-sec-val">${data.hasAiTxt ? '/.well-known/ai.txt' : 'No ai.txt Published'}</div>
+          <div class="email-sec-desc">
+            Emerging decentralized standard declaring fine-grained AI scraping permissions.
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-header" style="margin-bottom:0;border-bottom:none;padding:0;">
+        <div class="panel-title" style="font-size:0.88rem;">🤖 Recognized AI &amp; LLM Scraper Breakdown</div>
+      </div>
+
+      <div class="ai-bot-grid">
+  `;
+
+  data.bots.forEach((bot) => {
+    let pillClass = 'ai-pill-allowed';
+    let pillText = 'ALLOWED';
+    if (bot.status === 'BLOCKED') {
+      pillClass = 'ai-pill-blocked';
+      pillText = 'BLOCKED';
+    } else if (bot.status === 'PARTIALLY_RESTRICTED') {
+      pillClass = 'ai-pill-restricted';
+      pillText = 'RESTRICTED';
+    } else if (bot.status === 'UNSPECIFIED') {
+      pillClass = 'ai-pill-unspecified';
+      pillText = 'UNSPECIFIED';
+    }
+
+    html += `
+      <div class="ai-bot-card">
+        <div class="ai-bot-header">
+          <span class="ai-bot-name">${escapeHtml(bot.name)}</span>
+          <span class="${pillClass}">${pillText}</span>
+        </div>
+        <div class="ai-bot-company">${escapeHtml(bot.operator)} &bull; <span class="ai-bot-purpose">${escapeHtml(bot.purpose)}</span></div>
+        <div class="ai-bot-rule">${escapeHtml(bot.ruleText)}</div>
+      </div>
+    `;
+  });
+
+  html += `
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px;">
+        <button id="copyAiRobotsBtn" class="check-btn" style="padding:6px 14px;font-size:0.75rem;background:rgba(255,255,255,0.06);border:1px solid var(--border);">
+          📋 Copy Complete AI-Blocking robots.txt
+        </button>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  const copyAiBtn = container.querySelector('#copyAiRobotsBtn');
+  if (copyAiBtn) {
+    copyAiBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(data.recommendedRobotsSnippet).then(() => {
+        copyAiBtn.textContent = '✅ Copied robots.txt Snippet!';
+        setTimeout(() => {
+          copyAiBtn.textContent = '📋 Copy Complete AI-Blocking robots.txt';
         }, 2000);
       });
     });
@@ -2762,6 +2898,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (tabName === 'privacy') show(document.getElementById('intelTabPrivacy'));
       else if (tabName === 'seo') show(document.getElementById('intelTabSeo'));
       else if (tabName === 'emailSecurity') show(document.getElementById('intelTabEmailSecurity'));
+      else if (tabName === 'aiPolicy') show(document.getElementById('intelTabAiPolicy'));
     });
   });
 

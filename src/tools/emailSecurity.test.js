@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseDmarcRecord, parseSpfRecord, identifyMailProvider, auditEmailSecurity } from './emailSecurity.js';
+import { identifyMailProvider, auditEmailSecurity } from './emailSecurity.js';
 
 describe('emailSecurity module', () => {
   it('parses strict DMARC, SPF, and BIMI records correctly and grades A+', () => {

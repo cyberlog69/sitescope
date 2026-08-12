@@ -3284,6 +3284,64 @@ body {
 .risk-med { background: rgba(245, 158, 11, 0.15); color: #fde047; border: 1px solid rgba(245, 158, 11, 0.4); }
 .risk-high { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
 
+/* ─── AI Scraper & LLM Crawler Policy Inspector ──────────── */
+.ai-bot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.ai-bot-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-bot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ai-bot-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.ai-bot-company {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.ai-bot-purpose {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.ai-bot-rule {
+  font-size: 0.70rem;
+  font-family: monospace;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-top: 6px;
+}
+
+/* Status Pills */
+.ai-pill-blocked { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.70rem; }
+.ai-pill-allowed { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.4); padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.70rem; }
+.ai-pill-restricted { background: rgba(245, 158, 11, 0.15); color: #fde047; border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.70rem; }
+.ai-pill-unspecified { background: rgba(255, 255, 255, 0.06); color: var(--text-muted); border: 1px solid var(--border); padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.70rem; }
+
+
 
 
 

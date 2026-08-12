@@ -32,7 +32,8 @@ export function downloadFile(content, filename, mimeType) {
  *   carbon?: import('./carbon.js').CarbonResult,
  *   privacy?: import('./privacy.js').PrivacyAuditResult,
  *   seo?: import('./seo.js').SeoMetadataResult,
- *   emailSecurity?: import('./emailSecurity.js').EmailSecurityResult
+ *   emailSecurity?: import('./emailSecurity.js').EmailSecurityResult,
+ *   aiPolicy?: import('./aiPolicy.js').AiPolicyResult
  * }} ReportData
  */
 
@@ -154,6 +155,14 @@ export function exportAsMarkdown(reportData) {
     md += `**SPF Qualifier:** ${e.spf.present ? `✅ ${e.spf.qualifier}` : '⚠️ Missing'}  \n`;
     md += `**DNSSEC Status:** ${e.dnssec.enabled ? '✅ Active' : '⚠️ Inactive'}  \n`;
     md += `**BIMI Brand Indicator:** ${e.bimi.present ? '✅ Configured' : 'None'}  \n\n`;
+  }
+
+  if (reportData.aiPolicy) {
+    const a = reportData.aiPolicy;
+    md += `## 🤖 AI Scraper & LLM Crawler Policy\n\n`;
+    md += `**AI Scraping Posture:** **${a.posture}** (${a.blockedCount}/${a.totalAiBots} AI Bots Blocked)  \n`;
+    md += `**HTML noai Meta Directive:** ${a.hasNoAiMeta ? '✅ Active' : 'None'}  \n`;
+    md += `**ai.txt Specification:** ${a.hasAiTxt ? '✅ Configured' : 'None'}  \n\n`;
   }
 
   if (reportData.httpHeaders) {
