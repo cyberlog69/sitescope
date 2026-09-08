@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SiteScope — Enterprise Website Intelligence & Security SaaS</title>
+  <meta name="description" content="Instant 360° website intelligence, security audits, Core Web Vitals diagnostics, and AI scraper governance. Zero backend required, 100% private." />
+  
+  <!-- Open Graph / Social Cards -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://sitescope-omega.vercel.app/landing.html" />
+  <meta property="og:title" content="SiteScope — Modern Web Intelligence & Security Suite" />
+  <meta property="og:description" content="Audit DMARC, DNSSEC, PageSpeed Vitals, AI crawler policies, and security headers in seconds." />
+  <meta property="og:image" content="https://sitescope-omega.vercel.app/icons/icon-512x512.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="SiteScope — Modern Web Intelligence & Security Suite" />
+  <meta name="twitter:description" content="Audit DMARC, DNSSEC, PageSpeed Vitals, AI crawler policies, and security headers in seconds." />
+  
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%237c3aed'/><path d='M30 50 L45 65 L70 35' stroke='white' stroke-width='10' fill='none'/></svg>" />
+  <link rel="stylesheet" href="./landing.css" />
+</head>
+<body>
+
+  <!-- ─── Navigation Header ───────────────────────────────── -->
+  <header class="landing-nav">
+    <div class="container nav-wrapper">
+      <a href="./landing.html" class="brand-logo">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <circle cx="12" cy="11" r="3"/>
+          </svg>
+        </div>
+        <span>SiteScope<span style="color:var(--cyan)">.io</span></span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#testimonials">Reviews</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="./index.html" class="btn btn-secondary btn-sm">Launch Scanner</a>
+        <a href="#pricing" class="btn btn-primary btn-sm">Get Pro</a>
+        <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle navigation">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ─── Hero Section ────────────────────────────────────── -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-pill">
+        <span class="hero-pill-badge">v4.0 Live</span>
+        <span>Cryptographic Audits &amp; AI Crawler Governance</span>
+      </div>
+
+      <h1 class="hero-title">
+        Instant 360° Website Intelligence &amp; <br />
+        <span class="gradient-text">Security Audits in Seconds</span>
+      </h1>
+
+      <p class="hero-description">
+        Inspect DNSSEC, DMARC spoofing resistance, SSL lifespans, Google Core Web Vitals, 
+        AI scraping policies, and security headers. Zero backend required, 100% private, enterprise-grade analysis.
+      </p>
+
+      <div class="hero-cta-group">
+        <a href="./index.html" class="btn btn-primary btn-lg">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Launch Free Scanner
+        </a>
+        <a href="#pricing" class="btn btn-secondary btn-lg">
+          Explore SaaS Plans &rarr;
+        </a>
+      </div>
+
+      <div class="hero-trust">
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>No Credit Card Required</span>
+        </div>
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>100% Client-Side Privacy</span>
+        </div>
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>Postman &amp; OpenAPI Spec Export</span>
+        </div>
+      </div>
+
+      <!-- Hero Mock Report Card Preview -->
+      <div class="hero-preview-wrap">
+        <div class="preview-top-bar">
+          <div class="preview-dots">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
+          </div>
+          <div class="preview-domain-pill" id="previewDomain" title="Click to cycle sample domains">https://stripe.com</div>
+          <span style="font-size:0.75rem;color:var(--text-muted);">Click domain to demo</span>
+        </div>
+        <div class="preview-body">
+          <div class="preview-score-grid">
+            <div class="preview-score-box">
+              <div class="preview-score-label">Security Grade</div>
+              <div class="preview-score-val" style="color:#86efac;" id="previewGrade">A+</div>
+            </div>
+            <div class="preview-score-box">
+              <div class="preview-score-label">Core Web Vitals</div>
+              <div class="preview-score-val" style="color:#67e8f9;" id="previewVitals">98/100</div>
+            </div>
+            <div class="preview-score-box">
+              <div class="preview-score-label">DMARC Policy</div>
+              <div class="preview-score-val" style="color:#c4b5fd;" id="previewDmarc">REJECT</div>
+            </div>
+            <div class="preview-score-box">
+              <div class="preview-score-label">Threat Level</div>
+              <div class="preview-score-val" style="color:#86efac;">0 SAFE</div>
+            </div>
+          </div>
+
+          <div class="preview-chips">
+            <span class="preview-chip chip-pass">✅ DNSSEC Authenticated</span>
+            <span class="preview-chip chip-pass">✅ HSTS Preload Ready</span>
+            <span class="preview-chip chip-cyan">⚡ LCP 0.8s (Good)</span>
+            <span class="preview-chip chip-purple">🤖 GPTBot Disallowed (Protected)</span>
+            <span class="preview-chip chip-cyan">🌱 Eco-Score: A+ (0.09g CO₂)</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─── Feature Grid Section ────────────────────────────── -->
+  <section class="features-section" id="features">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Enterprise Capabilities</div>
+        <h2 class="section-title">Everything You Need to Audit &amp; Protect Any Web Domain</h2>
+        <p class="section-subtitle">
+          Comprehensive diagnostic toolsets combined into one unified, blazing-fast dashboard.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="feature-card">
+          <div class="feature-icon-box">🛡️</div>
+          <h3 class="feature-title">Email Security &amp; DNSSEC</h3>
+          <p class="feature-desc">
+            Cryptographic DNS audit evaluating DMARC policy, SPF lookup limits, DNSSEC validation, BIMI verified marks, and SMTP TLS transit.
+          </p>
+          <span class="feature-badge">Zero Phishing Risk</span>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-card">
+          <div class="feature-icon-box">🤖</div>
+          <h3 class="feature-title">AI &amp; LLM Crawler Control</h3>
+          <p class="feature-desc">
+            Audit scraper permissions for GPTBot, ClaudeBot, Google-Extended, and Perplexity across robots.txt, ai.txt, and HTML noai directives.
+          </p>
+          <span class="feature-badge">AI Governance</span>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card">
+          <div class="feature-icon-box">⚡</div>
+          <h3 class="feature-title">Google PageSpeed &amp; Vitals</h3>
+          <p class="feature-desc">
+            Direct integration with Lighthouse: Performance, Accessibility, Best Practices, and Core Web Vitals (LCP, CLS, INP, FCP).
+          </p>
+          <span class="feature-badge">Lighthouse Telemetry</span>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-card">
+          <div class="feature-icon-box">🔍</div>
+          <h3 class="feature-title">Visual SEO &amp; Social Previews</h3>
+          <p class="feature-desc">
+            Pixel-accurate preview simulator for Google SERP, X/Twitter Cards, Facebook, and Discord with automated meta tag fix generation.
+          </p>
+          <span class="feature-badge">Social Simulation</span>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-card">
+          <div class="feature-icon-box">⚔️</div>
+          <h3 class="feature-title">Domain Duel Comparison</h3>
+          <p class="feature-desc">
+            Head-to-head side-by-side site benchmarking comparing security grades, network latency, SSL duration, and stack diversity.
+          </p>
+          <span class="feature-badge">Competitive Intel</span>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feature-card">
+          <div class="feature-icon-box">📜</div>
+          <h3 class="feature-title">Privacy &amp; Cookie Consent</h3>
+          <p class="feature-desc">
+            GDPR / CCPA audit identifying Privacy Policy endpoints, Consent Management Platforms (OneTrust, Cookiebot), and tracking pixels.
+          </p>
+          <span class="feature-badge">Compliance Audit</span>
+        </div>
+
+        <!-- Feature 7 -->
+        <div class="feature-card">
+          <div class="feature-icon-box">📤</div>
+          <h3 class="feature-title">Postman &amp; OpenAPI Export</h3>
+          <p class="feature-desc">
+            Export all discovered links and API endpoints directly into Postman Collection v2.1 or OpenAPI 3.0 specification JSON files.
+          </p>
+          <span class="feature-badge">Developer Ready</span>
+        </div>
+
+        <!-- Feature 8 -->
+        <div class="feature-card">
+          <div class="feature-icon-box">🔔</div>
+          <h3 class="feature-title">Uptime &amp; SSL Expiry Watchlist</h3>
+          <p class="feature-desc">
+            Persistent site monitoring watchlist alerting on downtime transitions and expiring SSL certificates (< 30 days) via Web Notifications.
+          </p>
+          <span class="feature-badge">Proactive Alerts</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── How It Works Section ────────────────────────────── -->
+  <section class="workflow-section" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">How It Works</div>
+        <h2 class="section-title">Three Steps to Total Domain Clarity</h2>
+        <p class="section-subtitle">No accounts to create, no servers to configure, no SDKs to install.</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">01</div>
+          <h3 class="step-title">Enter Target Domain</h3>
+          <p class="step-desc">
+            Paste any website URL or hostname. SiteScope accepts raw domains, subdomains, and full URL paths.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">02</div>
+          <h3 class="step-title">Multi-Engine Audit</h3>
+          <p class="step-desc">
+            Concurrently queries Google DoH, Certificate Transparency logs, URLhaus threats, RDAP WHOIS, and Lighthouse APIs.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">03</div>
+          <h3 class="step-title">Actionable Remediation</h3>
+          <p class="step-desc">
+            Receive letter-graded scorecards, 1-click DNS and meta tag fix code, and export to JSON, Markdown, or Postman specs.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Pricing Section ─────────────────────────────────── -->
+  <section class="pricing-section" id="pricing">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Simple Pricing</div>
+        <h2 class="section-title">Transparent Plans for Developers &amp; Teams</h2>
+        <p class="section-subtitle">Start free forever on our client-side app, or upgrade for automated monitoring and team features.</p>
+      </div>
+
+      <!-- Billing Toggle -->
+      <div class="billing-toggle-wrap">
+        <span class="toggle-label active" id="labelMonthly">Monthly</span>
+        <div class="toggle-switch" id="billingToggle">
+          <div class="toggle-knob"></div>
+        </div>
+        <span class="toggle-label" id="labelAnnual">Annual</span>
+        <span class="discount-badge">Save 20%</span>
+      </div>
+
+      <div class="pricing-grid">
+        <!-- Community Plan -->
+        <div class="pricing-card">
+          <div class="tier-name">Community</div>
+          <p class="tier-desc">Perfect for independent developers, security researchers, and quick audits.</p>
+          <div class="tier-price-box">
+            <span class="currency">$</span>
+            <span class="amount">0</span>
+            <span class="period">/forever</span>
+          </div>
+          <ul class="tier-features">
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Unlimited client-side scans</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Bulk check up to 25 URLs concurrently</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>All 10 Advanced Intelligence engines</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>JSON, Markdown &amp; Postman exports</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>100% Private — zero server tracking</span>
+            </li>
+          </ul>
+          <a href="./index.html" class="btn btn-secondary">Get Started Free</a>
+        </div>
+
+        <!-- Pro Plan -->
+        <div class="pricing-card popular">
+          <div class="popular-badge">Most Popular</div>
+          <div class="tier-name">SiteScope Pro</div>
+          <p class="tier-desc">For growing startups, agencies, and DevOps teams needing continuous alerts.</p>
+          <div class="tier-price-box">
+            <span class="currency">$</span>
+            <span class="amount" id="proPrice">19</span>
+            <span class="period" id="proPeriod">/month</span>
+          </div>
+          <ul class="tier-features">
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Everything in Community, plus:</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Automated hourly uptime &amp; SSL checks</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Slack, Discord &amp; Webhook alerts</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>White-label diagnostic PDF reports</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>REST API access (100,000 req/mo)</span>
+            </li>
+          </ul>
+          <a href="./index.html" class="btn btn-primary">Start 14-Day Free Trial</a>
+        </div>
+
+        <!-- Enterprise Plan -->
+        <div class="pricing-card">
+          <div class="tier-name">Enterprise</div>
+          <p class="tier-desc">For compliance officers, organizations, and high-volume security monitoring.</p>
+          <div class="tier-price-box">
+            <span class="currency">$</span>
+            <span class="amount" id="entPrice">79</span>
+            <span class="period" id="entPeriod">/month</span>
+          </div>
+          <ul class="tier-features">
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Everything in Pro, plus:</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Team workspaces &amp; SSO / SAML login</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>SOC2, GDPR &amp; HIPAA export bundle</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Dedicated proxy tunnels &amp; IP allowlisting</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Custom SLA &amp; 24/7 dedicated support</span>
+            </li>
+          </ul>
+          <a href="./index.html" class="btn btn-secondary">Contact Sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Testimonials Section ────────────────────────────── -->
+  <section class="testimonials-section" id="testimonials">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Social Proof</div>
+        <h2 class="section-title">Loved by Security &amp; DevOps Teams</h2>
+        <p class="section-subtitle">Here is what practitioners say about auditing with SiteScope.</p>
+      </div>
+
+      <div class="testimonials-grid">
+        <div class="testimonial-card">
+          <p class="testimonial-quote">
+            "SiteScope replaced 4 different CLI scripts and paid subscription tools for us. Checking DMARC, DNSSEC, and AI crawler rules in under three seconds with zero backend is unmatched."
+          </p>
+          <div class="author-wrap">
+            <div class="author-avatar">AL</div>
+            <div>
+              <div class="author-name">Alex Lindqvist</div>
+              <div class="author-role">Chief Information Security Officer</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-quote">
+            "The ability to instantly export all discovered routes into a Postman Collection v2.1 and OpenAPI 3.0 file saved our API engineering team hours during client onboarding."
+          </div>
+          <div class="author-wrap">
+            <div class="author-avatar">SR</div>
+            <div>
+              <div class="author-name">Sarah Rahman</div>
+              <div class="author-role">Lead DevOps Engineer</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-quote">
+            "The Visual SEO social simulator is pixel-accurate. Being able to preview Google SERP and Twitter cards while auditing Core Web Vitals in the same view makes this a daily essential."
+          </div>
+          <div class="author-wrap">
+            <div class="author-avatar">MK</div>
+            <div>
+              <div class="author-name">Marcus Kim</div>
+              <div class="author-role">Head of Technical SEO</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FAQ Accordion Section ───────────────────────────── -->
+  <section class="faq-section" id="faq">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Got Questions?</div>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="section-subtitle">Everything you need to know about SiteScope and its architecture.</p>
+      </div>
+
+      <div class="faq-container">
+        <div class="faq-item open">
+          <div class="faq-question">
+            <span>How does SiteScope scan websites without a backend server?</span>
+            <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="faq-answer">
+            SiteScope is a modern static Progressive Web App. It communicates directly with public, high-availability APIs such as Google DNS-over-HTTPS (`dns.google`), Certificate Transparency logs (`crt.sh`), URLhaus malware feeds, and Lighthouse telemetry via standard client-side browser fetch requests and failover CORS proxy chains.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Is my search and domain audit history private?</span>
+            <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="faq-answer">
+            Yes, completely. Because scans execute in your browser, your queries are never logged, tracked, or resold to data brokers. Scan history is saved locally in your browser's `localStorage`, with an optional encrypted cloud synchronization bucket.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>What export formats are supported?</span>
+            <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="faq-answer">
+            SiteScope exports diagnostic reports in structured JSON, GitHub Flavored Markdown (`.md`), printable high-resolution PDF layouts, as well as developer-focused **Postman Collections v2.1** and **OpenAPI 3.0 Specifications**.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>How does the Uptime &amp; SSL Expiry Watchlist work?</span>
+            <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="faq-answer">
+            SiteScope stores your monitored domains in a persistent watchlist. When active, it performs periodic network health probes and Certificate Transparency queries, sending native browser Web Notifications if a site goes DOWN or if its SSL certificate is due to expire in less than 30 days.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Closing CTA Banner ──────────────────────────────── -->
+  <section class="cta-banner-section">
+    <div class="container">
+      <div class="cta-banner-box">
+        <h2 class="cta-banner-title">Ready to Audit &amp; Secure Your Digital Footprint?</h2>
+        <p class="cta-banner-desc">
+          Join thousands of engineers and security researchers using SiteScope daily. 
+          No credit card, no registration, 100% free.
+        </p>
+        <a href="./index.html" class="btn btn-primary btn-lg">
+          Launch Free Scanner Now &rarr;
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Footer ──────────────────────────────────────────── -->
+  <footer class="landing-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="brand-logo">
+            <div class="brand-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" stroke-width="2.2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <circle cx="12" cy="11" r="3"/>
+              </svg>
+            </div>
+            <span>SiteScope<span style="color:var(--cyan)">.io</span></span>
+          </div>
+          <p>
+            The open-source, client-side web intelligence &amp; security auditing platform for modern digital teams.
+          </p>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Product</div>
+          <ul class="footer-col-links">
+            <li><a href="./index.html">Web Scanner</a></li>
+            <li><a href="#features">Feature Suite</a></li>
+            <li><a href="#pricing">Pricing Plans</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Engines</div>
+          <ul class="footer-col-links">
+            <li><a href="./index.html">DMARC &amp; DNSSEC</a></li>
+            <li><a href="./index.html">Core Web Vitals</a></li>
+            <li><a href="./index.html">AI Bot Governance</a></li>
+            <li><a href="./index.html">Visual SEO &amp; SERP</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Resources</div>
+          <ul class="footer-col-links">
+            <li><a href="https://github.com/cyberlog69/sitescope" target="_blank" rel="noopener noreferrer">GitHub Repository</a></li>
+            <li><a href="./index.html">Live Status</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="./index.html">Privacy Policy</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; 2026 SiteScope. Released under the MIT License.</div>
+        <div class="status-indicator">
+          <div class="status-dot"></div>
+          <span>All Diagnostic Engines Operational</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="./landing.js"></script>
+</body>
+</html>

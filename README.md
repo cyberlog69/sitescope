@@ -19,6 +19,7 @@
 | Feature | Description |
 |---|---|
 | 🎨 **Cosmic UI** | Dark cosmic theme, glassmorphic panels, animated gradient mesh, and neon accents with GPU-accelerated rendering. |
+| 🚀 **SaaS Landing Page** | Dedicated, high-converting marketing landing page (`landing.html`) featuring interactive mock diagnostics, capability matrices, testimonials, interactive FAQ, and monthly/annual pricing plans. |
 | 📱 **PWA Ready** | Installable as a standalone app on desktop and mobile. Hardened Service Worker with stale-while-revalidate caching and 5 MB cache cap. |
 | ☁️ **Cloud & Local History** | Recent scans are synchronized across sessions via `kvdb.io` with instant `localStorage` fallbacks. |
 | 🤖 **AI & LLM Scraper Control** | Audits permissions for 12+ AI crawlers (`GPTBot`, `ClaudeBot`, `Google-Extended`, `PerplexityBot`, `CCBot`, `Meta-ExternalAgent`, `ByteSpider`, `Applebot-Extended`) across `robots.txt`, `ai.txt`, and HTML `noai` meta directives with a 1-click AI blocklist generator. |
@@ -195,8 +196,12 @@ The **Sandbox tab** is the safest way to visually inspect any website without ru
 
 ```
 sitescope/
-├── index.html              # Main app shell (all views: Single, Bulk, Email, History, Detector)
+├── index.html              # Main application markup & UI layout
+├── landing.html            # SaaS Marketing Landing Page (Pricing, Features, Reviews, FAQ)
+├── landing.css             # Cosmic glassmorphic styling for SaaS Landing Page
+├── landing.js              # Billing toggle, FAQ accordion & interactive mock preview
 ├── style.css               # Global styles — cosmic theme, glassmorphism, Scorecard badges
+├── vite.config.js          # Multi-page Vite build configuration
 ├── src/
 │   ├── main.js             # App controller — DOM wiring, event binding, all view controllers
 │   ├── intel.js            # WHOIS & HTTP header fetchers
