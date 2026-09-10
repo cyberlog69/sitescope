@@ -25,6 +25,7 @@ import { exportPostmanCollection, exportOpenApiSpec } from './tools/specExporter
 import { extractSeoMetadata } from './tools/seo.js';
 import { fetchEmailSecurity } from './tools/emailSecurity.js';
 import { fetchAiPolicy } from './tools/aiPolicy.js';
+import { initThemeSwitcher } from './tools/theme.js';
 
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js (Modularized)
@@ -3104,6 +3105,12 @@ function initMonitorListeners() {
       }
     });
   }
+}
+
+// ── Initialize Multi-Theme Switcher ──────────────────────────
+const themeSwitcherContainer = document.getElementById('themeSwitcherWrap');
+if (themeSwitcherContainer) {
+  initThemeSwitcher(themeSwitcherContainer);
 }
 
 if ('serviceWorker' in navigator) {

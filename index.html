@@ -63,6 +63,19 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Pre-seed Theme to prevent FOUT -->
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('sitescope_theme');
+        if (t && ['aurora', 'cyber', 'linear', 'nordic'].indexOf(t) !== -1) {
+          document.documentElement.dataset.theme = t;
+          document.body ? (document.body.dataset.theme = t) : document.addEventListener('DOMContentLoaded', function() { document.body.dataset.theme = t; });
+        }
+      } catch (e) {}
+    })();
+  </script>
   
   <!-- Vercel Speed Insights -->
   <script type="module" crossorigin="anonymous">
@@ -190,8 +203,48 @@
           <h2 class="header-view-title" id="currentViewTitle">Single Inspector</h2>
         </div>
         <div class="header-nav">
+          <!-- Live Multi-Theme Switcher -->
+          <div class="theme-switcher-wrap" id="themeSwitcherWrap">
+            <button class="theme-switcher-btn" id="themeSwitcherBtn" aria-label="Switch UI Theme" title="Switch UI Theme">
+              <span class="theme-btn-icon" id="themeBtnIcon">🌌</span>
+              <span class="theme-btn-label" id="themeBtnLabel">Aurora</span>
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="theme-dropdown" id="themeDropdown">
+              <div class="theme-dropdown-header">Select UI Theme</div>
+              <button class="theme-option active" data-theme="aurora">
+                <span class="theme-option-icon">🌌</span>
+                <div class="theme-option-info">
+                  <span class="theme-option-name">Aurora Cosmic</span>
+                  <span class="theme-option-desc">Deep space &amp; violet neon glass</span>
+                </div>
+              </button>
+              <button class="theme-option" data-theme="cyber">
+                <span class="theme-option-icon">⚡</span>
+                <div class="theme-option-info">
+                  <span class="theme-option-name">Cyber Obsidian</span>
+                  <span class="theme-option-desc">Hacker terminal &amp; matrix green</span>
+                </div>
+              </button>
+              <button class="theme-option" data-theme="linear">
+                <span class="theme-option-icon">🖤</span>
+                <div class="theme-option-info">
+                  <span class="theme-option-name">Linear Minimal</span>
+                  <span class="theme-option-desc">Clean charcoal zinc developer dark</span>
+                </div>
+              </button>
+              <button class="theme-option" data-theme="nordic">
+                <span class="theme-option-icon">❄️</span>
+                <div class="theme-option-info">
+                  <span class="theme-option-name">Nordic Frost</span>
+                  <span class="theme-option-desc">High-contrast enterprise light mode</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
           <a href="./landing.html" class="header-badge" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
-            <span>✨ SaaS Plans &amp; Pricing</span>
+            <span>✨ SaaS Plans</span>
           </a>
         </div>
       </header>

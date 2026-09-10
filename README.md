@@ -6,7 +6,7 @@
 ![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)
 ![PWA Ready](https://img.shields.io/badge/PWA-Ready-06b6d4?style=for-the-badge)
 ![Vite](https://img.shields.io/badge/Build-Vite%208-f59e0b?style=for-the-badge)
-![Tests](https://img.shields.io/badge/Tests-152%20Passed-22c55e?style=for-the-badge&logo=vitest)
+![Tests](https://img.shields.io/badge/Tests-159%20Passed-22c55e?style=for-the-badge&logo=vitest)
 ![PageSpeed](https://img.shields.io/badge/PageSpeed-Insights-3b82f6?style=for-the-badge&logo=google)
 ![Security Hardened](https://img.shields.io/badge/Security-Hardened-ef4444?style=for-the-badge)
 
@@ -18,7 +18,7 @@
 
 | Feature | Description |
 |---|---|
-| 🎨 **Cosmic UI** | Dark cosmic theme, glassmorphic panels, animated gradient mesh, and neon accents with GPU-accelerated rendering. |
+| 🎨 **Live Multi-Theme Switcher** | Switch instantly between 4 design aesthetics with `localStorage` persistence: 🌌 **Aurora Cosmic**, ⚡ **Cyber Obsidian** (Matrix green / Hacker terminal), 🖤 **Linear Minimalist** (Charcoal developer dark), and ❄️ **Nordic Frost** (High-contrast enterprise light). |
 | 🚀 **SaaS Landing Page** | Dedicated, high-converting marketing landing page (`landing.html`) featuring interactive mock diagnostics, capability matrices, testimonials, interactive FAQ, and monthly/annual pricing plans. |
 | 📱 **PWA Ready** | Installable as a standalone app on desktop and mobile. Hardened Service Worker with stale-while-revalidate caching and 5 MB cache cap. |
 | ☁️ **Cloud & Local History** | Recent scans are synchronized across sessions via `kvdb.io` with instant `localStorage` fallbacks. |
@@ -216,6 +216,7 @@ sitescope/
 │   │   ├── email.js        # RFC 5322 validator + scam scorer (unit-tested)
 │   │   └── detector.js     # Down Detector — Statuspage APIs, DNS-over-HTTPS (unit-tested)
 │   ├── tools/
+│   │   ├── theme.js         # Multi-Theme Switcher & persistence engine (unit-tested)
 │   │   ├── aiPolicy.js      # AI Scraper & LLM Crawler Policy Inspector (unit-tested)
 │   │   ├── emailSecurity.js # Email Security & Domain Authentication auditor (unit-tested)
 │   │   ├── seo.js           # Visual SEO & Social Card Simulator (unit-tested)

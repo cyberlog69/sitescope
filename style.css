@@ -46,6 +46,93 @@
   --shadow-glow: 0 0 40px rgba(124,58,237,0.2);
 }
 
+/* ─── Themes: Scoped CSS Custom Properties ───────────────────── */
+
+/* 1. ⚡ Cyber Obsidian Theme (Hacker Terminal) */
+body[data-theme="cyber"] {
+  --bg:            #06080b;
+  --bg-card:       rgba(10, 15, 22, 0.92);
+  --surface:       rgba(0, 255, 136, 0.05);
+  --surface-hover: rgba(0, 255, 136, 0.09);
+  --border:        rgba(0, 255, 136, 0.2);
+  --border-bright: rgba(0, 255, 136, 0.45);
+  --border-glow:   rgba(0, 255, 136, 0.4);
+
+  --text:          #f0fdf4;
+  --text-muted:    #86efac;
+  --text-dim:      #22c55e;
+
+  --violet:        #00ff88;
+  --violet-2:      #00e5ff;
+  --violet-glow:   rgba(0, 255, 136, 0.35);
+  --cyan:          #00e5ff;
+  --cyan-glow:     rgba(0, 229, 255, 0.3);
+
+  --accent:        #00ff88;
+  --accent-2:      #00e5ff;
+  --accent-glow:   rgba(0, 255, 136, 0.35);
+  --shadow-glow:   0 0 35px rgba(0, 255, 136, 0.2);
+}
+
+/* 2. 🖤 Linear Minimalist Dark Theme (Developer SaaS) */
+body[data-theme="linear"] {
+  --bg:            #090a0f;
+  --bg-card:       #12131a;
+  --surface:       rgba(255, 255, 255, 0.035);
+  --surface-hover: rgba(255, 255, 255, 0.07);
+  --border:        rgba(255, 255, 255, 0.09);
+  --border-bright: rgba(255, 255, 255, 0.18);
+  --border-glow:   rgba(99, 102, 241, 0.3);
+
+  --text:          #f8fafc;
+  --text-muted:    #94a3b8;
+  --text-dim:      #64748b;
+
+  --violet:        #6366f1;
+  --violet-2:      #818cf8;
+  --violet-glow:   rgba(99, 102, 241, 0.25);
+  --cyan:          #38bdf8;
+  --cyan-glow:     rgba(56, 189, 248, 0.25);
+
+  --accent:        #6366f1;
+  --accent-2:      #818cf8;
+  --accent-glow:   rgba(99, 102, 241, 0.25);
+  --shadow-glow:   0 0 25px rgba(99, 102, 241, 0.15);
+}
+
+/* 3. ❄️ Nordic Frost Light Theme (Enterprise High-Contrast) */
+body[data-theme="nordic"] {
+  --bg:            #f1f5f9;
+  --bg-card:       #ffffff;
+  --surface:       rgba(15, 23, 42, 0.04);
+  --surface-hover: rgba(15, 23, 42, 0.075);
+  --border:        rgba(15, 23, 42, 0.12);
+  --border-bright: rgba(15, 23, 42, 0.22);
+  --border-glow:   rgba(37, 99, 235, 0.25);
+
+  --text:          #0f172a;
+  --text-muted:    #475569;
+  --text-dim:      #94a3b8;
+
+  --violet:        #2563eb;
+  --violet-2:      #3b82f6;
+  --violet-glow:   rgba(37, 99, 235, 0.2);
+  --cyan:          #0284c7;
+  --cyan-glow:     rgba(2, 132, 199, 0.2);
+
+  --accent:        #2563eb;
+  --accent-2:      #3b82f6;
+  --accent-glow:   rgba(37, 99, 235, 0.2);
+  --shadow:        0 8px 24px rgba(0, 0, 0, 0.07);
+  --shadow-lg:     0 16px 40px rgba(0, 0, 0, 0.1);
+  --shadow-glow:   0 0 25px rgba(37, 99, 235, 0.12);
+}
+
+/* 4. 🌌 Aurora Cosmic Theme (Default) */
+body[data-theme="aurora"] {
+  /* Inherits default :root properties */
+}
+
 /* ─── Base ──────────────────────────────────────────────────── */
 html { scroll-behavior: smooth; }
 body {
@@ -368,6 +455,138 @@ body {
   padding: 5px 14px;
   border-radius: 20px;
   letter-spacing:0.4px;
+}
+
+/* ─── Theme Switcher Component ──────────────────────────────── */
+.theme-switcher-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.theme-switcher-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 12px;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.theme-switcher-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-bright);
+  color: var(--text);
+}
+
+.theme-btn-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.theme-switcher-btn svg {
+  transition: transform 0.2s ease;
+  stroke: var(--text-muted);
+}
+
+.theme-dropdown.open ~ .theme-switcher-btn svg {
+  transform: rotate(180deg);
+}
+
+.theme-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 250px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  padding: 8px;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 1000;
+  animation: themeMenuIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.theme-dropdown.open {
+  display: flex;
+}
+
+@keyframes themeMenuIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.theme-dropdown-header {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-dim);
+  padding: 6px 8px 4px;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.theme-option:hover {
+  background: var(--surface-hover);
+  border-color: var(--border);
+}
+
+.theme-option.active {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+}
+
+.theme-option-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.theme-option-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.theme-option-name {
+  font-size: 0.80rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.theme-option.active .theme-option-name {
+  color: var(--accent);
+}
+
+.theme-option-desc {
+  font-size: 0.66rem;
+  color: var(--text-muted);
 }
 
 /* ─── View Sections ─────────────────────────────────────────── */
