@@ -342,17 +342,84 @@ jobs:
 
 ---
 
-### 🐳 Docker
+### 🦭 Podman (Rootless & Secure)
+
+SiteScope includes first-class support for rootless **Podman** using an OCI `Containerfile` and an unprivileged Nginx server (`nginxinc/nginx-unprivileged:alpine`) listening on port `8080` without requiring root permissions.
+
+#### 1. Build and Run Directly with Podman CLI
 
 ```bash
-# Build
-docker build -t sitescope:latest .
+# Build using the native Containerfile
+podman build -t sitescope:latest -f Containerfile .
 
-# Run (served by Nginx on port 8080)
-docker run -d -p 8080:80 --name sitescope sitescope:latest
+# Run rootlessly (mapped to http://localhost:8080)
+podman run -d --name sitescope -p 8080:8080 localhost/sitescope:latest
+
+# Check status and logs
+podman ps
+podman logs sitescope
+
+# Stop and remove container
+podman stop sitescope
+podman rm sitescope
 ```
 
-Multi-stage build: Node 20 Alpine compiles the Vite app → Nginx Alpine serves the static output. Custom `nginx.conf` mirrors all production security headers (CSP, HSTS, XSS protection).
+#### 2. Run with Podman Compose
+
+```bash
+# Start in the background
+podman compose up -d
+
+# View running services and logs
+podman compose ps
+podman compose logs -f
+
+# Tear down
+podman compose down
+```
+
+#### 3. Run Natively as a Podman / Kubernetes Pod
+
+Podman can directly execute Kubernetes pod specifications without requiring Kubernetes or Docker daemon:
+
+```bash
+# Launch the pod manifest
+podman play kube podman-pod.yaml
+
+# Inspect the pod and its containers
+podman pod ps
+podman ps
+
+# Tear down the pod
+podman play kube --down podman-pod.yaml
+```
+
+#### 4. Run as a Systemd Service (Podman Quadlet)
+
+For Linux servers (RHEL, Fedora, Debian, Ubuntu), copy the provided Quadlet file to run SiteScope automatically as a user-level systemd service:
+
+```bash
+mkdir -p ~/.config/containers/systemd/
+cp quadlet/sitescope.container ~/.config/containers/systemd/
+systemctl --user daemon-reload
+systemctl --user start sitescope.service
+systemctl --user enable sitescope.service
+```
+
+---
+
+### 🐳 Docker
+
+Docker users can seamlessly build and run using either `Dockerfile` or `compose.yaml`:
+
+```bash
+# Build and run with Docker
+docker build -t sitescope:latest .
+docker run -d -p 8080:8080 --name sitescope sitescope:latest
+
+# Or using Docker Compose
+docker compose up -d
+```
 
 ---
 
