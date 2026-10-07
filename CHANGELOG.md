@@ -6,6 +6,8 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 ## [Unreleased]
 
 ### Added
+- Phase 1: Deep Security & Infrastructure Hardening module (`src/tools/deepSecurity.js`): AST-based Content Security Policy (CSP) parser, RFC 6797 HSTS Preload readiness verification, cookie attribute security hygiene (Secure, HttpOnly, SameSite), non-intrusive sensitive file leak probes (`.env`, `.git/HEAD`, `wp-config.php.bak`, `server-status`), and 1-click hardened configuration snippet generator for Nginx, Apache, Vercel, and Caddy.
+- 15 unit tests in `src/tools/deepSecurity.test.js` covering CSP AST analysis, HSTS preload validation, cookie auditing, sensitive leak mock tests, and server config generators.
 - Shared `src/utils/helpers.js` (escapeHtml, normalizeUrl, getDomain, sleep, safeHref), removing duplicated logic from 6 files.
 - ESLint (flat config) + Prettier + Vitest tooling with `lint`, `format`, `test`, `test:watch`, `typecheck` npm scripts.
 - JSDoc type annotations + `tsconfig.json` (`checkJs`) across `src/modules`, `src/tools`, `src/main`, and `src/intel.js` — `tsc --noEmit` passes with 0 errors.

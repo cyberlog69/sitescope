@@ -19,6 +19,7 @@
 | Feature | Description |
 |---|---|
 | 🎨 **Live Multi-Theme Switcher** | Switch instantly between 4 design aesthetics with `localStorage` persistence: 🌌 **Aurora Cosmic**, ⚡ **Cyber Obsidian** (Matrix green / Hacker terminal), 🖤 **Linear Minimalist** (Charcoal developer dark), and ❄️ **Nordic Frost** (High-contrast enterprise light). |
+| 🛡️ **Deep Security & AST Hardening** | Full Phase 1 security audit: AST-based Content Security Policy (CSP) parser (detecting unsafe-inline, unsafe-eval, missing default-src/object-src/base-uri), RFC 6797 HSTS Preload readiness verification, cookie attribute security hygiene (Secure, HttpOnly, SameSite), non-intrusive sensitive file leak probes (.env, .git/HEAD, wp-config.php.bak, server-status), and 1-click hardened configuration snippet generator for Nginx, Apache, Vercel, and Caddy. |
 | 📱 **PWA Ready** | Installable as a standalone app on desktop and mobile. Hardened Service Worker with stale-while-revalidate caching and 5 MB cache cap. |
 | ☁️ **Cloud & Local History** | Recent scans are synchronized across sessions via `kvdb.io` with instant `localStorage` fallbacks. |
 | 🤖 **AI & LLM Scraper Control** | Audits permissions for 12+ AI crawlers (`GPTBot`, `ClaudeBot`, `Google-Extended`, `PerplexityBot`, `CCBot`, `Meta-ExternalAgent`, `ByteSpider`, `Applebot-Extended`) across `robots.txt`, `ai.txt`, and HTML `noai` meta directives with a 1-click AI blocklist generator. |
@@ -211,6 +212,7 @@ sitescope/
 │   │   ├── email.js        # RFC 5322 validator + scam scorer (unit-tested)
 │   │   └── detector.js     # Down Detector — Statuspage APIs, DNS-over-HTTPS (unit-tested)
 │   ├── tools/
+│   │   ├── deepSecurity.js  # Deep Security, AST CSP, HSTS Preload & Leak Auditor (unit-tested)
 │   │   ├── theme.js         # Multi-Theme Switcher & persistence engine (unit-tested)
 │   │   ├── aiPolicy.js      # AI Scraper & LLM Crawler Policy Inspector (unit-tested)
 │   │   ├── emailSecurity.js # Email Security & Domain Authentication auditor (unit-tested)

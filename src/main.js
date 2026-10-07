@@ -26,6 +26,7 @@ import { extractSeoMetadata } from './tools/seo.js';
 import { fetchEmailSecurity } from './tools/emailSecurity.js';
 import { fetchAiPolicy } from './tools/aiPolicy.js';
 import { initThemeSwitcher } from './tools/theme.js';
+import { auditDeepSecurity, renderDeepSecurityPanel } from './tools/deepSecurity.js';
 
 /* ════════════════════════════════════════════════════════════
    SiteScope — app.js (Modularized)
@@ -197,6 +198,8 @@ function resetResults() {
     document.getElementById('intelStack').textContent = 'Detecting technologies...';
     document.getElementById('intelRobots').textContent = 'Analyzing robots.txt...';
     document.getElementById('intelLatency').textContent = 'Measuring latency...';
+    const deepSecReset = document.getElementById('intelDeepSecurity');
+    if (deepSecReset) deepSecReset.textContent = 'Auditing security headers, AST policies, and sensitive files...';
   }
 }
 
@@ -588,6 +591,36 @@ async function checkSite(url) {
         fetchAiPolicy(domain, '', cachedHtml || '').then(aiData => {
           if (currentReportData) currentReportData.aiPolicy = aiData;
           renderAiPolicyPanel(aiData, aiPolicyContainer);
+        });
+      });
+    }
+
+    // Deep Security & Infrastructure Hardening Auditor (Phase 1)
+    const deepSecContainer = document.getElementById('intelDeepSecurity');
+    if (deepSecContainer) {
+      fetchHttpHeaders(url).then(hdrs => {
+        proxyFetchPromise.then(json => {
+          const html = (json && json.contents) || cachedHtml || '';
+          auditDeepSecurity(domain, hdrs || {}, html, url).then(deepSecData => {
+            if (currentReportData) currentReportData.deepSecurity = deepSecData;
+            renderDeepSecurityPanel(deepSecData, domain, deepSecContainer);
+          }).catch(err => {
+            logWarn('main:deepSecurity', err);
+          });
+        }).catch(() => {
+          auditDeepSecurity(domain, hdrs || {}, cachedHtml || '', url).then(deepSecData => {
+            if (currentReportData) currentReportData.deepSecurity = deepSecData;
+            renderDeepSecurityPanel(deepSecData, domain, deepSecContainer);
+          }).catch(err => {
+            logWarn('main:deepSecurity', err);
+          });
+        });
+      }).catch(() => {
+        auditDeepSecurity(domain, {}, cachedHtml || '', url).then(deepSecData => {
+          if (currentReportData) currentReportData.deepSecurity = deepSecData;
+          renderDeepSecurityPanel(deepSecData, domain, deepSecContainer);
+        }).catch(err => {
+          logWarn('main:deepSecurity', err);
         });
       });
     }
@@ -2900,6 +2933,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (tabName === 'seo') show(document.getElementById('intelTabSeo'));
       else if (tabName === 'emailSecurity') show(document.getElementById('intelTabEmailSecurity'));
       else if (tabName === 'aiPolicy') show(document.getElementById('intelTabAiPolicy'));
+      else if (tabName === 'deepSecurity') show(document.getElementById('intelTabDeepSecurity'));
     });
   });
 
