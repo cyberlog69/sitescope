@@ -136,7 +136,11 @@ export function detectTechnologies(html, headers) {
   if (htmlLower.includes('googletagmanager.com/gtm.js')) {
     detected.push({ name: 'Google Tag Manager', category: 'Analytics', icon: '🏷️' });
   }
-  if (htmlLower.includes('connect.facebook.net') || htmlLower.includes('fbq(')) {
+  if (
+    hasUrlWithHostname(htmlLower, 'connect.facebook.net') ||
+    hasUrlWithHostname(htmlLower, 'www.connect.facebook.net') ||
+    htmlLower.includes('fbq(')
+  ) {
     detected.push({ name: 'Facebook Pixel', category: 'Marketing', icon: '👥' });
   }
   if (htmlLower.includes('static.hotjar.com') || htmlLower.includes('hj(')) {
