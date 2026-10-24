@@ -2175,8 +2175,13 @@ async function runDetectorCheck(target) {
       <text x="18" y="25" font-family="Inter,Arial,sans-serif" font-size="18" font-weight="700"
             text-anchor="middle" fill="#fff">${domainLetter}</text>
     </svg>`;
-    favDiv.innerHTML = `<img src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(avatarSvg)}"
-      width="36" height="36" style="display:block;" alt="${result.domain}" />`;
+    const avatarImg = document.createElement('img');
+    avatarImg.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(avatarSvg)}`;
+    avatarImg.width = 36;
+    avatarImg.height = 36;
+    avatarImg.style.display = 'block';
+    avatarImg.alt = result.domain;
+    favDiv.replaceChildren(avatarImg);
     favDiv.style.display = 'block';
 
     // Async: try to load a real logo and swap it in if it's a proper image
@@ -2193,8 +2198,16 @@ async function runDetectorCheck(target) {
           if (probe.naturalWidth > 4 && probe.naturalHeight > 4) {
             // Only update if this result is still visible (user may have cleared)
             const el = document.getElementById('detectorFavicon');
-            if (el) el.innerHTML = `<img src="${probe.src}" width="36" height="36"
-              style="display:block;object-fit:contain;" alt="${domain}" />`;
+            if (el) {
+              const logoImg = document.createElement('img');
+              logoImg.src = probe.src;
+              logoImg.width = 36;
+              logoImg.height = 36;
+              logoImg.style.display = 'block';
+              logoImg.style.objectFit = 'contain';
+              logoImg.alt = domain;
+              el.replaceChildren(logoImg);
+            }
           } else { idx++; tryNext(); }
         };
         probe.onerror = () => { idx++; tryNext(); };
