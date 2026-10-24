@@ -137,7 +137,7 @@ export function isValidEmailFormat(email) {
   if (!/^[a-zA-Z0-9-]*[a-zA-Z0-9]$/.test(tag)) return false;
 
   // eslint-disable-next-line no-control-regex -- RFC 5322 domain-literal data allows these control chars and escapes
-  const dataRe = /^(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+$/;
+  const dataRe = /^(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+$/;
   return dataRe.test(data);
 }
 
