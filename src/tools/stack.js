@@ -125,7 +125,12 @@ export function detectTechnologies(html, headers) {
   }
 
   // 5. Analytics & Tag Managers
-  if (htmlLower.includes('google-analytics.com') || htmlLower.includes('googletagmanager.com/gtag') || htmlLower.includes('_ga')) {
+  if (
+    hasUrlWithHostname(htmlLower, 'google-analytics.com') ||
+    hasUrlWithHostname(htmlLower, 'www.google-analytics.com') ||
+    hasUrlWithHostname(htmlLower, 'googletagmanager.com') ||
+    htmlLower.includes('_ga')
+  ) {
     detected.push({ name: 'Google Analytics', category: 'Analytics', icon: '📊' });
   }
   if (htmlLower.includes('googletagmanager.com/gtm.js')) {
