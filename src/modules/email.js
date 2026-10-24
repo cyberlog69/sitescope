@@ -104,9 +104,41 @@ const EMAIL_BRAND_DOMAINS = [
  * @returns {boolean}
  */
 export function isValidEmailFormat(email) {
+  if (typeof email !== 'string' || email.length === 0 || email.length > 254) return false;
+
+  const at = email.indexOf('@');
+  if (at <= 0 || at !== email.lastIndexOf('@') || at === email.length - 1) return false;
+
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+
+  // Dot-atom or quoted-string local part (kept RFC-like but split from domain parsing).
   // eslint-disable-next-line no-control-regex -- RFC 5322 quoted-string local part allows these control chars
-  const re = /^(?:[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-zA-Z0-9-]*[a-zA-Z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/;
-  return re.test(email);
+  const localRe = /^(?:[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")$/;
+  if (!localRe.test(local)) return false;
+
+  // Standard DNS hostname domain.
+  const hostRe = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+  if (hostRe.test(domain)) return true;
+
+  // Address-literal: [ ... ]
+  if (!(domain.startsWith('[') && domain.endsWith(']'))) return false;
+  const literal = domain.slice(1, -1);
+
+  // IPv4 literal
+  const ipv4Re = /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/;
+  if (ipv4Re.test(literal)) return true;
+
+  // General address-literal: tag:data (data supports escaped chars)
+  const colon = literal.indexOf(':');
+  if (colon <= 0 || colon === literal.length - 1) return false;
+  const tag = literal.slice(0, colon);
+  const data = literal.slice(colon + 1);
+  if (!/^[a-zA-Z0-9-]*[a-zA-Z0-9]$/.test(tag)) return false;
+
+  // eslint-disable-next-line no-control-regex -- RFC 5322 domain-literal data allows these control chars and escapes
+  const dataRe = /^(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+$/;
+  return dataRe.test(data);
 }
 
 /**
