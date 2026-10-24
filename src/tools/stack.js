@@ -143,7 +143,7 @@ export function detectTechnologies(html, headers) {
   ) {
     detected.push({ name: 'Facebook Pixel', category: 'Marketing', icon: '👥' });
   }
-  if (htmlLower.includes('static.hotjar.com') || htmlLower.includes('hj(')) {
+  if (hasUrlWithHostname(htmlLower, 'static.hotjar.com') || htmlLower.includes('hj(')) {
     detected.push({ name: 'Hotjar', category: 'UX Analytics', icon: '🔥' });
   }
 
