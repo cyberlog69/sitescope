@@ -13,6 +13,24 @@ import { escapeHtml } from '../utils/helpers.js';
  * @param {Record<string, string> | null | undefined} headers
  * @returns {DetectedTech[]}
  */
+function hasUrlWithHostname(sourceHtml, expectedHostname) {
+  const urlRegex = /https?:\/\/[^\s"'<>]+/gi;
+  const matches = String(sourceHtml || '').match(urlRegex) || [];
+
+  for (const rawUrl of matches) {
+    try {
+      const parsed = new URL(rawUrl);
+      if (parsed.hostname.toLowerCase() === expectedHostname) {
+        return true;
+      }
+    } catch {
+      // Ignore malformed URLs in HTML.
+    }
+  }
+
+  return false;
+}
+
 export function detectTechnologies(html, headers) {
   const detected = [];
   const htmlLower = (html || '').toLowerCase();
@@ -58,7 +76,7 @@ export function detectTechnologies(html, headers) {
   if (htmlLower.includes('wp-content') || htmlLower.includes('wp-includes') || htmlLower.includes('generator" content="wordpress')) {
     detected.push({ name: 'WordPress', category: 'CMS', icon: '📝' });
   }
-  if (htmlLower.includes('shopify.theme') || htmlLower.includes('cdn.shopify.com')) {
+  if (htmlLower.includes('shopify.theme') || hasUrlWithHostname(html, 'cdn.shopify.com')) {
     detected.push({ name: 'Shopify', category: 'CMS / E-Commerce', icon: '🛍️' });
   }
   if (htmlLower.includes('static1.squarespace.com') || htmlLower.includes('squarespace.com')) {
