@@ -94,9 +94,7 @@ export function sanitizeForSandbox(rawHtml, baseUrl) {
       if (
         val.startsWith('javascript:') ||
         val.startsWith('vbscript:') ||
-        val.startsWith('data:text/html') ||
-        val.startsWith('data:text/javascript') ||
-        val.startsWith('data:application/javascript')
+        val.startsWith('data:')
       ) {
         el.setAttribute(attr, '#');
       }
