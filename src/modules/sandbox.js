@@ -59,7 +59,13 @@ export function sanitizeForSandbox(rawHtml, baseUrl) {
   const extractedLinks = [];
   doc.querySelectorAll('a[href]').forEach(a => {
     const href = a.getAttribute('href');
-    if (href && !href.startsWith('javascript:')) {
+    const normalizedHref = href ? href.trim().toLowerCase() : '';
+    if (
+      href &&
+      !normalizedHref.startsWith('javascript:') &&
+      !normalizedHref.startsWith('data:') &&
+      !normalizedHref.startsWith('vbscript:')
+    ) {
       try {
         const u = new URL(href, baseUrl);
         extractedLinks.push({ text: a.textContent.trim().substring(0, 50) || href.substring(0, 50), url: u.href });
