@@ -85,7 +85,11 @@ export function detectTechnologies(html, headers) {
   if (htmlLower.includes('shopify.theme') || hasUrlWithHostname(html, 'cdn.shopify.com')) {
     detected.push({ name: 'Shopify', category: 'CMS / E-Commerce', icon: '🛍️' });
   }
-  if (hasUrlWithHostname(html, 'static1.squarespace.com') || htmlLower.includes('squarespace.com')) {
+  if (
+    hasUrlWithHostname(html, 'static1.squarespace.com') ||
+    hasUrlWithHostname(html, 'squarespace.com') ||
+    hasUrlWithHostname(html, 'www.squarespace.com')
+  ) {
     detected.push({ name: 'Squarespace', category: 'CMS', icon: '📐' });
   }
   if (hasUrlWithHostname(html, 'wix.com') || htmlLower.includes('wix-code')) {
