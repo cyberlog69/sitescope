@@ -88,7 +88,7 @@ export function detectTechnologies(html, headers) {
   if (hasUrlWithHostname(html, 'static1.squarespace.com') || htmlLower.includes('squarespace.com')) {
     detected.push({ name: 'Squarespace', category: 'CMS', icon: '📐' });
   }
-  if (htmlLower.includes('wix.com') || htmlLower.includes('wix-code')) {
+  if (hasUrlWithHostname(html, 'wix.com') || htmlLower.includes('wix-code')) {
     detected.push({ name: 'Wix', category: 'CMS', icon: '✨' });
   }
   if (htmlLower.includes('ghost-sdk') || htmlLower.includes('generator" content="ghost')) {
