@@ -8,10 +8,10 @@ import { escapeHtml } from '../utils/helpers.js';
  */
 
 /**
- * Fingerprint a site's technology stack from its HTML source and HTTP headers.
- * @param {string} html
- * @param {Record<string, string> | null | undefined} headers
- * @returns {DetectedTech[]}
+ * Check if the HTML contains any URL matching the expected hostname.
+ * @param {string} sourceHtml
+ * @param {string} expectedHostname
+ * @returns {boolean}
  */
 function hasUrlWithHostname(sourceHtml, expectedHostname) {
   const urlRegex = /https?:\/\/[^\s"'<>]+/gi;
@@ -31,6 +31,12 @@ function hasUrlWithHostname(sourceHtml, expectedHostname) {
   return false;
 }
 
+/**
+ * Fingerprint a site's technology stack from its HTML source and HTTP headers.
+ * @param {string} html
+ * @param {Record<string, string> | null | undefined} headers
+ * @returns {DetectedTech[]}
+ */
 export function detectTechnologies(html, headers) {
   const detected = [];
   const htmlLower = (html || '').toLowerCase();
