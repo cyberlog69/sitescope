@@ -1,0 +1,19 @@
+# Podman & Docker Compose specification for SiteScope
+services:
+  sitescope:
+    build:
+      context: .
+      dockerfile: Containerfile
+    image: localhost/sitescope:latest
+    container_name: sitescope
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

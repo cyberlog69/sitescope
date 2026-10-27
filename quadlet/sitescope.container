@@ -1,0 +1,24 @@
+# Podman Quadlet configuration for systemd integration
+# Place this file in: ~/.config/containers/systemd/sitescope.container
+# Reload systemd:     systemctl --user daemon-reload
+# Start service:      systemctl --user start sitescope.service
+# Enable on boot:     systemctl --user enable sitescope.service
+
+[Unit]
+Description=SiteScope Web Application Container
+Documentation=https://github.com/cyberlog69/sitescope
+After=network-online.target
+
+[Container]
+Image=localhost/sitescope:latest
+ContainerName=sitescope
+PublishPort=8080:8080
+AutoUpdate=registry
+SecurityLabelDisable=false
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

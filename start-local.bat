@@ -1,0 +1,3 @@
+@echo off
+echo Starting SiteScope Local Server...
+call npm run dev

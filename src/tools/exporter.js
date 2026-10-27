@@ -1,0 +1,185 @@
+// @ts-check
+// exporter.js — Diagnostic Report Exporter (JSON, Markdown, Print/PDF)
+
+
+/**
+ * Trigger browser file download.
+ * @param {string} content
+ * @param {string} filename
+ * @param {string} mimeType
+ */
+export function downloadFile(content, filename, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/**
+ * @typedef {{
+ *   url?: string,
+ *   domain?: string,
+ *   timestamp?: string|number,
+ *   category?: { label?: string, emoji?: string },
+ *   security?: import('../modules/security.js').ScanResult,
+ *   scorecard?: import('../modules/scorecard.js').ScorecardResult,
+ *   httpHeaders?: Record<string, string>,
+ *   pagespeed?: import('./pagespeed.js').PageSpeedResult,
+ *   subdomains?: import('./subdomains.js').SubdomainResult,
+ *   carbon?: import('./carbon.js').CarbonResult,
+ *   privacy?: import('./privacy.js').PrivacyAuditResult,
+ *   seo?: import('./seo.js').SeoMetadataResult,
+ *   emailSecurity?: import('./emailSecurity.js').EmailSecurityResult,
+ *   aiPolicy?: import('./aiPolicy.js').AiPolicyResult
+ * }} ReportData
+ */
+
+/**
+ * Export scan report as structured JSON.
+ * @param {ReportData} reportData
+ */
+export function exportAsJson(reportData) {
+  const domain   = reportData.domain || 'scan';
+  const filename = `sitescope-report-${domain.replace(/[^a-z0-9.-]/gi, '_')}.json`;
+  const jsonStr  = JSON.stringify(reportData, null, 2);
+  downloadFile(jsonStr, filename, 'application/json');
+}
+
+/**
+ * Export scan report as Markdown documentation.
+ * @param {ReportData} reportData
+ */
+export function exportAsMarkdown(reportData) {
+  const domain    = reportData.domain || 'Target Site';
+  const timestamp = new Date(reportData.timestamp || Date.now()).toISOString();
+  const sc  = reportData.scorecard;
+  const sec = reportData.security;
+
+  let md = `# 🛡️ SiteScope Diagnostic Report — ${domain}\n\n`;
+  md += `**Generated:** ${timestamp}  \n`;
+  md += `**Target URL:** ${reportData.url || domain}  \n`;
+  md += `**Security Grade:** **${sc?.grade || 'N/A'}** (${sc?.score ?? 0}/100)  \n`;
+  md += `**Category:** ${reportData.category?.label || 'General'} ${reportData.category?.emoji || '🌐'}  \n\n`;
+
+  md += `---\n\n## 📊 Security Scorecard Summary\n\n`;
+  if (sc?.strengths && sc.strengths.length) {
+    md += `### ✅ Strengths\n`;
+    sc.strengths.forEach((st) => (md += `- ${st}\n`));
+    md += `\n`;
+  }
+
+  if (sc?.remediations && sc.remediations.length) {
+    md += `### ⚠️ Remediation Checklist (${sc.remediations.length} action items)\n\n`;
+    md += `| Severity | Issue | Remediation |\n`;
+    md += `|---|---|---|\n`;
+    sc.remediations.forEach((r) => {
+      md += `| **${r.severity.toUpperCase()}** | ${r.title} | ${r.description} |\n`;
+    });
+    md += `\n`;
+  }
+
+  md += `## 🛡️ Threat Scanner Report\n\n`;
+  md += `**Threat Level:** ${sec?.level || 'Unknown'}  \n`;
+  md += `**Database Status:** ${sec?.dbStatus || 'Clean'}  \n\n`;
+  if (sec?.findings && sec.findings.length) {
+    md += `### Findings:\n`;
+    sec.findings.forEach((f) => (md += `- [${f.type.toUpperCase()}] ${f.text}\n`));
+    md += `\n`;
+  }
+
+  if (reportData.pagespeed && !reportData.pagespeed.error) {
+    const ps = reportData.pagespeed;
+    md += `## ⚡ Google PageSpeed Insights & Core Web Vitals\n\n`;
+    md += `| Category | Score |\n|---|---|\n`;
+    md += `| **Performance** | ${ps.scores.performance ?? 'N/A'}/100 |\n`;
+    md += `| **Accessibility** | ${ps.scores.accessibility ?? 'N/A'}/100 |\n`;
+    md += `| **Best Practices** | ${ps.scores.bestPractices ?? 'N/A'}/100 |\n`;
+    md += `| **SEO** | ${ps.scores.seo ?? 'N/A'}/100 |\n\n`;
+
+    if (ps.metrics.length) {
+      md += `### Core Web Vitals\n\n`;
+      md += `| Metric | Value | Rating |\n|---|---|---|\n`;
+      ps.metrics.forEach((m) => {
+        md += `| **${m.title} (${m.name})** | ${m.value} | ${m.rating.toUpperCase()} |\n`;
+      });
+      md += `\n`;
+    }
+  }
+
+  if (reportData.subdomains && !reportData.subdomains.error && reportData.subdomains.totalCount > 0) {
+    const sub = reportData.subdomains;
+    md += `## 🕸️ Discovered Subdomains (${sub.totalCount})\n\n`;
+    sub.subdomains.forEach((s) => (md += `- \`${s}\`\n`));
+    md += `\n`;
+  }
+
+  if (reportData.carbon) {
+    const c = reportData.carbon;
+    md += `## 🌱 Digital Sustainability & Carbon Footprint\n\n`;
+    md += `**Eco-Score Grade:** **${c.ecoGrade}** (${c.cleanerThanPct}% cleaner than web average)  \n`;
+    md += `**CO₂ Emissions / Visit:** ${c.co2PerVisitGramsFormatted}  \n`;
+    md += `**Annual CO₂ (10k monthly visits):** ${c.annualCo2KgFormatted}  \n`;
+    md += `**Trees Needed / Year:** ${c.treesNeeded} mature tree(s) 🌳  \n`;
+    md += `**Green Hosting:** ${c.isGreenHost ? '✅ Certified Green Host' : '⚠️ Standard Hosting'}  \n\n`;
+  }
+
+  if (reportData.privacy) {
+    const p = reportData.privacy;
+    md += `## 📜 Cookie Consent & Privacy Audit (GDPR / CCPA)\n\n`;
+    md += `**Compliance Level:** **${p.complianceLevel}** (${p.complianceScore}/100)  \n`;
+    md += `**Privacy Policy:** ${p.hasPrivacyPolicy ? `[Link](${p.privacyPolicyUrl})` : '⚠️ Missing'}  \n`;
+    md += `**Cookie Consent Banner:** ${p.cmpDetected ? `✅ ${p.cmpDetected.name}` : '⚠️ None Detected'}  \n`;
+    md += `**Trackers Detected:** ${p.thirdPartyTrackers.length > 0 ? p.thirdPartyTrackers.join(', ') : 'None'}  \n\n`;
+  }
+
+  if (reportData.seo) {
+    const s = reportData.seo;
+    md += `## 🔍 Visual SEO & Social Card Audit\n\n`;
+    md += `**SEO Health Grade:** **${s.seoGrade}** (${s.seoScore}/100)  \n`;
+    md += `**Page Title:** ${s.title || '⚠️ Missing'}  \n`;
+    md += `**Meta Description:** ${s.description || '⚠️ Missing'}  \n`;
+    md += `**Open Graph Image:** ${s.og.image ? `✅ [View Image](${s.og.image})` : '⚠️ Missing'}  \n`;
+    md += `**Twitter Card Type:** ${s.twitter.card || '⚠️ None'}  \n`;
+    md += `**Structured Data:** ${s.jsonLdSchemas.length > 0 ? s.jsonLdSchemas.join(', ') : 'None'}  \n\n`;
+  }
+
+  if (reportData.emailSecurity) {
+    const e = reportData.emailSecurity;
+    md += `## 🛡️ Email Security & Domain Authentication\n\n`;
+    md += `**Domain Auth Grade:** **${e.authGrade}** (Spoofing Risk: ${e.spoofingRiskScore}/100)  \n`;
+    md += `**Mail Provider:** ${e.mailProvider}  \n`;
+    md += `**DMARC Policy:** ${e.dmarc.present ? `✅ ${e.dmarc.policy.toUpperCase()}` : '⚠️ Missing (Spoofable)'}  \n`;
+    md += `**SPF Qualifier:** ${e.spf.present ? `✅ ${e.spf.qualifier}` : '⚠️ Missing'}  \n`;
+    md += `**DNSSEC Status:** ${e.dnssec.enabled ? '✅ Active' : '⚠️ Inactive'}  \n`;
+    md += `**BIMI Brand Indicator:** ${e.bimi.present ? '✅ Configured' : 'None'}  \n\n`;
+  }
+
+  if (reportData.aiPolicy) {
+    const a = reportData.aiPolicy;
+    md += `## 🤖 AI Scraper & LLM Crawler Policy\n\n`;
+    md += `**AI Scraping Posture:** **${a.posture}** (${a.blockedCount}/${a.totalAiBots} AI Bots Blocked)  \n`;
+    md += `**HTML noai Meta Directive:** ${a.hasNoAiMeta ? '✅ Active' : 'None'}  \n`;
+    md += `**ai.txt Specification:** ${a.hasAiTxt ? '✅ Configured' : 'None'}  \n\n`;
+  }
+
+  if (reportData.httpHeaders) {
+    md += `## 🌐 HTTP Security Headers\n\n\`\`\`json\n`;
+    md += JSON.stringify(reportData.httpHeaders, null, 2);
+    md += `\n\`\`\`\n\n`;
+  }
+
+  md += `---\n*Report generated by SiteScope v4 (https://sitescope-omega.vercel.app)*\n`;
+
+  const filename = `sitescope-report-${domain.replace(/[^a-z0-9.-]/gi, '_')}.md`;
+  downloadFile(md, filename, 'text/markdown');
+}
+
+/**
+ * Trigger print dialog formatted as PDF/Paper report.
+ */
+export function triggerPrintReport() {
+  window.print();
+}

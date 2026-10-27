@@ -1,0 +1,25 @@
+# Native Podman / Kubernetes Pod Manifest
+# Run natively using: podman play kube podman-pod.yaml
+# Stop and tear down using: podman play kube --down podman-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sitescope-pod
+  labels:
+    app.kubernetes.io/name: sitescope
+spec:
+  containers:
+    - name: sitescope
+      image: localhost/sitescope:latest
+      ports:
+        - name: http
+          containerPort: 8080
+          hostPort: 8080
+      resources:
+        limits:
+          memory: 256Mi
+        requests:
+          memory: 64Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: false
