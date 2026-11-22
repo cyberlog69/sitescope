@@ -16,13 +16,15 @@
     "strict": false,
     "noImplicitAny": false,
     "noImplicitThis": false,
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "types": ["vite/client"]
   },
   "include": [
     "src/utils/**.js",
     "src/modules/**.js",
     "src/tools/**.js",
     "src/main/**.js",
+    "src/main.js",
     "src/intel.js"
   ],
   "exclude": ["node_modules", "dist", "src/**/*.test.js"]

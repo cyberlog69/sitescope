@@ -3,10 +3,11 @@
 // Strategy:
 //   Tier 1 (popular services with official Statuspage.io): query the service's
 //           own status API — authoritative, CORS-friendly, zero false positives.
-//   Tier 2 (all other domains): DNS-over-HTTPS (dns.google) + allorigins proxy
+//   Tier 2 (all other domains): DNS-over-HTTPS (dns.google) + CORS proxy chain
 //           run in parallel, majority-vote verdict.
 
 import { logWarn } from '../utils/logger.js';
+import { fetchViaCorsProxy } from '../utils/proxy.js';
 
 /**
  * @typedef {{ name:string, domain:string, color:string, statusApi:string|null, statusPage:string|null }} ServiceEntry
@@ -16,7 +17,7 @@ import { logWarn } from '../utils/logger.js';
  *   reportsCount:number, reports:number[] }} WebsiteStatusResult
  */
 
-const OUTAGE_KV_BUCKET = 'sitescope_v4_history';
+const OUTAGE_KV_BUCKET = 'sitescope_v4_outages';
 
 // ── Service registry ──────────────────────────────────────────────────────────
 // statusApi: Atlassian Statuspage v2 endpoint (returns { status: { indicator } })
@@ -189,21 +190,14 @@ async function checkDnsOverHttps(domain) {
   }
 }
 
-// ── Tier 2b: allorigins CORS proxy ───────────────────────────────────────────
+// ── Tier 2b: CORS proxy chain ────────────────────────────────────────────────
 // Checks if the site responds over HTTP from an external server.
 async function checkViaProxy(domain) {
-  try {
-    const res = await fetch(
-      `https://api.allorigins.win/get?url=${encodeURIComponent(`https://${domain}`)}&timestamp=${Date.now()}`,
-      { signal: AbortSignal.timeout(8000) }
-    );
-    if (!res.ok) return { ok: false };
-    const json = await res.json();
-    const code = Number(json?.status?.http_code ?? 0);
-    return { ok: code > 0, httpCode: code };
-  } catch {
-    return { ok: false, httpCode: null };
-  }
+  const result = await fetchViaCorsProxy(`https://${domain}`, {
+    timeout: 6000,
+    cacheBust: true
+  });
+  return result ? { ok: true } : { ok: false };
 }
 
 // ── Tier 2c: Direct no-cors HEAD (fastest local signal) ──────────────────────
@@ -332,20 +326,47 @@ export async function checkWebsiteStatus(target) {
 }
 
 // ── Outage Report Storage ─────────────────────────────────────────────────────
+// Reports are intentionally community-shared, but kept in a bucket separate
+// from scan history and normalized so a hostile client cannot poison the chart
+// with junk timestamps or unbounded arrays.
+const OUTAGE_MAX_REPORTS = 1000;
+const OUTAGE_REPORT_COOLDOWN_MS = 60 * 60 * 1000;
+
+/**
+ * @param {unknown} value
+ * @returns {number[]} timestamps (ms) from the last 24h, sorted ascending
+ */
+export function normalizeOutageReports(value) {
+  if (!Array.isArray(value)) return [];
+  const now = Date.now();
+  const oneDayAgo = now - 86400000;
+  const seenMinutes = new Set();
+  return value
+    .map((entry) => new Date(/** @type {string|number} */ (entry)).getTime())
+    .filter((t) => Number.isFinite(t) && t > oneDayAgo && t <= now + 60000)
+    .filter((t) => {
+      const minute = Math.floor(t / 60000);
+      if (seenMinutes.has(minute)) return false;
+      seenMinutes.add(minute);
+      return true;
+    })
+    .sort((a, b) => a - b)
+    .slice(-OUTAGE_MAX_REPORTS);
+}
+
 export async function fetchOutageReports(cleanKey) {
-  const url       = `https://kvdb.io/${OUTAGE_KV_BUCKET}/outage_${cleanKey}`;
-  const oneDayAgo = Date.now() - 86400000;
+  const url = `https://kvdb.io/${OUTAGE_KV_BUCKET}/outage_${cleanKey}`;
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
     if (!res.ok) throw new Error('kvdb');
     const text = await res.text();
     if (!text || !text.trim()) return [];
-    return JSON.parse(text).map(t => new Date(t).getTime()).filter(t => t > oneDayAgo);
+    return normalizeOutageReports(JSON.parse(text));
   } catch (err) {
     logWarn('detector:fetchOutageReports:kvdb', err);
     try {
       const raw = localStorage.getItem(`outages_${cleanKey}`);
-      if (raw) return JSON.parse(raw).map(t => new Date(t).getTime()).filter(t => t > oneDayAgo);
+      if (raw) return normalizeOutageReports(JSON.parse(raw));
     } catch (localErr) {
       logWarn('detector:fetchOutageReports:localStorage', localErr);
     }
@@ -354,12 +375,23 @@ export async function fetchOutageReports(cleanKey) {
 }
 
 export async function submitOutageReport(cleanKey) {
-  const url       = `https://kvdb.io/${OUTAGE_KV_BUCKET}/outage_${cleanKey}`;
-  const oneDayAgo = Date.now() - 86400000;
+  const url = `https://kvdb.io/${OUTAGE_KV_BUCKET}/outage_${cleanKey}`;
   let reports = await fetchOutageReports(cleanKey);
+
+  // One report per browser per hour keeps the shared list meaningful.
+  const lastReportKey = `outage_reported_${cleanKey}`;
+  try {
+    const last = Number(localStorage.getItem(lastReportKey));
+    if (Number.isFinite(last) && Date.now() - last < OUTAGE_REPORT_COOLDOWN_MS) {
+      return reports;
+    }
+  } catch (err) {
+    logWarn('detector:submitOutageReport:rate-limit', err);
+  }
+
   reports.push(Date.now());
-  reports = reports.filter(t => t > oneDayAgo);
-  const isoStrings = reports.map(t => new Date(t).toISOString());
+  reports = normalizeOutageReports(reports);
+  const isoStrings = reports.map((t) => new Date(t).toISOString());
   try {
     await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(isoStrings), signal: AbortSignal.timeout(4000) });
   } catch (err) {
@@ -367,6 +399,7 @@ export async function submitOutageReport(cleanKey) {
   }
   try {
     localStorage.setItem(`outages_${cleanKey}`, JSON.stringify(isoStrings));
+    localStorage.setItem(lastReportKey, String(Date.now()));
   } catch (err) {
     logWarn('detector:submitOutageReport:localStorage', err);
   }

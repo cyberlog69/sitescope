@@ -38,7 +38,10 @@ export async function fetchSiteData(url) {
   const apiUrl = `https://api.microlink.io/?url=${encodeURIComponent(url)}&meta=true&video=false`;
   const favicon = `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=32`;
 
-  const res = await fetch(apiUrl, { headers: { Accept: 'application/json' } });
+  const res = await fetch(apiUrl, {
+    headers: { Accept: 'application/json' },
+    signal: AbortSignal.timeout(12000)
+  });
   const json = await res.json();
 
   if (json.status === 'success' || json.status === 'partial') {

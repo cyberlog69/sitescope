@@ -28,6 +28,39 @@ export async function fetchSslInfo(domain) {
 }
 
 /**
+ * @typedef {{ valid: boolean, daysRemaining: number, expiresAt: string, issuer: string|null }} SslSummary
+ */
+
+/**
+ * Pick the newest certificate and summarize the fields consumers need
+ * (scorecard, monitor, domain duel). `fetchSslInfo` deliberately returns the
+ * raw crt.sh array for the detailed panel.
+ * @param {CrtShCert[] | null | undefined} certs
+ * @param {number} [now]
+ * @returns {SslSummary | null}
+ */
+export function summarizeSslInfo(certs, now = Date.now()) {
+  if (!Array.isArray(certs) || certs.length === 0) return null;
+
+  const dated = certs
+    .map((cert) => ({ cert, expires: new Date(cert.not_after).getTime() }))
+    .filter((entry) => Number.isFinite(entry.expires));
+  if (dated.length === 0) return null;
+
+  const active = dated.filter((entry) => entry.expires > now);
+  const chosen = (active.length ? active : dated).reduce((best, entry) =>
+    entry.expires > best.expires ? entry : best,
+  );
+
+  return {
+    valid: chosen.expires > now,
+    daysRemaining: Math.max(0, Math.floor((chosen.expires - now) / 86400000)),
+    expiresAt: new Date(chosen.expires).toISOString(),
+    issuer: chosen.cert.issuer_name || null,
+  };
+}
+
+/**
  * @param {CrtShCert[] | null} sslData
  * @param {string} domain
  * @param {HTMLElement | null} containerEl
@@ -45,13 +78,14 @@ export function renderSslPanel(sslData, domain, containerEl) {
     return;
   }
 
-  // Filter out expired and sort by newest
-  const activeCerts = sslData.filter(c => {
-    const expires = new Date(c.not_after);
-    return expires > new Date();
-  });
+  // Filter out expired and sort by newest expiry
+  const activeCerts = sslData
+    .filter(c => new Date(c.not_after) > new Date())
+    .sort((a, b) => new Date(b.not_after).getTime() - new Date(a.not_after).getTime());
 
-  const latestCert = activeCerts[0] || sslData[0];
+  const latestCert = activeCerts[0] || [...sslData].sort(
+    (a, b) => new Date(b.not_after).getTime() - new Date(a.not_after).getTime()
+  )[0];
   const issuer = latestCert.issuer_name || 'Unknown Issuer';
   const created = new Date(latestCert.not_before);
   const expires = new Date(latestCert.not_after);

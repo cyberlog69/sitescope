@@ -29,8 +29,9 @@ const PROXIES = [
     }
   },
   {
-    // corsproxy.io passes the target response straight through
-    build: (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    // allorigins raw pass-through: same provider, but a separate endpoint that
+    // returns the body directly (useful when /get is rate-limited).
+    build: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     extract: async (res) => {
       const text = await res.text();
       return text || null;

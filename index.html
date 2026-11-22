@@ -7,55 +7,11 @@
   <meta name="description" content="Paste any URL and instantly get a live preview, security scan, and metadata of any website." />
 
   <!-- Content Security Policy -->
-  <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
-    script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline';
-    style-src 'self' https://fonts.googleapis.com 'unsafe-inline';
-    font-src 'self' https://fonts.gstatic.com data:;
-    img-src 'self' data: blob:
-      https://www.google.com
-      https://www.gstatic.com
-      https://s2.googleusercontent.com
-      https://icon.horse
-      https://s0.wordpress.com
-      https://image.thum.io
-      https://api.microlink.io
-      https://logo.clearbit.com
-      https://favicon.im
-      https://api.qrserver.com
-      https://icons.duckduckgo.com;
-    connect-src 'self'
-      https://api.microlink.io
-      https://api.allorigins.win
-      https://corsproxy.io
-      https://api.codetabs.com
-      https://urlhaus-api.abuse.ch
-      https://dns.google
-      https://cloudflare-dns.com
-      https://www.google.com
-      https://www.googleapis.com
-      https://s0.wordpress.com
-      https://image.thum.io
-      https://icon.horse
-      https://rdap.org
-      https://rdap.verisign.com
-      https://ipinfo.io
-      https://kvdb.io
-      https://api.qrserver.com
-      https://logo.clearbit.com
-      https://www.githubstatus.com
-      https://status.openai.com
-      https://discordstatus.com
-      https://www.cloudflarestatus.com
-      https://crt.sh;
-    frame-src blob:;
-    object-src 'none';
-    base-uri 'self';
-    form-action 'none';
-    upgrade-insecure-requests;
-  " />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https:; frame-src blob: https:; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests" />
 
   <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <meta name="theme-color" content="#06080f" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <link rel="preconnect" href="https://api.microlink.io" />
@@ -64,30 +20,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Pre-seed Theme to prevent FOUT -->
-  <script>
-    (function() {
-      try {
-        var t = localStorage.getItem('sitescope_theme');
-        if (t && ['aurora', 'cyber', 'linear', 'nordic'].indexOf(t) !== -1) {
-          document.documentElement.dataset.theme = t;
-          document.body ? (document.body.dataset.theme = t) : document.addEventListener('DOMContentLoaded', function() { document.body.dataset.theme = t; });
-        }
-      } catch (e) {}
-    })();
-  </script>
-  
-  <!-- Vercel Speed Insights -->
-  <script type="module" crossorigin="anonymous">
-    import { injectSpeedInsights } from 'https://cdn.jsdelivr.net/npm/@vercel/speed-insights@2/dist/index.mjs';
-    injectSpeedInsights();
-  </script>
-  
-  <!-- Vercel Web Analytics -->
-  <script>
-    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-  </script>
-  <script defer src="/_vercel/insights/script.js"></script>
+  <!-- Pre-seed theme before first paint (external file so script-src stays strict) -->
+  <script src="/theme-init.js"></script>
+
+  <!-- Vercel Speed Insights / Web Analytics -->
+  <script type="module" crossorigin="anonymous" src="/speed-insights.js"></script>
+  <script src="/analytics-init.js"></script>
 </head>
 <body>
 
@@ -490,7 +428,7 @@
                       </div>
                       <div class="browser-address-bar" id="iframeAddress"></div>
                     </div>
-                    <iframe id="siteFrame" class="site-iframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" title="Website Live Preview"></iframe>
+                    <iframe id="siteFrame" class="site-iframe" sandbox="allow-scripts allow-forms allow-popups" referrerpolicy="no-referrer" title="Website Live Preview"></iframe>
                   </div>
                 </div>
               </div>
@@ -567,6 +505,7 @@
                       <div class="sk-line sk-w-50" style="height:12px;border-radius:6px"></div>
                     </div>
                   </div>
+                  <div id="scorecardRemediation" class="hidden"></div>
                 </div>
 
                 <!-- Site Description -->
@@ -1154,7 +1093,7 @@
   </div>
 
   <!-- QR Code Modal -->
-  <div id="qrModal" class="qr-modal hidden" id="qrModalBackdrop">
+  <div id="qrModal" class="qr-modal hidden">
     <div class="qr-card">
       <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px;letter-spacing:0.04em;text-transform:uppercase;">QR Code</div>
       <div style="position:relative;width:220px;height:220px;margin:0 auto 14px;border-radius:10px;overflow:hidden;background:var(--card-background);border:1px solid var(--border);">

@@ -1,40 +1,34 @@
-const CACHE_NAME = 'sitescope-v4-cache-v3';
+const CACHE_NAME = 'sitescope-v4-cache-v5';
 const CACHE_MAX_BYTES = 5 * 1024 * 1024; // 5 MB cache cap
 
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/manifest.json',
-];
+// Only stable, unhashed shell files belong here. Vite fingerprints the JS/CSS
+// bundles, so they are cached by the runtime handler after the first request.
+const STATIC_ASSETS = ['/', '/index.html', '/manifest.json', '/favicon.svg'];
 
-// ── Install: pre-cache static shell ──────────────────────────
-self.addEventListener('install', event => {
+// ── Install: pre-cache the app shell ───────────────────────────────────────
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(STATIC_ASSETS))
-      .then(() => self.skipWaiting())
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting()),
   );
 });
 
-// ── Activate: evict old caches ────────────────────────────────
-self.addEventListener('activate', event => {
+// ── Activate: drop old cache generations ───────────────────────────────────
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(names =>
-      Promise.all(
-        names
-          .filter(name => name !== CACHE_NAME)
-          .map(name => caches.delete(name))
-      )
-    ).then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((names) => Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n))))
+      .then(() => self.clients.claim()),
   );
 });
 
-// ── Fetch: stale-while-revalidate for own-origin GET only ─────
-self.addEventListener('fetch', event => {
+// ── Fetch: stale-while-revalidate for same-origin GETs only ────────────────
+self.addEventListener('fetch', (event) => {
   const { request } = event;
 
-  // Only handle same-origin GET requests — never intercept API/external calls
   if (
     request.method !== 'GET' ||
     !request.url.startsWith(self.location.origin) ||
@@ -43,28 +37,46 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Reject opaque (cross-origin) responses — they can mask errors
   event.respondWith(
-    caches.open(CACHE_NAME).then(async cache => {
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+
+      // Navigations are network-first: serving a stale index.html can point at
+      // hashed bundles that no longer exist after a deploy. Offline falls back
+      // to the cached shell.
+      if (request.mode === 'navigate') {
+        try {
+          const response = await fetch(request);
+          if (response && response.status === 200 && response.type === 'basic') {
+            cache.put(request, response.clone()).catch(() => {});
+          }
+          return response;
+        } catch {
+          const cachedNav = await cache.match(request);
+          if (cachedNav) return cachedNav;
+          const shell = await cache.match('/index.html');
+          if (shell) return shell;
+          return Response.error();
+        }
+      }
+
       const cached = await cache.match(request);
 
-      const networkFetch = fetch(request).then(response => {
-        // Only cache valid, non-opaque, same-origin responses
-        if (
-          response &&
-          response.status === 200 &&
-          response.type === 'basic' &&
-          response.headers.get('content-length') !== null
-            ? parseInt(response.headers.get('content-length'), 10) < CACHE_MAX_BYTES
-            : true
-        ) {
-          cache.put(request, response.clone());
-        }
-        return response;
-      }).catch(() => cached); // Network error — serve cache if available
+      const network = fetch(request)
+        .then((response) => {
+          const length = response.headers.get('content-length');
+          const withinLimit = length === null || Number(length) < CACHE_MAX_BYTES;
+          if (response && response.status === 200 && response.type === 'basic' && withinLimit) {
+            cache.put(request, response.clone()).catch(() => {});
+          }
+          return response;
+        })
+        .catch(() => null);
 
-      // Stale-while-revalidate: serve cached immediately, update in background
-      return cached || networkFetch;
-    })
+      const fresh = await network;
+      if (cached) return cached;
+      if (fresh) return fresh;
+      return Response.error();
+    })(),
   );
 });

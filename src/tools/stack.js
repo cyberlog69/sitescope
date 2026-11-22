@@ -37,7 +37,7 @@ function hasUrlWithHostname(sourceHtml, expectedHostname) {
  * @param {Record<string, string> | null | undefined} headers
  * @returns {DetectedTech[]}
  */
-export function detectTechnologies(html, headers) {
+export function detectTechnologies(html, headers = {}) {
   const detected = [];
   const htmlLower = (html || '').toLowerCase();
   

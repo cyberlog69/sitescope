@@ -3,7 +3,8 @@
 //
 // localStorage is the source of truth for "instant" reads/writes — history
 // always saves even if the network request fails. kvdb.io is used as a
-// best-effort cross-device cloud sync layer on top of that.
+// best-effort backup, namespaced per browser so users never see each other's
+// scans (the bucket itself is public and unauthenticated).
 
 import { logWarn } from '../utils/logger.js';
 
@@ -12,9 +13,52 @@ import { logWarn } from '../utils/logger.js';
  */
 
 export const HISTORY_LS_KEY = 'sitescope_scan_history';
-export const HISTORY_KV_KEY = 'history';
-export const HISTORY_KV_URL = `https://kvdb.io/sitescope_v4_history/${HISTORY_KV_KEY}`;
+export const HISTORY_CLIENT_KEY = 'sitescope_client_id';
+export const HISTORY_BUCKET = 'sitescope_v4_history';
 export const HISTORY_MAX = 50;
+
+let ephemeralClientId = '';
+
+/** @returns {string} */
+function randomClientId() {
+  const bytes = new Uint8Array(16);
+  if (globalThis.crypto && typeof globalThis.crypto.getRandomValues === 'function') {
+    globalThis.crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+  }
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Stable per-browser identifier used to namespace cloud history. Previously
+ * every visitor pushed scans into one shared public kvdb bucket, which leaked
+ * URLs between users and let anyone wipe the whole list.
+ * @returns {string}
+ */
+export function getHistoryClientId() {
+  try {
+    const existing = localStorage.getItem(HISTORY_CLIENT_KEY);
+    if (existing && /^[a-f0-9]{32}$/i.test(existing)) return existing;
+
+    const id = randomClientId();
+    localStorage.setItem(HISTORY_CLIENT_KEY, id);
+    return id;
+  } catch {
+    // Storage blocked: keep the namespace unique for this session instead of
+    // falling back to a shared key that other visitors could read or wipe.
+    if (!ephemeralClientId) ephemeralClientId = randomClientId();
+    return ephemeralClientId;
+  }
+}
+
+/**
+ * @param {string} [clientId]
+ * @returns {string}
+ */
+export function historyCloudUrl(clientId = getHistoryClientId()) {
+  return `https://kvdb.io/${HISTORY_BUCKET}/history_${clientId}`;
+}
 
 /**
  * Read scan history from localStorage.
@@ -45,11 +89,12 @@ export function lsSaveHistory(items) {
 /**
  * Fetch cloud history. Returns `null` on network failure (distinct from an
  * empty list, which is a valid "no history yet" cloud response).
+ * @param {string} [clientId]
  * @returns {Promise<HistoryEntry[] | null>}
  */
-export async function fetchCloudHistory() {
+export async function fetchCloudHistory(clientId) {
   try {
-    const res = await fetch(HISTORY_KV_URL, { signal: AbortSignal.timeout(5000) });
+    const res = await fetch(historyCloudUrl(clientId), { signal: AbortSignal.timeout(5000) });
     if (!res.ok) return null;
     const text = await res.text();
     if (!text || !text.trim()) return [];
@@ -111,7 +156,7 @@ export async function saveHistoryEntry({ url, title, favicon, threatLevel }) {
     cloud.unshift(newEntry);
     cloud = cloud.slice(0, HISTORY_MAX);
 
-    await fetch(HISTORY_KV_URL, {
+    await fetch(historyCloudUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(cloud),
@@ -131,7 +176,7 @@ export async function saveHistoryEntry({ url, title, favicon, threatLevel }) {
 export async function clearHistory() {
   lsSaveHistory([]);
   try {
-    await fetch(HISTORY_KV_URL, {
+    await fetch(historyCloudUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify([]),

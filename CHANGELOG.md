@@ -10,15 +10,34 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.
 - 15 unit tests in `src/tools/deepSecurity.test.js` covering CSP AST analysis, HSTS preload validation, cookie auditing, sensitive leak mock tests, and server config generators.
 - Shared `src/utils/helpers.js` (escapeHtml, normalizeUrl, getDomain, sleep, safeHref), removing duplicated logic from 6 files.
 - ESLint (flat config) + Prettier + Vitest tooling with `lint`, `format`, `test`, `test:watch`, `typecheck` npm scripts.
-- JSDoc type annotations + `tsconfig.json` (`checkJs`) across `src/modules`, `src/tools`, `src/main`, and `src/intel.js` — `tsc --noEmit` passes with 0 errors.
-- `src/main/history.js` and `src/main/bulk.js` — extracted scan-history (cloud+local sync) and bulk-checker logic out of `main.js` so it can be unit tested without a DOM.
-- `src/utils/proxy.js` — CORS proxy fallback chain (allorigins → codetabs) so a single dead free proxy no longer breaks SSL/robots.txt/WHOIS/header lookups.
+- JSDoc type annotations + `tsconfig.json` (`checkJs`) across `src/modules`, `src/tools`, `src/main`, **`src/main.js`**, and `src/intel.js` — `tsc --noEmit` passes with 0 errors.
+- `src/main/history.js` and `src/main/bulk.js` — extracted scan-history and bulk-checker logic out of `main.js` so it can be unit tested without a DOM.
+- `src/utils/proxy.js` — CORS proxy fallback chain (allorigins `/get` → `/raw` → codetabs) so a single dead free proxy no longer breaks SSL/robots.txt/WHOIS/header lookups. The legacy `corsproxy.io` endpoint was removed after it began returning HTTP 403 without a key.
 - `src/utils/logger.js` — thin `console` wrapper (`logWarn`/`logError`) used consistently instead of ad-hoc `console.*` calls.
-- 115 unit tests across 11 test files (up from 59/5), covering security heuristics, email scam scoring, sandbox sanitization, category classification, down-detector helpers, tech-stack fingerprinting, robots.txt parsing, scan history merge/sync, bulk URL parsing, and the CORS proxy fallback.
-- GitHub Actions CI (`.github/workflows/ci.yml`) running lint, typecheck, test, and build on every push/PR to `main`.
+- `config/csp.js` + `scripts/sync-csp.mjs` — one CSP source of truth, synced into `index.html`, `vercel.json`, and `nginx.conf`; `npm run csp:check` fails CI on drift.
+- `scripts/generate-dom-map.mjs` + `src/main/dom.js` — generated, typed element references so `main.js` is fully type-checked (`npm run dom:check`).
+- `scripts/generate-icons.mjs` — dependency-free PNG icon generator (192/512, maskable, apple-touch) plus `favicon.svg`.
+- `src/test/setup.js` — restores jsdom `localStorage` on Node 22+, where the experimental Node global shadows it. `.nvmrc` and `engines.node >= 20.19`.
+- 220 unit tests across 30 files, now including `intel.js`, `tools/dns.js`, `tools/ssl.js`, `tools/latency.js`, `utils/logger.js`, per-browser history namespacing, and outage-report normalization.
+- GitHub Actions CI (`.github/workflows/ci.yml`) running lint, typecheck, CSP drift, DOM-map drift, test, and build on every push/PR to `master`/`main`.
+
+### Changed
+- Cloud history is now namespaced per browser (`history_<random id>`) instead of one shared public kvdb key, so visitors never read or overwrite each other's scans.
+- Community outage reports moved to a separate bucket, are normalized (valid timestamps, one per minute, 24h window, 1000-entry cap), and are rate-limited to one report per browser per hour.
+- Sandbox HTML fetching, reachability probes, and Domain Duel HTML fetching now use the shared 3-tier proxy chain with explicit timeouts.
+- `script-src` no longer allows `'unsafe-inline'`; theme bootstrap, Vercel analytics stub, and Speed Insights loader were moved to `public/*.js`, and inline `onerror` handlers were replaced with one delegated capture listener.
+- CSP now permits `https:` images, connections, and frames so OG previews, latency/reachability probes, and the Live preview actually work; the policy is documented in the README.
+- The Live (Unsafe) iframe drops `allow-same-origin`, closing the sandbox-escape vector.
+- Service worker no longer pre-caches the Vite-hashed `/style.css` (which does not exist in `dist/`), only caches successful 200 responses, falls back to the cached shell for navigations, and is registered in production builds only.
+- Nginx now serves `sw.js`/`manifest.json` with correct cache semantics, caches `/assets/` immutably, and enables gzip.
+- `package.json` metadata corrected (name `sitescope`, version 4.4.0, MIT license, no bogus `main: app.js`, Node engines, new maintenance scripts).
 
 ### Fixed
 - Real variable-scoping bug in `security.js` (`spoofedBrand` was declared inside an `if` block but referenced outside it).
+- Service worker install failure in production (`/style.css` pre-cache) and a ternary-precedence bug that cached non-200 responses. Navigations are now network-first so a fresh deploy cannot point at deleted hashed bundles.
+- Domain Duel never fetched page HTML, treated the latency number array as `{ok, latencyMs}` objects, and passed raw crt.sh arrays into the scorecard — stack detection, latency, and SSL scoring were permanently wrong.
+- Scorecard, watchlist monitor, and Domain Duel now consume a real SSL summary (`valid`, `daysRemaining`, `expiresAt`, `issuer`) via `summarizeSslInfo`.
+- Deep-security header lookup was called with a full URL instead of the domain.
 - ESLint errors across the codebase: empty catch blocks now log via `logWarn`/`logError` instead of silently swallowing errors, `prefer-const` violations, a `no-useless-assignment` in `scanSecurity`, and documented `no-control-regex` false positives (intentional ASCII/RFC-5322 control-character ranges).
 
 ## [4.3] - 2026-07-13 — Down Detector & Status Monitor

@@ -28,7 +28,7 @@
  * @param {string} params.url
  * @param {import('./security.js').ScanResult} [params.securityScan]
  * @param {Record<string, string>} [params.headers]
- * @param {{ valid?: boolean, error?: string|boolean, daysRemaining?: number }} [params.sslInfo]
+ * @param {{ valid?: boolean, error?: string|boolean, daysRemaining?: number, expiresAt?: string, issuer?: string|null } | null} [params.sslInfo]
  * @param {object} [params._dnsInfo]
  * @returns {ScorecardResult}
  */

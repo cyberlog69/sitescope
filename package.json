@@ -1,8 +1,9 @@
 {
-  "name": "website-checker",
-  "version": "1.0.0",
-  "description": "> Paste any URL and get a live preview, metadata, category classification, security threat analysis, and a fully isolated sandbox. Now featuring a dark cosmic glassmorphic UI, bulk checking, and a comprehensive email validator. No signup required.",
-  "main": "app.js",
+  "name": "sitescope",
+  "version": "4.4.0",
+  "private": true,
+  "description": "Instant website intelligence: preview, metadata, category classification, security analysis, and an isolated sandbox. No signup required.",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -12,6 +13,12 @@
     "lint": "eslint src/",
     "format": "prettier --write src/",
     "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck && npm run csp:check && npm run dom:check && npm test",
+    "csp:sync": "node scripts/sync-csp.mjs",
+    "csp:check": "node scripts/sync-csp.mjs --check",
+    "dom:sync": "node scripts/generate-dom-map.mjs",
+    "dom:check": "node scripts/generate-dom-map.mjs --check",
+    "icons": "node scripts/generate-icons.mjs",
     "podman:build": "podman build -t sitescope:latest -f Containerfile .",
     "podman:run": "podman run -d --name sitescope -p 8080:8080 localhost/sitescope:latest",
     "podman:stop": "podman stop sitescope",
@@ -21,10 +28,20 @@
     "type": "git",
     "url": "git+https://github.com/cyberlog69/sitescope.git"
   },
-  "keywords": [],
+  "keywords": [
+    "website",
+    "security",
+    "scanner",
+    "pwa",
+    "diagnostics",
+    "seo",
+    "sandbox"
+  ],
   "author": "",
-  "license": "ISC",
-  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.19"
+  },
   "bugs": {
     "url": "https://github.com/cyberlog69/sitescope/issues"
   },

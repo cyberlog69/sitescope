@@ -1,12 +1,14 @@
 import { escapeHtml, normalizeUrl, getDomain, sleep, safeHref } from './utils/helpers.js';
 import { logWarn, logError } from './utils/logger.js';
+import { fetchViaCorsProxy } from './utils/proxy.js';
+import { dom } from './main/dom.js';
 import { fetchWhois, fetchHttpHeaders } from './intel.js';
 import { classifySite } from './modules/category.js';
 import { scanSecurity, THREAT_META } from './modules/security.js';
 import { sanitizeForSandbox } from './modules/sandbox.js';
 import { checkEmail, emailScoreFillCls } from './modules/email.js';
 import { fetchAllDns, renderDnsPanel } from './tools/dns.js';
-import { fetchSslInfo, renderSslPanel } from './tools/ssl.js';
+import { fetchSslInfo, renderSslPanel, summarizeSslInfo } from './tools/ssl.js';
 import { detectTechnologies, renderStackPanel } from './tools/stack.js';
 import { fetchRobotsTxt, parseRobotsTxt, renderRobotsPanel } from './tools/robots.js';
 import { runLatencySuite, renderLatencyPanel } from './tools/latency.js';
@@ -37,67 +39,85 @@ import { auditDeepSecurity, renderDeepSecurityPanel } from './tools/deepSecurity
 'use strict';
 
 // ── DOM References ──────────────────────────────────────────
-const urlInput       = document.getElementById('urlInput');
-const checkBtn       = document.getElementById('checkBtn');
-const btnText        = document.getElementById('btnText');
-const btnLoader      = document.getElementById('btnLoader');
-const clearBtn       = document.getElementById('clearBtn');
-const errorBanner    = document.getElementById('errorBanner');
-const errorMsg       = document.getElementById('errorMsg');
-const results        = document.getElementById('results');
+const urlInput       = dom.urlInput;
+const checkBtn       = dom.checkBtn;
+const btnText        = dom.btnText;
+const btnLoader      = dom.btnLoader;
+const clearBtn       = dom.clearBtn;
+const errorBanner    = dom.errorBanner;
+const errorMsg       = dom.errorMsg;
+const results        = dom.results;
 
 // Info bar
-const resultUrlText  = document.getElementById('resultUrlText');
-const statusDot      = document.getElementById('statusDot');
-const openBtn        = document.getElementById('openBtn');
+const resultUrlText  = dom.resultUrlText;
+const statusDot      = dom.statusDot;
+const openBtn        = dom.openBtn;
 
 // Preview
-const tabScreenshot  = document.getElementById('tabScreenshot');
-const tabLive        = document.getElementById('tabLive');
-const screenshotView = document.getElementById('screenshotView');
-const liveView       = document.getElementById('liveView');
-const screenshotImg  = document.getElementById('screenshotImg');
-const screenshotLoading = document.getElementById('screenshotLoading');
-const screenshotError   = document.getElementById('screenshotError');
-const browserAddress    = document.getElementById('browserAddress');
-const iframeAddress     = document.getElementById('iframeAddress');
-const siteFrame         = document.getElementById('siteFrame');
+const tabScreenshot  = dom.tabScreenshot;
+const tabLive        = dom.tabLive;
+const screenshotView = dom.screenshotView;
+const liveView       = dom.liveView;
+const screenshotImg  = dom.screenshotImg;
+const screenshotLoading = dom.screenshotLoading;
+const screenshotError   = dom.screenshotError;
+const browserAddress    = dom.browserAddress;
+const iframeAddress     = dom.iframeAddress;
+const siteFrame         = dom.siteFrame;
 
 // Info panel
-const siteFavicon    = document.getElementById('siteFavicon');
-const faviconFallback= document.getElementById('faviconFallback');
-const siteTitle      = document.getElementById('siteTitle');
-const siteDomain     = document.getElementById('siteDomain');
-const siteDescription= document.getElementById('siteDescription');
-const metaStatus     = document.getElementById('metaStatus');
-const metaAuthor     = document.getElementById('metaAuthor');
-const metaLang       = document.getElementById('metaLang');
-const metaProtocol   = document.getElementById('metaProtocol');
-const ogSection      = document.getElementById('ogSection');
-const ogImage        = document.getElementById('ogImage');
-const keywordsSection= document.getElementById('keywordsSection');
-const tagsWrap       = document.getElementById('tagsWrap');
+const siteFavicon    = dom.siteFavicon;
+const faviconFallback= dom.faviconFallback;
+const siteTitle      = dom.siteTitle;
+const siteDomain     = dom.siteDomain;
+const siteDescription= dom.siteDescription;
+const metaStatus     = dom.metaStatus;
+const metaAuthor     = dom.metaAuthor;
+const metaLang       = dom.metaLang;
+const metaProtocol   = dom.metaProtocol;
+const ogSection      = dom.ogSection;
+const ogImage        = dom.ogImage;
+const keywordsSection= dom.keywordsSection;
+const tagsWrap       = dom.tagsWrap;
 
 // Category
-const categoryBadge  = document.getElementById('categoryBadge');
-const catIcon        = document.getElementById('catIcon');
-const catLabel       = document.getElementById('catLabel');
-const catDescription = document.getElementById('catDescription');
+const categoryBadge  = dom.categoryBadge;
+const catIcon        = dom.catIcon;
+const catLabel       = dom.catLabel;
+const catDescription = dom.catDescription;
 
 // ── State ───────────────────────────────────────────────────
 let currentUrl = '';
 let isLoading  = false;
 let cachedHtml = '';
 let cachedHtmlUrl = '';
+/** @type {Promise<{ contents: string } | null> | null} */
 let proxyFetchPromise = null;
+/** @type {Record<string, any> | null} */
 let currentReportData = null;
+
+/** @type {Window & typeof globalThis & { updateBulkTableFilters?: () => void }} */
+const appWindow = /** @type {any} */ (window);
 
 // ── Helpers ─────────────────────────────────────────────────
 function show(el) { el.classList.remove('hidden'); }
 function hide(el) { el.classList.add('hidden'); }
 
+// The CSP forbids inline event handlers, so broken favicons / OG previews are
+// hidden by one delegated capture listener instead of `onerror` attributes.
+document.addEventListener(
+  'error',
+  (event) => {
+    const target = event.target;
+    if (target instanceof HTMLImageElement && target.hasAttribute('data-hide-on-error')) {
+      target.style.display = 'none';
+    }
+  },
+  true
+);
+
 function renderScorecardRemediation(scorecard) {
-  const container = document.getElementById('scorecardRemediation');
+  const container = dom.scorecardRemediation;
   if (!container) return;
   if (!scorecard || !scorecard.remediations || scorecard.remediations.length === 0) {
     hide(container);
@@ -180,7 +200,7 @@ function resetResults() {
   activateTab('screenshot');
 
   // Reset Advanced Intel Panel
-  const advPanel = document.getElementById('advancedIntelPanel');
+  const advPanel = dom.advancedIntelPanel;
   if (advPanel) {
     advPanel.classList.add('hidden');
     // reset tabs to WHOIS active
@@ -189,23 +209,23 @@ function resetResults() {
     if (tabs[0]) tabs[0].classList.add('active');
     
     document.querySelectorAll('.intel-tab-content').forEach(c => c.classList.add('hidden'));
-    show(document.getElementById('intelTabWhois'));
+    show(dom.intelTabWhois);
     
-    document.getElementById('intelWhois').textContent = 'Fetching WHOIS...';
-    document.getElementById('intelHeaders').textContent = 'Fetching headers...';
-    document.getElementById('intelDns').textContent = 'Fetching DNS...';
-    document.getElementById('intelSsl').textContent = 'Fetching SSL...';
-    document.getElementById('intelStack').textContent = 'Detecting technologies...';
-    document.getElementById('intelRobots').textContent = 'Analyzing robots.txt...';
-    document.getElementById('intelLatency').textContent = 'Measuring latency...';
-    const deepSecReset = document.getElementById('intelDeepSecurity');
+    dom.intelWhois.textContent = 'Fetching WHOIS...';
+    dom.intelHeaders.textContent = 'Fetching headers...';
+    dom.intelDns.textContent = 'Fetching DNS...';
+    dom.intelSsl.textContent = 'Fetching SSL...';
+    dom.intelStack.textContent = 'Detecting technologies...';
+    dom.intelRobots.textContent = 'Analyzing robots.txt...';
+    dom.intelLatency.textContent = 'Measuring latency...';
+    const deepSecReset = dom.intelDeepSecurity;
     if (deepSecReset) deepSecReset.textContent = 'Auditing security headers, AST policies, and sensitive files...';
   }
 }
 
 // ── Tab Switching ───────────────────────────────────────────
-const tabSandbox   = document.getElementById('tabSandbox');
-const sandboxView  = document.getElementById('sandboxView');
+const tabSandbox   = dom.tabSandbox;
+const sandboxView  = dom.sandboxView;
 
 function activateTab(tab) {
   // Reset all tabs
@@ -256,10 +276,13 @@ clearBtn.addEventListener('click', () => {
 // ── Quick Links ─────────────────────────────────────────────
 document.querySelectorAll('.quick-btn:not([data-email])').forEach(btn => {
   btn.addEventListener('click', () => {
-    urlInput.value = btn.dataset.url;
+    const quickBtn = /** @type {HTMLElement} */ (btn);
+    const url = quickBtn.dataset.url;
+    if (!url) return;
+    urlInput.value = url;
     clearBtn.classList.add('visible');
     urlInput.focus();
-    checkSite(btn.dataset.url);
+    checkSite(url);
   });
 });
 
@@ -321,14 +344,10 @@ async function checkSite(url) {
   loadScreenshotWaterfall(url);
 
   // ── Kick off raw HTML proxy fetch for sandbox caching & stack detection ──
+  // Kick off raw HTML fetch for sandbox caching & stack detection.
   cachedHtml = '';
   cachedHtmlUrl = url;
-  proxyFetchPromise = fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, { headers: { Accept: 'application/json' } })
-    .then(res => {
-      if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
-      return res.json();
-    })
-    .catch(() => null);
+  proxyFetchPromise = fetchViaCorsProxy(url, { timeout: 12000 });
 
   // ── Run metadata + reachability in parallel ──────────────────────────────────
   const [metaResult, reachable] = await Promise.allSettled([
@@ -365,10 +384,14 @@ async function checkSite(url) {
   renderCategory(url, title, desc || '');
 
   let fetchedHeaders = {};
+  /** @type {import('./tools/ssl.js').SslSummary | null} */
   let fetchedSslInfo = null;
 
   const headersPromise = fetchHttpHeaders(domain).then(h => { fetchedHeaders = h || {}; });
-  const sslPromise     = fetchSslInfo(domain).then(ssl => { fetchedSslInfo = ssl; return ssl; });
+  const sslPromise     = fetchSslInfo(domain).then(ssl => {
+    fetchedSslInfo = summarizeSslInfo(ssl);
+    return ssl;
+  });
 
   const scanPromise = scanSecurity(url).then(merged => {
     renderSecurityReport(merged, 'done');
@@ -384,7 +407,8 @@ async function checkSite(url) {
     return merged;
   });
 
-  Promise.all([scanPromise, headersPromise, sslPromise]).then(([merged]) => {
+  /** @param {import('./modules/security.js').ScanResult} merged */
+  const applyScorecard = (merged) => {
     const scorecard = calculateSecurityScorecard({
       url,
       securityScan: merged,
@@ -392,14 +416,14 @@ async function checkSite(url) {
       sslInfo: fetchedSslInfo
     });
 
-    const gradeBadge = document.getElementById('scorecardGradeBadge');
+    const gradeBadge = dom.scorecardGradeBadge;
     if (gradeBadge) {
       gradeBadge.textContent = `Grade ${scorecard.grade}`;
       gradeBadge.className = `scorecard-grade-badge ${scorecard.badgeClass}`;
       show(gradeBadge);
     }
 
-    const exportBtn = document.getElementById('exportReportBtn');
+    const exportBtn = dom.exportReportBtn;
     if (exportBtn) show(exportBtn);
 
     currentReportData = {
@@ -413,6 +437,17 @@ async function checkSite(url) {
     };
 
     renderScorecardRemediation(scorecard);
+  };
+
+  // Show a grade as soon as the threat scan lands; header and certificate
+  // lookups can take many seconds through free APIs, so re-render when they
+  // arrive (and again after a bounded wait as a failure fallback).
+  scanPromise.then((merged) => {
+    applyScorecard(merged);
+    sleep(8000).then(() => applyScorecard(merged));
+  });
+  Promise.all([headersPromise, sslPromise]).then(() => {
+    scanPromise.then((merged) => applyScorecard(merged));
   });
 
   // ── Status badge ──────────────────────────────────────────────────────────────
@@ -429,7 +464,7 @@ async function checkSite(url) {
     </span>`;
 
     // Show Advanced Intel Panel
-    const advPanel = document.getElementById('advancedIntelPanel');
+    const advPanel = dom.advancedIntelPanel;
     if (advPanel) advPanel.classList.remove('hidden');
 
     // Run basic WHOIS/Headers legacy check
@@ -438,7 +473,7 @@ async function checkSite(url) {
     renderQrCode(url);
 
     // DNS Resolver
-    const dnsContainer = document.getElementById('intelDns');
+    const dnsContainer = dom.intelDns;
     if (dnsContainer) {
       dnsContainer.innerHTML = '<div class="info-value">Fetching DNS records...</div>';
       fetchAllDns(domain).then(dnsData => {
@@ -447,7 +482,7 @@ async function checkSite(url) {
     }
 
     // SSL Inspector
-    const sslContainer = document.getElementById('intelSsl');
+    const sslContainer = dom.intelSsl;
     if (sslContainer) {
       sslContainer.innerHTML = '<div class="info-value">Fetching SSL details...</div>';
       fetchSslInfo(domain).then(sslData => {
@@ -456,7 +491,7 @@ async function checkSite(url) {
     }
 
     // Tech Stack Fingerprinting (uses cached HTML proxy fetch)
-    const stackContainer = document.getElementById('intelStack');
+    const stackContainer = dom.intelStack;
     if (stackContainer) {
       stackContainer.innerHTML = '<div class="info-value">Detecting technology fingerprint...</div>';
       proxyFetchPromise.then(json => {
@@ -471,7 +506,7 @@ async function checkSite(url) {
     }
 
     // Robots.txt Analyzer
-    const robotsContainer = document.getElementById('intelRobots');
+    const robotsContainer = dom.intelRobots;
     if (robotsContainer) {
       robotsContainer.innerHTML = '<div class="info-value">Analyzing robots.txt...</div>';
       fetchRobotsTxt(domain).then(robotsText => {
@@ -481,7 +516,7 @@ async function checkSite(url) {
     }
 
     // Latency Probe
-    const latencyContainer = document.getElementById('intelLatency');
+    const latencyContainer = dom.intelLatency;
     if (latencyContainer) {
       latencyContainer.innerHTML = '<div class="info-value">Measuring latency (5 HEAD trials)...</div>';
       runLatencySuite(url).then(trials => {
@@ -490,7 +525,7 @@ async function checkSite(url) {
     }
 
     // PageSpeed Insights & Core Web Vitals
-    const pagespeedContainer = document.getElementById('intelPagespeed');
+    const pagespeedContainer = dom.intelPagespeed;
     if (pagespeedContainer) {
       pagespeedContainer.innerHTML = '<div class="info-value">Fetching Google PageSpeed Insights &amp; Core Web Vitals&hellip;</div>';
       fetchPageSpeed(url, 'mobile').then(psData => {
@@ -500,7 +535,7 @@ async function checkSite(url) {
     }
 
     // Subdomain Discovery Engine
-    const subdomainsContainer = document.getElementById('intelSubdomains');
+    const subdomainsContainer = dom.intelSubdomains;
     if (subdomainsContainer) {
       subdomainsContainer.innerHTML = '<div class="info-value">Discovering subdomains via Certificate Transparency (crt.sh)&hellip;</div>';
       fetchSubdomains(domain).then(subData => {
@@ -510,9 +545,9 @@ async function checkSite(url) {
     }
 
     // Carbon Footprint & Eco-Score Calculator
-    const carbonContainer = document.getElementById('intelCarbon');
+    const carbonContainer = dom.intelCarbon;
     if (carbonContainer) {
-      fetchHttpHeaders(url).then(fetchedHeaders => {
+      fetchHttpHeaders(domain).then(fetchedHeaders => {
         const isGreen = isGreenHosting(fetchedHeaders);
         const byteSize = (cachedHtml || '').length || 150000;
         const carbonData = calculateCarbonFootprint(byteSize, isGreen);
@@ -527,11 +562,11 @@ async function checkSite(url) {
     }
 
     // Cookie Consent & Privacy Policy Inspector
-    const privacyContainer = document.getElementById('intelPrivacy');
+    const privacyContainer = dom.intelPrivacy;
     if (privacyContainer) {
       proxyFetchPromise.then(json => {
         const html = (json && json.contents) || cachedHtml || '';
-        fetchHttpHeaders(url).then(hdrs => {
+        fetchHttpHeaders(domain).then(hdrs => {
           const privacyData = auditPrivacyAndConsent(html, hdrs || {}, url);
           if (currentReportData) currentReportData.privacy = privacyData;
           renderPrivacyPanel(privacyData, privacyContainer);
@@ -544,7 +579,7 @@ async function checkSite(url) {
     }
 
     // Visual SEO & Social Card Simulator
-    const seoContainer = document.getElementById('intelSeo');
+    const seoContainer = dom.intelSeo;
     if (seoContainer) {
       proxyFetchPromise.then(json => {
         const html = (json && json.contents) || cachedHtml || '';
@@ -559,7 +594,7 @@ async function checkSite(url) {
     }
 
     // Email Security & Domain Authentication Auditor
-    const emailSecContainer = document.getElementById('intelEmailSecurity');
+    const emailSecContainer = dom.intelEmailSecurity;
     if (emailSecContainer) {
       fetchEmailSecurity(domain).then(emailSecData => {
         if (currentReportData) currentReportData.emailSecurity = emailSecData;
@@ -572,10 +607,12 @@ async function checkSite(url) {
     }
 
     // AI Scraper & LLM Crawler Policy Inspector
-    const aiPolicyContainer = document.getElementById('intelAiPolicy');
+    const aiPolicyContainer = dom.intelAiPolicy;
     if (aiPolicyContainer) {
       fetchRobotsTxt(domain).then(robotsContent => {
-        proxyFetchPromise.then(json => {
+        /** @type {Promise<{contents:string}|null>} */
+        const htmlPromise = proxyFetchPromise || Promise.resolve(null);
+        htmlPromise.then(json => {
           const html = (json && json.contents) || cachedHtml || '';
           fetchAiPolicy(domain, robotsContent || '', html).then(aiData => {
             if (currentReportData) currentReportData.aiPolicy = aiData;
@@ -596,10 +633,12 @@ async function checkSite(url) {
     }
 
     // Deep Security & Infrastructure Hardening Auditor (Phase 1)
-    const deepSecContainer = document.getElementById('intelDeepSecurity');
+    const deepSecContainer = dom.intelDeepSecurity;
     if (deepSecContainer) {
-      fetchHttpHeaders(url).then(hdrs => {
-        proxyFetchPromise.then(json => {
+      fetchHttpHeaders(domain).then(hdrs => {
+        /** @type {Promise<{contents:string}|null>} */
+        const htmlPromise = proxyFetchPromise || Promise.resolve(null);
+        htmlPromise.then(json => {
           const html = (json && json.contents) || cachedHtml || '';
           auditDeepSecurity(domain, hdrs || {}, html, url).then(deepSecData => {
             if (currentReportData) currentReportData.deepSecurity = deepSecData;
@@ -648,15 +687,11 @@ async function fetchSiteMeta(url) {
   }
 }
 
-// ── Probe Site Reachability (allorigins) ──────────────────────────────
+// ── Probe Site Reachability (CORS proxy chain) ──────────────────────────────
 async function probeSiteReachability(url) {
   try {
-    const probeRes = await fetch(
-      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&timestamp=${Date.now()}`,
-      { signal: AbortSignal.timeout(8000) }
-    );
-    const json = await probeRes.json();
-    return !!(json && json.status && json.status.http_code > 0);
+    const result = await fetchViaCorsProxy(url, { timeout: 5000, cacheBust: true });
+    return !!result;
   } catch {
     return false;
   }
@@ -695,7 +730,7 @@ function loadScreenshotWaterfall(url) {
     const imgSrc = services[current++];
     const img = new Image();
     img.onload = () => {
-      if (document.getElementById('screenshotView')) {
+      if (dom.screenshotView) {
         renderScreenshot(imgSrc);
       }
     };
@@ -795,8 +830,8 @@ function renderCategory(url, title, description) {
 }
 
 // ── DOM refs for security panel ─────────────────────────────
-const securityReport    = document.getElementById('securityReport');
-const secScanningBadge  = document.getElementById('secScanningBadge');
+const securityReport    = dom.securityReport;
+const secScanningBadge  = dom.secScanningBadge;
 
 function resetSecurityPanel() {
   securityReport.innerHTML = `
@@ -868,20 +903,20 @@ function renderSecurityReport(report, _stage) {
 }
 
 // ── SANDBOX CONTAINER MODULE ─────────────────────────────────
-const sandboxFrame      = document.getElementById('sandboxFrame');
-const sandboxLoadingEl  = document.getElementById('sandboxLoading');
-const sandboxErrorEl    = document.getElementById('sandboxError');
-const sandboxErrMsg     = document.getElementById('sandboxErrMsg');
-const sandboxStatusSub  = document.getElementById('sandboxStatusSub');
-const sandboxLiveBadge  = document.getElementById('sandboxLiveBadge');
+const sandboxFrame      = dom.sandboxFrame;
+const sandboxLoadingEl  = dom.sandboxLoading;
+const sandboxErrorEl    = dom.sandboxError;
+const sandboxErrMsg     = dom.sandboxErrMsg;
+const sandboxStatusSub  = dom.sandboxStatusSub;
+const sandboxLiveBadge  = dom.sandboxLiveBadge;
 
 // Block-count badges
-const sbScripts   = document.getElementById('sb-scripts');
-const sbForms     = document.getElementById('sb-forms');
-const sbIframes   = document.getElementById('sb-iframes');
-const sbRedirects = document.getElementById('sb-redirects');
-const sbTracking  = document.getElementById('sb-tracking');
-const sbHandlers  = document.getElementById('sb-handlers');
+const sbScripts   = dom['sb-scripts'];
+const sbForms     = dom['sb-forms'];
+const sbIframes   = dom['sb-iframes'];
+const sbRedirects = dom['sb-redirects'];
+const sbTracking  = dom['sb-tracking'];
+const sbHandlers  = dom['sb-handlers'];
 
 let sandboxUrl      = '';
 let sandboxBlobUrl  = '';
@@ -937,17 +972,14 @@ async function loadSandbox(url) {
   try {
     let rawContent = '';
     
-    // Use cached HTML if the URL matches, otherwise fetch it
+    // Use cached HTML if the URL matches, otherwise fetch it via the proxy chain
     if (cachedHtml && cachedHtmlUrl === url) {
       rawContent = cachedHtml;
     } else {
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-      const res  = await fetch(proxyUrl, { headers: { Accept: 'application/json' } });
-      if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
-      const json = await res.json();
-      if (!json.contents) throw new Error('Empty response from proxy');
-      rawContent = json.contents;
-      cachedHtml = json.contents;
+      const result = await fetchViaCorsProxy(url, { timeout: 12000 });
+      if (!result || !result.contents) throw new Error('All CORS proxies failed');
+      rawContent = result.contents;
+      cachedHtml = result.contents;
       cachedHtmlUrl = url;
     }
 
@@ -1370,7 +1402,7 @@ function renderSeoPanel(data, container) {
 
         <!-- Twitter Card -->
         <div class="twitter-card-box hidden" id="simTwitter">
-          ${data.twitter.image ? `<img src="${escapeHtml(data.twitter.image)}" class="twitter-card-img" alt="Twitter Card Preview" onerror="this.style.display='none'" />` : '<div class="twitter-card-img" style="display:flex;align-items:center;justify-content:center;color:#71767b;font-size:0.8rem;">No Twitter preview image (twitter:image / og:image)</div>'}
+          ${data.twitter.image ? `<img src="${escapeHtml(data.twitter.image)}" class="twitter-card-img" alt="Twitter Card Preview" data-hide-on-error />` : '<div class="twitter-card-img" style="display:flex;align-items:center;justify-content:center;color:#71767b;font-size:0.8rem;">No Twitter preview image (twitter:image / og:image)</div>'}
           <div class="twitter-card-content">
             <div class="twitter-card-domain">${escapeHtml(domain)}</div>
             <div class="twitter-card-title">${escapeHtml(data.twitter.title || data.title || domain)}</div>
@@ -1380,7 +1412,7 @@ function renderSeoPanel(data, container) {
 
         <!-- Facebook / LinkedIn -->
         <div class="twitter-card-box hidden" id="simFacebook" style="background:#242526;border-color:#3a3b3c;">
-          ${data.og.image ? `<img src="${escapeHtml(data.og.image)}" class="twitter-card-img" alt="OG Preview" onerror="this.style.display='none'" />` : '<div class="twitter-card-img" style="display:flex;align-items:center;justify-content:center;color:#b0b3b8;font-size:0.8rem;">No Open Graph preview image (og:image)</div>'}
+          ${data.og.image ? `<img src="${escapeHtml(data.og.image)}" class="twitter-card-img" alt="OG Preview" data-hide-on-error />` : '<div class="twitter-card-img" style="display:flex;align-items:center;justify-content:center;color:#b0b3b8;font-size:0.8rem;">No Open Graph preview image (og:image)</div>'}
           <div class="twitter-card-content">
             <div class="twitter-card-domain" style="color:#b0b3b8;">${escapeHtml(domain)}</div>
             <div class="twitter-card-title" style="color:#e4e6eb;">${escapeHtml(data.og.title || data.title || domain)}</div>
@@ -1393,7 +1425,7 @@ function renderSeoPanel(data, container) {
           <div class="discord-provider">${escapeHtml(data.og.siteName || domain)}</div>
           <a class="discord-title" href="${escapeHtml(rawUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(data.og.title || data.title || domain)}</a>
           <div class="discord-desc">${escapeHtml(data.og.description || data.description || '')}</div>
-          ${data.og.image ? `<img src="${escapeHtml(data.og.image)}" class="discord-img" alt="Discord embed preview" onerror="this.style.display='none'" />` : ''}
+          ${data.og.image ? `<img src="${escapeHtml(data.og.image)}" class="discord-img" alt="Discord embed preview" data-hide-on-error />` : ''}
         </div>
       </div>
 
@@ -1720,28 +1752,28 @@ function renderAiPolicyPanel(data, container) {
 }
 
 // ── EMAIL CHECKER & SCAM DETECTION MODULE ────────────────────
-const emailInput       = document.getElementById('emailInput');
-const emailClearBtn    = document.getElementById('emailClearBtn');
-const emailCheckBtn    = document.getElementById('emailCheckBtn');
-const emailBtnText     = document.getElementById('emailBtnText');
-const emailBtnLoader   = document.getElementById('emailBtnLoader');
-const emailResult      = document.getElementById('emailResult');
+const emailInput       = dom.emailInput;
+const emailClearBtn    = dom.emailClearBtn;
+const emailCheckBtn    = dom.emailCheckBtn;
+const emailBtnText     = dom.emailBtnText;
+const emailBtnLoader   = dom.emailBtnLoader;
+const emailResult      = dom.emailResult;
 
-const emailSubSingle   = document.getElementById('emailSubSingle');
-const emailSubBulk     = document.getElementById('emailSubBulk');
-const emailSinglePanel = document.getElementById('emailSinglePanel');
-const emailBulkPanel   = document.getElementById('emailBulkPanel');
+const emailSubSingle   = dom.emailSubSingle;
+const emailSubBulk     = dom.emailSubBulk;
+const emailSinglePanel = dom.emailSinglePanel;
+const emailBulkPanel   = dom.emailBulkPanel;
 
-const emailBulkInput      = document.getElementById('emailBulkInput');
-const emailBulkCount      = document.getElementById('emailBulkCount');
-const emailBulkClearBtn   = document.getElementById('emailBulkClearBtn');
-const emailBulkRunBtn     = document.getElementById('emailBulkRunBtn');
-const emailBulkBtnText    = document.getElementById('emailBulkBtnText');
-const emailBulkBtnLoader  = document.getElementById('emailBulkBtnLoader');
-const emailBulkResults    = document.getElementById('emailBulkResults');
-const emailBulkTableBody  = document.getElementById('emailBulkTableBody');
-const emailBulkSummary    = document.getElementById('emailBulkSummary');
-const emailExportCsvBtn   = document.getElementById('emailExportCsvBtn');
+const emailBulkInput      = dom.emailBulkInput;
+const emailBulkCount      = dom.emailBulkCount;
+const emailBulkClearBtn   = dom.emailBulkClearBtn;
+const emailBulkRunBtn     = dom.emailBulkRunBtn;
+const emailBulkBtnText    = dom.emailBulkBtnText;
+const emailBulkBtnLoader  = dom.emailBulkBtnLoader;
+const emailBulkResults    = dom.emailBulkResults;
+const emailBulkTableBody  = dom.emailBulkTableBody;
+const emailBulkSummary    = dom.emailBulkSummary;
+const emailExportCsvBtn   = dom.emailExportCsvBtn;
 
 function setEmailSubMode(mode) {
   if (mode === 'single') {
@@ -1761,7 +1793,10 @@ emailSubBulk.addEventListener('click',   () => setEmailSubMode('bulk'));
 
 document.querySelectorAll('.quick-btn[data-email]').forEach(btn => {
   btn.addEventListener('click', () => {
-    emailInput.value = btn.dataset.email;
+    const quickBtn = /** @type {HTMLElement} */ (btn);
+    const email = quickBtn.dataset.email;
+    if (!email) return;
+    emailInput.value = email;
     emailClearBtn.classList.add('visible');
   });
 });
@@ -1786,7 +1821,7 @@ emailBulkClearBtn.addEventListener('click', () => {
 emailBulkInput.addEventListener('input', () => {
   const emails = parseEmailList(emailBulkInput.value);
   const n = Math.min(emails.length, 50);
-  emailBulkCount.textContent = n;
+  emailBulkCount.textContent = String(n);
   emailBulkCount.style.color = n >= 50 ? 'var(--red)' : '';
 });
 
@@ -1940,10 +1975,10 @@ async function runBulkEmailCheck() {
     if (i < emails.length - 1) await sleep(400);
   }
 
-  document.getElementById('esum-total').textContent = emails.length;
-  document.getElementById('esum-valid').textContent = countValid;
-  document.getElementById('esum-scam').textContent  = countScam;
-  document.getElementById('esum-disposable').textContent = countDisp;
+  dom['esum-total'].textContent = String(emails.length);
+  dom['esum-valid'].textContent = String(countValid);
+  dom['esum-scam'].textContent  = String(countScam);
+  dom['esum-disposable'].textContent = String(countDisp);
   show(emailBulkSummary);
 
   hide(emailBulkBtnLoader);
@@ -2000,42 +2035,42 @@ emailExportCsvBtn.addEventListener('click', () => {
 const views = {
   single: {
     title: 'Single Inspector',
-    el: document.getElementById('singleView'),
-    nav: document.getElementById('navSingle')
+    el: dom.singleView,
+    nav: dom.navSingle
   },
   bulk: {
     title: 'Bulk Sites Scan',
-    el: document.getElementById('bulkView'),
-    nav: document.getElementById('navBulk')
+    el: dom.bulkView,
+    nav: dom.navBulk
   },
   email: {
     title: 'Email Validator',
-    el: document.getElementById('emailView'),
-    nav: document.getElementById('navEmail')
+    el: dom.emailView,
+    nav: dom.navEmail
   },
   history: {
     title: 'Scan History Logs',
-    el: document.getElementById('historyView'),
-    nav: document.getElementById('navHistory')
+    el: dom.historyView,
+    nav: dom.navHistory
   },
   detector: {
     title: 'Down Detector & Status Monitor',
-    el: document.getElementById('detectorView'),
-    nav: document.getElementById('navDetector')
+    el: dom.detectorView,
+    nav: dom.navDetector
   },
   duel: {
     title: 'Domain Duel — Side-by-Side Comparison',
-    el: document.getElementById('duelView'),
-    nav: document.getElementById('navDuel')
+    el: dom.duelView,
+    nav: dom.navDuel
   },
   monitor: {
     title: 'SSL Expiry & Uptime Monitor',
-    el: document.getElementById('monitorView'),
-    nav: document.getElementById('navMonitor')
+    el: dom.monitorView,
+    nav: dom.navMonitor
   }
 };
 
-const viewTitleEl = document.getElementById('currentViewTitle');
+const viewTitleEl = dom.currentViewTitle;
 
 function setMode(mode) {
   Object.keys(views).forEach(key => {
@@ -2063,26 +2098,26 @@ function setMode(mode) {
   }
 }
 
-if (document.getElementById('navSingle')) {
-  document.getElementById('navSingle').addEventListener('click', () => setMode('single'));
+if (dom.navSingle) {
+  dom.navSingle.addEventListener('click', () => setMode('single'));
 }
-if (document.getElementById('navBulk')) {
-  document.getElementById('navBulk').addEventListener('click', () => setMode('bulk'));
+if (dom.navBulk) {
+  dom.navBulk.addEventListener('click', () => setMode('bulk'));
 }
-if (document.getElementById('navEmail')) {
-  document.getElementById('navEmail').addEventListener('click', () => setMode('email'));
+if (dom.navEmail) {
+  dom.navEmail.addEventListener('click', () => setMode('email'));
 }
-if (document.getElementById('navHistory')) {
-  document.getElementById('navHistory').addEventListener('click', () => setMode('history'));
+if (dom.navHistory) {
+  dom.navHistory.addEventListener('click', () => setMode('history'));
 }
-if (document.getElementById('navDetector')) {
-  document.getElementById('navDetector').addEventListener('click', () => setMode('detector'));
+if (dom.navDetector) {
+  dom.navDetector.addEventListener('click', () => setMode('detector'));
 }
-if (document.getElementById('navDuel')) {
-  document.getElementById('navDuel').addEventListener('click', () => setMode('duel'));
+if (dom.navDuel) {
+  dom.navDuel.addEventListener('click', () => setMode('duel'));
 }
-if (document.getElementById('navMonitor')) {
-  document.getElementById('navMonitor').addEventListener('click', () => setMode('monitor'));
+if (dom.navMonitor) {
+  dom.navMonitor.addEventListener('click', () => setMode('monitor'));
 }
 
 // ── Down Detector Page Controller ────────────────────────────
@@ -2091,7 +2126,7 @@ let currentDetectorKey = '';
 
 function initDetectorTab() {
   renderPopularGrid('popularServicesGrid', (domain) => {
-    document.getElementById('detectorUrlInput').value = domain;
+    dom.detectorUrlInput.value = domain;
     runDetectorCheck(domain);
   });
   startBackgroundGridPoll();
@@ -2099,10 +2134,10 @@ function initDetectorTab() {
   if (detectorEventsBound) return;
   detectorEventsBound = true;
 
-  const urlInput = document.getElementById('detectorUrlInput');
-  const checkBtn = document.getElementById('detectorCheckBtn');
-  const clearBtn = document.getElementById('detectorClearBtn');
-  const reportBtn = document.getElementById('detectorReportBtn');
+  const urlInput = dom.detectorUrlInput;
+  const checkBtn = dom.detectorCheckBtn;
+  const clearBtn = dom.detectorClearBtn;
+  const reportBtn = dom.detectorReportBtn;
 
   checkBtn.addEventListener('click', () => {
     const rawVal = urlInput.value.trim();
@@ -2118,8 +2153,8 @@ function initDetectorTab() {
 
   clearBtn.addEventListener('click', () => {
     urlInput.value = '';
-    document.getElementById('detectorResults').classList.add('hidden');
-    document.getElementById('detectorErrorBanner').classList.add('hidden');
+    dom.detectorResults.classList.add('hidden');
+    dom.detectorErrorBanner.classList.add('hidden');
   });
 
   reportBtn.addEventListener('click', async () => {
@@ -2131,7 +2166,7 @@ function initDetectorTab() {
     try {
       const updatedReports = await submitOutageReport(currentDetectorKey);
       
-      document.getElementById('detectorCommunityReports').textContent = `${updatedReports.length} reports (Active)`;
+      dom.detectorCommunityReports.textContent = `${updatedReports.length} reports (Active)`;
       renderOutageChart(updatedReports, 'outageChartContainer');
       
       reportBtn.textContent = 'Report Registered!';
@@ -2147,11 +2182,11 @@ function initDetectorTab() {
 }
 
 async function runDetectorCheck(target) {
-  const btnText = document.getElementById('detectorBtnText');
-  const btnLoader = document.getElementById('detectorBtnLoader');
-  const checkBtn = document.getElementById('detectorCheckBtn');
-  const resultsDiv = document.getElementById('detectorResults');
-  const errorBanner = document.getElementById('detectorErrorBanner');
+  const btnText = dom.detectorBtnText;
+  const btnLoader = dom.detectorBtnLoader;
+  const checkBtn = dom.detectorCheckBtn;
+  const resultsDiv = dom.detectorResults;
+  const errorBanner = dom.detectorErrorBanner;
 
   checkBtn.disabled = true;
   btnText.classList.add('hidden');
@@ -2162,10 +2197,10 @@ async function runDetectorCheck(target) {
     const result = await checkWebsiteStatus(target);
     currentDetectorKey = result.cleanKey;
 
-    document.getElementById('detectorDomainTitle').textContent = result.domain;
-    document.getElementById('detectorMessage').textContent = result.message;
+    dom.detectorDomainTitle.textContent = result.domain;
+    dom.detectorMessage.textContent = result.message;
 
-    const favDiv = document.getElementById('detectorFavicon');
+    const favDiv = dom.detectorFavicon;
     // Build a letter avatar immediately — never breaks regardless of network
     const domainLetter = (result.domain[0] || '?').toUpperCase();
     const avatarColors = ['#6366f1','#8b5cf6','#06b6d4','#10b981','#f59e0b','#ef4444','#ec4899','#3b82f6'];
@@ -2197,7 +2232,7 @@ async function runDetectorCheck(target) {
         probe.onload = () => {
           if (probe.naturalWidth > 4 && probe.naturalHeight > 4) {
             // Only update if this result is still visible (user may have cleared)
-            const el = document.getElementById('detectorFavicon');
+            const el = dom.detectorFavicon;
             if (el) {
               const logoImg = document.createElement('img');
               logoImg.src = probe.src;
@@ -2216,11 +2251,11 @@ async function runDetectorCheck(target) {
       tryNext();
     })(result.domain);
 
-    const badge = document.getElementById('detectorStatusBadge');
+    const badge = dom.detectorStatusBadge;
     badge.className = 'verdict-badge';
     badge.textContent = result.status;
 
-    const card = document.getElementById('detectorVerdictCard');
+    const card = dom.detectorVerdictCard;
     card.className = 'verdict-glow-card';
 
     if (result.status === 'Online') {
@@ -2235,7 +2270,7 @@ async function runDetectorCheck(target) {
     }
 
     // Local latency — only shown for probe-based checks; Official API doesn't measure it
-    const latencyEl = document.getElementById('detectorLocalLatency');
+    const latencyEl = dom.detectorLocalLatency;
     if (result.source === 'official') {
       latencyEl.textContent = 'N/A (API)';
       latencyEl.style.color = 'var(--text-muted)';
@@ -2245,14 +2280,14 @@ async function runDetectorCheck(target) {
     }
 
     // Global reachability
-    const reachEl = document.getElementById('detectorGlobalReach');
+    const reachEl = dom.detectorGlobalReach;
     reachEl.textContent = result.isGloballyReachable ? '✓ Reachable' : '✗ Unreachable';
     reachEl.style.color = result.isGloballyReachable ? 'var(--green)' : 'var(--red)';
 
-    document.getElementById('detectorCommunityReports').textContent = `${result.reportsCount} active`;
+    dom.detectorCommunityReports.textContent = `${result.reportsCount} active`;
 
     // Source badge — show how we got this data
-    const sourceBadgeEl = document.getElementById('detectorSourceBadge');
+    const sourceBadgeEl = dom.detectorSourceBadge;
     if (sourceBadgeEl) {
       sourceBadgeEl.textContent = result.source === 'official' ? '⚡ Official Status API' : '🔍 Network Probe';
       sourceBadgeEl.className   = result.source === 'official' ? 'source-badge source-official' : 'source-badge source-probe';
@@ -2263,7 +2298,7 @@ async function runDetectorCheck(target) {
 
   } catch (e) {
     logError('main:runDetectorCheck', e);
-    document.getElementById('detectorErrorMsg').textContent = 'An error occurred while inspecting the website status.';
+    dom.detectorErrorMsg.textContent = 'An error occurred while inspecting the website status.';
     errorBanner.classList.remove('hidden');
     resultsDiv.classList.add('hidden');
   } finally {
@@ -2274,8 +2309,8 @@ async function runDetectorCheck(target) {
 }
 
 // ── Hamburger Toggle & Sidebar Actions ────────────────────────
-const sidebarToggle        = document.getElementById('sidebarToggle');
-const sidebarToggleDesktop = document.getElementById('sidebarToggleDesktop');
+const sidebarToggle        = dom.sidebarToggle;
+const sidebarToggleDesktop = dom.sidebarToggleDesktop;
 const sidebarEl            = document.querySelector('.sidebar');
 
 if (sidebarEl) {
@@ -2295,10 +2330,11 @@ if (sidebarEl) {
 
   // Click outside sidebar on mobile to dismiss it
   document.addEventListener('click', (e) => {
-    if (window.innerWidth <= 900) {
-      const isToggleClick = (sidebarToggle && (e.target === sidebarToggle || sidebarToggle.contains(e.target))) ||
-                            (sidebarToggleDesktop && (e.target === sidebarToggleDesktop || sidebarToggleDesktop.contains(e.target)));
-      if (!sidebarEl.contains(e.target) && !isToggleClick) {
+    const target = e.target;
+    if (window.innerWidth <= 900 && target instanceof Node) {
+      const isToggleClick = (sidebarToggle && (target === sidebarToggle || sidebarToggle.contains(target))) ||
+                            (sidebarToggleDesktop && (target === sidebarToggleDesktop || sidebarToggleDesktop.contains(target)));
+      if (!sidebarEl.contains(target) && !isToggleClick) {
         sidebarEl.classList.remove('active');
       }
     }
@@ -2316,24 +2352,24 @@ if (sidebarEl) {
 }
 
 // ── Bulk Scan DOM Elements & State ───────────────────────────
-const bulkInput        = document.getElementById('bulkInput');
-const bulkCount        = document.getElementById('bulkCount');
-const bulkClearBtn     = document.getElementById('bulkClearBtn');
-const bulkRunBtn       = document.getElementById('bulkRunBtn');
-const bulkBtnText      = document.getElementById('bulkBtnText');
-const bulkBtnLoader    = document.getElementById('bulkBtnLoader');
+const bulkInput        = dom.bulkInput;
+const bulkCount        = dom.bulkCount;
+const bulkClearBtn     = dom.bulkClearBtn;
+const bulkRunBtn       = dom.bulkRunBtn;
+const bulkBtnText      = dom.bulkBtnText;
+const bulkBtnLoader    = dom.bulkBtnLoader;
 
-const bulkResults      = document.getElementById('bulkResults');
-const bulkProgressLabel= document.getElementById('bulkProgressLabel');
-const bulkProgressFill = document.getElementById('bulkProgressFill');
-const bulkStopBtn      = document.getElementById('bulkStopBtn');
-const bulkSummary      = document.getElementById('bulkSummary');
-const sumTotal         = document.getElementById('sumTotal');
-const sumOk            = document.getElementById('sumOk');
-const sumErr           = document.getElementById('sumErr');
-const sumTime          = document.getElementById('sumTime');
-const exportCsvBtn     = document.getElementById('exportCsvBtn');
-const bulkTableBody    = document.getElementById('bulkTableBody');
+const bulkResults      = dom.bulkResults;
+const bulkProgressLabel= dom.bulkProgressLabel;
+const bulkProgressFill = dom.bulkProgressFill;
+const bulkStopBtn      = dom.bulkStopBtn;
+const bulkSummary      = dom.bulkSummary;
+const sumTotal         = dom.sumTotal;
+const sumOk            = dom.sumOk;
+const sumErr           = dom.sumErr;
+const sumTime          = dom.sumTime;
+const exportCsvBtn     = dom.exportCsvBtn;
+const bulkTableBody    = dom.bulkTableBody;
 
 const DELAY_MS   = 600;
 let bulkRunning  = false;
@@ -2345,7 +2381,7 @@ bulkInput.addEventListener('input', updateBulkCount);
 function updateBulkCount() {
   const urls = parseBulkUrls(bulkInput.value);
   const n = Math.min(urls.length, MAX_BULK_URLS);
-  bulkCount.textContent = n;
+  bulkCount.textContent = String(n);
   bulkCount.style.color = n >= MAX_BULK_URLS ? 'var(--red)' : '';
 }
 
@@ -2426,9 +2462,9 @@ async function startBulkCheck() {
   const done    = bulkAbort ? `Stopped after ${bulkData.length}` : `Done \u2014 all ${urls.length}`;
   bulkProgressLabel.textContent = `${done} URLs checked in ${elapsed}s`;
 
-  sumTotal.textContent = bulkData.length;
-  sumOk.textContent    = okCount;
-  sumErr.textContent   = errCount;
+  sumTotal.textContent = String(bulkData.length);
+  sumOk.textContent    = String(okCount);
+  sumErr.textContent   = String(errCount);
   sumTime.textContent  = `${elapsed}s`;
   show(bulkSummary);
 
@@ -2437,7 +2473,7 @@ async function startBulkCheck() {
   show(bulkBtnText); hide(bulkBtnLoader);
   bulkRunBtn.disabled = false;
   bulkStopBtn.disabled = true;
-  if (window.updateBulkTableFilters) window.updateBulkTableFilters();
+  if (appWindow.updateBulkTableFilters) appWindow.updateBulkTableFilters();
 }
 
 function makeSkeletonRow(num, _url) {
@@ -2485,7 +2521,7 @@ function makeResultRow(r) {
 
   tr.innerHTML = `
     <td><span class="row-num">${r.index}</span></td>
-    <td><img class="row-favicon" src="${escapeHtml(r.favicon)}" alt="" onerror="this.style.display='none'"/></td>
+    <td><img class="row-favicon" src="${escapeHtml(r.favicon)}" alt="" data-hide-on-error/></td>
     <td class="row-url-cell">
       <span class="row-url" title="${escapeHtml(r.url)}">${escapeHtml(r.url)}</span>
       <span class="row-title" title="${escapeHtml(r.title)}">${escapeHtml(r.title)}</span>
@@ -2507,7 +2543,8 @@ function makeResultRow(r) {
       </div>
     </td>
   `;
-  tr.querySelector('.inspect-btn').addEventListener('click', () => inspectFromBulk(r.url));
+  const inspectBtn = tr.querySelector('.inspect-btn');
+  if (inspectBtn) inspectBtn.addEventListener('click', () => inspectFromBulk(r.url));
   return tr;
 }
 
@@ -2548,7 +2585,7 @@ exportCsvBtn.addEventListener('click', () => {
 // Cloud sync (kvdb.io) + localStorage fallback logic lives in ./main/history.js
 // (testable without a DOM). This section only renders it into the page.
 function renderCloudHistory() {
-  const historyList = document.getElementById('historyList');
+  const historyList = dom.historyList;
   if (!historyList) return;
 
   loadMergedHistory((localData) => {
@@ -2583,7 +2620,7 @@ function renderHistoryItems(container, data) {
     const div = document.createElement('div');
     div.className = 'history-item';
     div.innerHTML = `
-      <img class="history-favicon" src="${escapeHtml(item.favicon)}" onerror="this.style.display='none'" />
+      <img class="history-favicon" src="${escapeHtml(item.favicon)}" data-hide-on-error />
       <div class="history-url">${escapeHtml(item.title)}</div>
       <div class="history-threat" style="color:${threatColor}">${escapeHtml(item.threat)}</div>
       <div class="history-time">${date}</div>
@@ -2601,10 +2638,10 @@ function renderHistoryItems(container, data) {
 
 
 function renderQrCode(url) {
-  const qrImage   = document.getElementById('qrImage');
-  const showQrBtn = document.getElementById('showQrBtn');
-  const qrUrlText = document.getElementById('qrUrlText');
-  const dlBtn     = document.getElementById('qrDownloadBtn');
+  const qrImage   = dom.qrImage;
+  const showQrBtn = dom.showQrBtn;
+  const qrUrlText = dom.qrUrlText;
+  const dlBtn     = dom.qrDownloadBtn;
   if (!qrImage || !showQrBtn) return;
 
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&data=${encodeURIComponent(url)}`;
@@ -2648,13 +2685,13 @@ function renderQrCode(url) {
 
 
 async function fetchIpIntel(domain) {
-  const ipEl = document.getElementById('intelIp');
-  const locEl = document.getElementById('intelLoc');
+  const ipEl = dom.intelIp;
+  const locEl = dom.intelLoc;
   if (!ipEl || !locEl) return;
   try {
     ipEl.textContent = 'Fetching...';
     locEl.textContent = '...';
-    document.getElementById('intelGrid').classList.remove('hidden');
+    dom.intelGrid.classList.remove('hidden');
     const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}`);
     const data = await res.json();
     if (data.Answer && data.Answer.length > 0) {
@@ -2676,9 +2713,9 @@ async function fetchIpIntel(domain) {
 function renderExtractedLinks(links, baseUrl) {
   // @ts-ignore
   window.extractedLinks = links || [];
-  const panel = document.getElementById('linkExtractorPanel');
-  const countSpan = document.getElementById('linkExtCount');
-  const list = document.getElementById('linkExtList');
+  const panel = dom.linkExtractorPanel;
+  const countSpan = dom.linkExtCount;
+  const list = dom.linkExtList;
   if (!panel) return;
   
   if (!links || links.length === 0) {
@@ -2696,7 +2733,7 @@ function renderExtractedLinks(links, baseUrl) {
     }
   }
   
-  countSpan.textContent = unique.length;
+  countSpan.textContent = String(unique.length);
   try {
     const baseHost = new URL(baseUrl).hostname;
     list.innerHTML = unique.map(l => {
@@ -2711,10 +2748,10 @@ function renderExtractedLinks(links, baseUrl) {
 
 // ── DOMAIN DUEL RUNNER & RENDERER ────────────────────────────
 async function runDomainDuel() {
-  const urlAInput = document.getElementById('duelUrlA');
-  const urlBInput = document.getElementById('duelUrlB');
-  const runBtn = document.getElementById('duelRunBtn');
-  const container = document.getElementById('duelResultContainer');
+  const urlAInput = dom.duelUrlA;
+  const urlBInput = dom.duelUrlB;
+  const runBtn = dom.duelRunBtn;
+  const container = dom.duelResultContainer;
   if (!urlAInput || !urlBInput || !container || !runBtn) return;
 
   // @ts-ignore
@@ -2734,25 +2771,28 @@ async function runDomainDuel() {
   container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted);">Fetching diagnostic metadata for both domains in parallel&hellip;</div>';
 
   try {
-    const [dataA, dataB] = await Promise.all([
-      fetchSiteData(normA).catch(() => fallbackSiteData(normA)),
-      fetchSiteData(normB).catch(() => fallbackSiteData(normB))
-    ]);
-
     const domainA = getDomain(normA);
     const domainB = getDomain(normB);
 
-    const [secA, secB, latA, latB, sslA, sslB] = await Promise.all([
-      scanSecurity(normA, dataA.html || '').catch(() => ({ level: 'safe', score: 0, dbStatus: 'Clean', findings: [] })),
-      scanSecurity(normB, dataB.html || '').catch(() => ({ level: 'safe', score: 0, dbStatus: 'Clean', findings: [] })),
-      runLatencySuite(normA).then(t => t.find(r => r.ok)?.latencyMs ?? null).catch(() => null),
-      runLatencySuite(normB).then(t => t.find(r => r.ok)?.latencyMs ?? null).catch(() => null),
-      fetchSslInfo(domainA).catch(() => null),
-      fetchSslInfo(domainB).catch(() => null)
+    /** @type {(url: string) => Promise<string>} */
+    const fetchHtml = (url) =>
+      fetchViaCorsProxy(url, { timeout: 12000 })
+        .then((result) => (result && result.contents) || '')
+        .catch(() => '');
+
+    const [htmlA, htmlB, secA, secB, latA, latB, sslA, sslB] = await Promise.all([
+      fetchHtml(normA),
+      fetchHtml(normB),
+      scanSecurity(normA).catch(() => /** @type {import('./modules/security.js').ScanResult} */ ({ level: 'safe', score: 0, dbStatus: 'Clean', findings: [] })),
+      scanSecurity(normB).catch(() => /** @type {import('./modules/security.js').ScanResult} */ ({ level: 'safe', score: 0, dbStatus: 'Clean', findings: [] })),
+      runLatencySuite(normA).then((t) => (t.length ? Math.min(...t) : null)).catch(() => null),
+      runLatencySuite(normB).then((t) => (t.length ? Math.min(...t) : null)).catch(() => null),
+      fetchSslInfo(domainA).then(summarizeSslInfo).catch(() => null),
+      fetchSslInfo(domainB).then(summarizeSslInfo).catch(() => null)
     ]);
 
-    const stackA = dataA.html ? detectTechnologies(dataA.html) : [];
-    const stackB = dataB.html ? detectTechnologies(dataB.html) : [];
+    const stackA = detectTechnologies(htmlA, {});
+    const stackB = detectTechnologies(htmlB, {});
 
     const scA = calculateSecurityScorecard({ url: normA, securityScan: secA, sslInfo: sslA });
     const scB = calculateSecurityScorecard({ url: normB, securityScan: secB, sslInfo: sslB });
@@ -2826,27 +2866,15 @@ function renderDuelResults(result, container) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const duelRunBtn = document.getElementById('duelRunBtn');
+  const duelRunBtn = dom.duelRunBtn;
   if (duelRunBtn) duelRunBtn.addEventListener('click', runDomainDuel);
 
-  const historyBtn = document.getElementById('historyBtn');
-  const historyDropdown = document.getElementById('historyDropdown');
-  const historyClearBtn = document.getElementById('historyClearBtn');
-  const showQrBtn = document.getElementById('showQrBtn');
-  const qrModal = document.getElementById('qrModal');
-  const qrCloseBtn = document.getElementById('qrCloseBtn');
-  const linkExtHeader = document.getElementById('linkExtHeader');
-  const linkExtList = document.getElementById('linkExtList');
-
-  if (historyBtn) {
-    historyBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      historyDropdown.classList.toggle('hidden');
-      if (!historyDropdown.classList.contains('hidden')) renderCloudHistory();
-    });
-    document.addEventListener('click', () => historyDropdown.classList.add('hidden'));
-    historyDropdown.addEventListener('click', (e) => e.stopPropagation());
-  }
+  const historyClearBtn = dom.historyClearBtn;
+  const showQrBtn = dom.showQrBtn;
+  const qrModal = dom.qrModal;
+  const qrCloseBtn = dom.qrCloseBtn;
+  const linkExtHeader = dom.linkExtHeader;
+  const linkExtList = dom.linkExtList;
 
   if (historyClearBtn) historyClearBtn.addEventListener('click', clearCloudHistory);
 
@@ -2858,11 +2886,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Export Report Menu
-  const exportBtn     = document.getElementById('exportReportBtn');
-  const exportMenu    = document.getElementById('exportReportMenu');
-  const exportJsonOpt = document.getElementById('exportJsonOpt');
-  const exportMdOpt   = document.getElementById('exportMdOpt');
-  const exportPdfOpt  = document.getElementById('exportPdfOpt');
+  const exportBtn     = dom.exportReportBtn;
+  const exportMenu    = dom.exportReportMenu;
+  const exportJsonOpt = dom.exportJsonOpt;
+  const exportMdOpt   = dom.exportMdOpt;
+  const exportPdfOpt  = dom.exportPdfOpt;
 
   if (exportBtn && exportMenu) {
     exportBtn.addEventListener('click', (e) => {
@@ -2894,8 +2922,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const exportPostmanOpt = document.getElementById('exportPostmanOpt');
-  const exportOpenApiOpt = document.getElementById('exportOpenApiOpt');
+  const exportPostmanOpt = dom.exportPostmanOpt;
+  const exportOpenApiOpt = dom.exportOpenApiOpt;
 
   if (exportPostmanOpt) {
     exportPostmanOpt.addEventListener('click', () => {
@@ -2929,30 +2957,30 @@ document.addEventListener('DOMContentLoaded', () => {
       advTabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       
-      const tabName = tab.dataset.tab;
+      const tabName = /** @type {HTMLElement} */ (tab).dataset.tab;
       document.querySelectorAll('.intel-tab-content').forEach(c => c.classList.add('hidden'));
       
-      if (tabName === 'whois') show(document.getElementById('intelTabWhois'));
-      else if (tabName === 'headers') show(document.getElementById('intelTabHeaders'));
-      else if (tabName === 'dns') show(document.getElementById('intelTabDns'));
-      else if (tabName === 'ssl') show(document.getElementById('intelTabSsl'));
-      else if (tabName === 'stack') show(document.getElementById('intelTabStack'));
-      else if (tabName === 'robots') show(document.getElementById('intelTabRobots'));
-      else if (tabName === 'latency') show(document.getElementById('intelTabLatency'));
-      else if (tabName === 'pagespeed') show(document.getElementById('intelTabPagespeed'));
-      else if (tabName === 'subdomains') show(document.getElementById('intelTabSubdomains'));
-      else if (tabName === 'carbon') show(document.getElementById('intelTabCarbon'));
-      else if (tabName === 'privacy') show(document.getElementById('intelTabPrivacy'));
-      else if (tabName === 'seo') show(document.getElementById('intelTabSeo'));
-      else if (tabName === 'emailSecurity') show(document.getElementById('intelTabEmailSecurity'));
-      else if (tabName === 'aiPolicy') show(document.getElementById('intelTabAiPolicy'));
-      else if (tabName === 'deepSecurity') show(document.getElementById('intelTabDeepSecurity'));
+      if (tabName === 'whois') show(dom.intelTabWhois);
+      else if (tabName === 'headers') show(dom.intelTabHeaders);
+      else if (tabName === 'dns') show(dom.intelTabDns);
+      else if (tabName === 'ssl') show(dom.intelTabSsl);
+      else if (tabName === 'stack') show(dom.intelTabStack);
+      else if (tabName === 'robots') show(dom.intelTabRobots);
+      else if (tabName === 'latency') show(dom.intelTabLatency);
+      else if (tabName === 'pagespeed') show(dom.intelTabPagespeed);
+      else if (tabName === 'subdomains') show(dom.intelTabSubdomains);
+      else if (tabName === 'carbon') show(dom.intelTabCarbon);
+      else if (tabName === 'privacy') show(dom.intelTabPrivacy);
+      else if (tabName === 'seo') show(dom.intelTabSeo);
+      else if (tabName === 'emailSecurity') show(dom.intelTabEmailSecurity);
+      else if (tabName === 'aiPolicy') show(dom.intelTabAiPolicy);
+      else if (tabName === 'deepSecurity') show(dom.intelTabDeepSecurity);
     });
   });
 
   // Bulk Table Filter/Sort
-  const bulkFilterInput = document.getElementById('bulkFilterInput');
-  const bulkFilterThreat = document.getElementById('bulkFilterThreat');
+  const bulkFilterInput = dom.bulkFilterInput;
+  const bulkFilterThreat = dom.bulkFilterThreat;
   const headers = document.querySelectorAll('.bulk-table th.sortable');
   let sortCol = 'id';
   let sortAsc = true;
@@ -2982,7 +3010,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return 0;
     });
 
-    const tbody = document.getElementById('bulkTableBody');
+    const tbody = dom.bulkTableBody;
     if (!tbody) return;
     tbody.innerHTML = '';
     filtered.forEach(r => {
@@ -2996,6 +3024,7 @@ document.addEventListener('DOMContentLoaded', () => {
   headers.forEach(th => {
     th.addEventListener('click', () => {
       const col = th.getAttribute('data-sort');
+      if (!col) return;
       if (sortCol === col) sortAsc = !sortAsc;
       else { sortCol = col; sortAsc = true; }
       headers.forEach(h => { h.classList.remove('sort-asc', 'sort-desc'); });
@@ -3004,14 +3033,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
-  window.updateBulkTableFilters = renderBulkTable;
+  appWindow.updateBulkTableFilters = renderBulkTable;
 
   initMonitorListeners();
 });
 
 // ── UPTIME & SSL MONITOR MODULE ──────────────────────────────
 function renderWatchlistUI() {
-  const container = document.getElementById('monitorWatchlistContainer');
+  const container = dom.monitorWatchlistContainer;
   if (!container) return;
 
   const watchlist = getWatchlist();
@@ -3091,11 +3120,9 @@ async function checkSingleMonitoredSite(id) {
 
     let sslDays = site.sslDaysLeft;
     try {
-      const sslInfo = await fetchSslInfo(site.domain);
-      if (sslInfo && sslInfo.validTo) {
-        const expMs = new Date(sslInfo.validTo).getTime();
-        const nowMs = Date.now();
-        sslDays = Math.max(0, Math.floor((expMs - nowMs) / (1000 * 60 * 60 * 24)));
+      const sslInfo = summarizeSslInfo(await fetchSslInfo(site.domain));
+      if (sslInfo) {
+        sslDays = sslInfo.daysRemaining;
       }
     } catch {
       // Ignore SSL fetch error
@@ -3120,9 +3147,9 @@ async function checkSingleMonitoredSite(id) {
 }
 
 function initMonitorListeners() {
-  const addBtn = document.getElementById('monitorAddBtn');
-  const addInput = /** @type {HTMLInputElement|null} */ (document.getElementById('monitorAddUrl'));
-  const notifyBtn = document.getElementById('monitorNotifyBtn');
+  const addBtn = dom.monitorAddBtn;
+  const addInput = /** @type {HTMLInputElement|null} */ (dom.monitorAddUrl);
+  const notifyBtn = dom.monitorNotifyBtn;
 
   if (addBtn && addInput) {
     addBtn.addEventListener('click', () => {
@@ -3155,12 +3182,12 @@ function initMonitorListeners() {
 }
 
 // ── Initialize Multi-Theme Switcher ──────────────────────────
-const themeSwitcherContainer = document.getElementById('themeSwitcherWrap');
+const themeSwitcherContainer = dom.themeSwitcherWrap;
 if (themeSwitcherContainer) {
   initThemeSwitcher(themeSwitcherContainer);
 }
 
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(err => {
       logWarn('main:serviceWorker', err);

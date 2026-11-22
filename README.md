@@ -6,7 +6,7 @@
 ![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)
 ![PWA Ready](https://img.shields.io/badge/PWA-Ready-06b6d4?style=for-the-badge)
 ![Vite](https://img.shields.io/badge/Build-Vite%208-f59e0b?style=for-the-badge)
-![Tests](https://img.shields.io/badge/Tests-159%20Passed-22c55e?style=for-the-badge&logo=vitest)
+![Tests](https://img.shields.io/badge/Tests-220%20Passed-22c55e?style=for-the-badge&logo=vitest)
 ![PageSpeed](https://img.shields.io/badge/PageSpeed-Insights-3b82f6?style=for-the-badge&logo=google)
 ![Security Hardened](https://img.shields.io/badge/Security-Hardened-ef4444?style=for-the-badge)
 
@@ -21,7 +21,7 @@
 | 🎨 **Live Multi-Theme Switcher** | Switch instantly between 4 design aesthetics with `localStorage` persistence: 🌌 **Aurora Cosmic**, ⚡ **Cyber Obsidian** (Matrix green / Hacker terminal), 🖤 **Linear Minimalist** (Charcoal developer dark), and ❄️ **Nordic Frost** (High-contrast enterprise light). |
 | 🛡️ **Deep Security & AST Hardening** | Full Phase 1 security audit: AST-based Content Security Policy (CSP) parser (detecting unsafe-inline, unsafe-eval, missing default-src/object-src/base-uri), RFC 6797 HSTS Preload readiness verification, cookie attribute security hygiene (Secure, HttpOnly, SameSite), non-intrusive sensitive file leak probes (.env, .git/HEAD, wp-config.php.bak, server-status), and 1-click hardened configuration snippet generator for Nginx, Apache, Vercel, and Caddy. |
 | 📱 **PWA Ready** | Installable as a standalone app on desktop and mobile. Hardened Service Worker with stale-while-revalidate caching and 5 MB cache cap. |
-| ☁️ **Cloud & Local History** | Recent scans are synchronized across sessions via `kvdb.io` with instant `localStorage` fallbacks. |
+| ☁️ **Cloud & Local History** | Recent scans live in `localStorage` and are backed up to a per-browser namespaced `kvdb.io` key, so visitors never see each other's scans. |
 | 🤖 **AI & LLM Scraper Control** | Audits permissions for 12+ AI crawlers (`GPTBot`, `ClaudeBot`, `Google-Extended`, `PerplexityBot`, `CCBot`, `Meta-ExternalAgent`, `ByteSpider`, `Applebot-Extended`) across `robots.txt`, `ai.txt`, and HTML `noai` meta directives with a 1-click AI blocklist generator. |
 | 🛡️ **Email Security & Auth** | Deep DNS-over-HTTPS cryptographic audit: evaluates DMARC policy (`reject`/`quarantine`/`none`), SPF lookup limits & qualifiers, DNSSEC authenticated data, BIMI verified mark certificates, MTA-STS transport encryption, and computes an overall **Email Phishing & Domain Spoofing Risk Score (0–100)**. |
 | 🔍 **Visual SEO & Social Simulator** | Pixel-accurate preview simulator for **Google Search (SERP)**, **X / Twitter Cards**, **Facebook / LinkedIn**, and **Discord / Slack** embeds with meta tags health score and 1-click HTML fix snippet generator. |
@@ -40,7 +40,7 @@
 | 🔗 **Link Extractor** | Automatically extracts and lists all hyperlinks found on the target page during the sandbox phase. |
 | 🌐 **Advanced Intel** | RDAP-based WHOIS lookups, real-time IP & Location mapping, and HTTP Security Header analysis. All results sanitized against XSS. |
 | 📄 **Report Exporter** | One-click export for single site scans into **JSON**, formatted **Markdown (.md)**, or a clean printable **PDF** summary layout. |
-| ⚡ **3-Tier CORS Proxy** | Failover CORS proxy engine (`allorigins.win` → `corsproxy.io` → `codetabs.com`) ensures 100% network probe reliability. |
+| ⚡ **3-Tier CORS Proxy** | Failover CORS proxy engine (`allorigins.win` `/get` → `/raw` → `codetabs.com`) used by every proxy-backed lookup: sandbox HTML, WHOIS, headers, SSL, robots.txt, subdomains, AI policy, and deep-security probes. |
 | 📧 **Email Validator** | Complete RFC 5322 validation, MX record lookup, 400+ disposable domain list, and heuristic scam scoring with bulk CSV export. |
 | 🔐 **Security Scanner** | 2-stage threat detection: local heuristic scan + URLhaus malware database integration with risk score and findings report. |
 | 📋 **Bulk URL Check** | Check up to 25 URLs concurrently with live progress, threat-level filtering, sortable columns, and CSV export. |
@@ -86,12 +86,14 @@ Single URL scan results can be exported with 1 click using the **Export** dropdo
 
 ## ⚡ 3-Tier CORS Fallback Proxy Engine
 
-Cross-origin network requests (WHOIS, HTTP headers, sandbox HTML fetching) pass through a 3-tier failover proxy pipeline:
-1. `api.allorigins.win` (Primary JSON wrapper)
-2. `corsproxy.io` (Secondary fast pass-through)
+Cross-origin network requests (WHOIS, HTTP headers, sandbox HTML fetching, SSL, robots.txt, subdomains, AI policy, and deep-security probes) pass through a 3-tier failover proxy pipeline:
+1. `api.allorigins.win/get` (Primary JSON wrapper)
+2. `api.allorigins.win/raw` (Raw pass-through, survives `/get` rate limits)
 3. `api.codetabs.com` (Tertiary fallback)
 
-If any proxy experiences a temporary outage, SiteScope automatically fails over to the next proxy in the chain without failing the scan.
+> `corsproxy.io` was dropped from the chain: its legacy anonymous URLs now return HTTP 403 without an API key.
+
+If any proxy experiences a temporary outage, SiteScope automatically fails over to the next proxy in the chain without failing the scan. Each attempt has its own timeout, and a failed chain surfaces an explicit error instead of hanging.
 
 ---
 
@@ -169,7 +171,9 @@ The **Sandbox tab** is the safest way to visually inspect any website without ru
    - Blocks `<meta http-equiv="refresh">` redirects
    - Rewrites relative URLs to absolute for correct rendering
    - Removes tracking pixels and analytics snippets
-3. **Render** — Cleaned HTML is injected into a maximally-restricted `<iframe>` via a `blob:` URL with `referrerpolicy="no-referrer"`.
+3. **Render** — Cleaned HTML is injected into a maximally-restricted `<iframe>` via a `blob:` URL with `referrerpolicy="no-referrer"`. The frame runs with `sandbox="allow-same-origin"` only (no scripts, forms, or navigation), so the sanitized document cannot execute code even though it inherits the app origin.
+
+The separate **Live (Unsafe)** tab loads the real site in a sandbox that allows scripts and forms but deliberately omits `allow-same-origin`, which prevents a framed page from reaching the parent document.
 
 ---
 
@@ -177,18 +181,26 @@ The **Sandbox tab** is the safest way to visually inspect any website without ru
 
 | Tool / Service | Purpose |
 |---|---|
-| **Vite 8** | Build system, module bundler, HMR dev server (0 vulnerabilities) |
+| **Vite 8** | Build system, module bundler, HMR dev server |
 | **ES Modules** | Modular architecture (`src/main.js`, `src/modules/scorecard.js`, etc.) |
-| **Vitest** | Unit test framework with 120 passing unit tests (`npm test`) |
+| **Vitest** | Unit test framework with 220 passing unit tests (`npm test`) |
 | **ESLint 10 & Prettier** | Code quality enforcement (`npm run lint`, `npm run format`) |
 | **Service Worker** | Hardened PWA caching with stale-while-revalidate (`public/sw.js`) |
 | **vercel.json** | Server-level HTTP security headers for the Vercel deployment |
-| **kvdb.io & localStorage** | Hybrid cloud + local storage for scan history persistence |
-| **CORS Proxies** | 3-tier fallback chain (`allorigins.win`, `corsproxy.io`, `codetabs`) |
+| **kvdb.io & localStorage** | Per-browser cloud backup + local storage for scan history |
+| **CORS Proxies** | 3-tier fallback chain (`allorigins.win` `/get`, `/raw`, `codetabs`) |
 | **RDAP (rdap.org)** | Standards-based WHOIS/domain registration data |
 | **URLhaus API** | Malware and phishing URL threat database |
 | **Google DNS-over-HTTPS** | `dns.google/resolve` — DNS resolution for Down Detector and DNS intel |
 | **Atlassian Statuspage API** | Official status feeds for GitHub, OpenAI, Discord, Cloudflare |
+
+### Content Security Policy
+
+The CSP is generated from `config/csp.js` and kept identical across `index.html`, `vercel.json`, and `nginx.conf` by `npm run csp:sync` (CI verifies it with `csp:check`).
+
+- `script-src` is locked to `'self'` plus the Speed Insights CDN — **no `'unsafe-inline'`**. The theme bootstrap, analytics stub, and Speed Insights loader are external files in `public/`, and generated markup no longer uses inline `onerror` handlers.
+- `img-src`, `connect-src`, and `frame-src` allow `https:` because the product's job is to contact arbitrary user-supplied hosts (latency probes, reachability checks) and render arbitrary remote images (OG previews, favicons). Restricting those would silently break core features.
+- `object-src 'none'`, `base-uri 'self'`, `form-action 'none'`, and `frame-ancestors 'none'` (header only — browsers ignore it in `<meta>`) remain enforced.
 
 ---
 
@@ -198,11 +210,19 @@ The **Sandbox tab** is the safest way to visually inspect any website without ru
 sitescope/
 ├── index.html              # Main application markup & UI layout
 ├── style.css               # Global styles — cosmic theme, glassmorphism, Scorecard badges
+├── config/
+│   └── csp.js              # Single source of truth for the Content-Security-Policy
+├── scripts/
+│   ├── sync-csp.mjs        # Writes/verifies the CSP across index.html, vercel.json, nginx.conf
+│   ├── generate-dom-map.mjs# Generates the typed DOM reference map from index.html
+│   └── generate-icons.mjs  # Generates PWA PNG icons + favicon.svg (zero dependencies)
 ├── src/
 │   ├── main.js             # App controller — DOM wiring, event binding, all view controllers
-│   ├── intel.js            # WHOIS & HTTP header fetchers
+│   ├── intel.js            # WHOIS & HTTP header fetchers (unit-tested)
+│   ├── test/setup.js       # Vitest setup (restores jsdom localStorage on modern Node)
 │   ├── main/
-│   │   ├── history.js      # Scan history: kvdb.io cloud sync + localStorage fallback (unit-tested)
+│   │   ├── dom.js          # GENERATED typed references for every element id (unit-tested via markup)
+│   │   ├── history.js      # Scan history: per-browser kvdb.io backup + localStorage (unit-tested)
 │   │   └── bulk.js         # Bulk URL parsing + per-URL metadata/threat fetch (unit-tested)
 │   ├── modules/
 │   │   ├── scorecard.js    # Composite Security Grade Scorecard (A+ to F) (unit-tested)
@@ -225,29 +245,37 @@ sitescope/
 │   │   ├── monitor.js       # SSL Expiry & Uptime Monitor with notifications (unit-tested)
 │   │   ├── specExporter.js  # Postman Collection & OpenAPI 3.0 Spec Exporter (unit-tested)
 │   │   ├── exporter.js      # Diagnostic Report Exporter (JSON/MD/PDF) (unit-tested)
-│   │   ├── dns.js           # DNS-over-HTTPS multi-record resolver
-│   │   ├── ssl.js           # Certificate Transparency inspector
+│   │   ├── dns.js           # DNS-over-HTTPS multi-record resolver (unit-tested)
+│   │   ├── ssl.js           # Certificate Transparency inspector + summary adapter (unit-tested)
 │   │   ├── stack.js         # Technology fingerprinting (unit-tested)
 │   │   ├── robots.js        # robots.txt fetcher + parser (unit-tested)
-│   │   └── latency.js       # 5-probe HEAD latency suite
+│   │   └── latency.js       # 5-probe HEAD latency suite (unit-tested)
 │   └── utils/
 │       ├── helpers.js      # escapeHtml, normalizeUrl, getDomain, sleep, safeHref (unit-tested)
-│       ├── proxy.js        # 3-tier CORS proxy fallback chain (allorigins → corsproxy → codetabs)
-│       └── logger.js       # Thin console wrapper (logWarn/logError)
+│       ├── proxy.js        # 3-tier CORS proxy fallback chain (allorigins /get → /raw → codetabs) (unit-tested)
+│       └── logger.js       # Thin console wrapper (logWarn/logError) (unit-tested)
 ├── public/
-│   ├── sw.js               # Hardened Service Worker
-│   └── manifest.json       # PWA manifest
+│   ├── sw.js               # Hardened Service Worker (shell pre-cache + runtime cache)
+│   ├── manifest.json       # PWA manifest with 192/512 and maskable icons
+│   ├── favicon.svg         # App favicon
+│   ├── theme-init.js       # Pre-paint theme bootstrap (no inline script)
+│   ├── analytics-init.js   # Vercel analytics stub + loader (no inline script)
+│   ├── speed-insights.js   # Vercel Speed Insights loader (no inline script)
+│   └── icons/              # Generated PNG icons (192/512, maskable, apple-touch)
 ├── .github/workflows/
-│   └── ci.yml              # Lint + typecheck + test + build on every push/PR
+│   └── ci.yml              # Lint + typecheck + CSP/DOM drift + test + build on push/PR
 ├── start-local.bat         # One-click local dev server (Windows)
-├── Dockerfile              # Multi-stage Docker build (Node → Nginx)
-├── nginx.conf              # Nginx config with security headers for Docker
+├── Containerfile           # Podman/Docker multi-stage build (Node → unprivileged Nginx)
+├── Dockerfile              # Alternate Docker build
+├── nginx.conf              # Nginx config with security + cache headers for containers
 └── vercel.json             # Vercel deployment config + HTTP security headers
 ```
 
 ---
 
 ## 🚀 Getting Started (Local Development)
+
+**Requirements:** Node.js **20.19+** (see `.nvmrc`). Node 22+ also works — the Vitest setup restores jsdom's `localStorage` when Node's experimental global shadows it.
 
 ```bash
 # 1. Clone the repository
@@ -257,8 +285,8 @@ cd sitescope
 # 2. Install dependencies
 npm install
 
-# 3. Run unit tests
-npm test
+# 3. Run the full quality gate (lint + typecheck + CSP/DOM drift + tests)
+npm run check
 
 # 4. Start the development server
 npm run dev
@@ -267,6 +295,18 @@ npm run dev
 # 5. Build for production
 npm run build
 ```
+
+Other useful scripts:
+
+| Script | Purpose |
+|---|---|
+| `npm run dev` / `build` / `preview` | Vite dev, production build, preview |
+| `npm test` / `test:watch` | Vitest unit tests |
+| `npm run lint` / `format` | ESLint / Prettier |
+| `npm run typecheck` | `tsc --noEmit` (includes `src/main.js`) |
+| `npm run csp:sync` / `csp:check` | Rewrite or verify the CSP in `index.html`, `vercel.json`, `nginx.conf` |
+| `npm run dom:sync` / `dom:check` | Regenerate or verify the typed DOM map from `index.html` |
+| `npm run icons` | Regenerate PWA icons and `favicon.svg` |
 
 **Windows shortcut:** Double-click **`start-local.bat`** in the project root — launches the Vite dev server automatically.
 
@@ -439,13 +479,14 @@ docker compose up -d
 | Limitation | Details |
 |---|---|
 | Screenshot Providers | WordPress mShots may take 5–18s for uncached/new sites. Thum.io and Microlink are tried automatically as fallbacks. |
-| Sandbox Proxy | 3-tier CORS proxy chain (`allorigins.win`, `corsproxy.io`, `codetabs`). If one is slow or down, fallback occurs automatically. |
-| URLhaus DB | Covers active and recent threats. Zero-day or brand-new threats may not yet appear. |
+| Sandbox Proxy | 3-tier CORS proxy chain (`allorigins.win` `/get` → `/raw` → `codetabs`). If one is slow or down, fallback occurs automatically. |
+| URLhaus DB | Covers active and recent threats. The browser API does not send CORS headers, so when the direct lookup is blocked the scanner labels the database check "unavailable" and falls back to local heuristics. |
 | Bulk Rate Limit | 600ms delay between requests to respect free-tier API limits. |
-| Cloud History | History is stored in a public KV bucket — do not enter sensitive or private URLs. |
+| Cloud History | History is kept in `localStorage` and backed up to a per-browser namespaced key in a public KV bucket. The namespace keeps other visitors out, but the bucket operator can still read it — do not enter sensitive or private URLs. |
 | RDAP Coverage | `.com`/`.net`/`.org` domains have the best RDAP coverage. Some ccTLDs may fall back to "Unavailable". |
 | Down Detector — Services without official APIs | Google, YouTube, Netflix, Amazon, and X do not publish official Statuspage feeds. These are checked via DNS-over-HTTPS + network probes, which are accurate but not authoritative. |
-| Down Detector — Community Reports | Outage reports are stored in a shared public KV bucket. Do not use for private domains. |
+| Down Detector — Community Reports | Outage reports are stored in a separate shared public KV bucket, normalized and capped, and rate-limited to one report per browser per hour. Do not use for private domains. |
+| Live Preview | The Live tab runs the real site with JavaScript. It is sandboxed without `allow-same-origin`, so some sites that require cookies/storage may render incompletely — that is the security trade-off. |
 
 ---
 

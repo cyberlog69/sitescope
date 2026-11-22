@@ -140,7 +140,7 @@ export function sendNotification(title, body) {
   if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
     new Notification(title, {
       body,
-      icon: '/favicon.ico'
+      icon: '/icons/icon-192.png'
     });
   }
 }

@@ -7,7 +7,7 @@
  *   domain: string,
  *   scorecard?: import('../modules/scorecard.js').ScorecardResult,
  *   security?: import('../modules/security.js').ScanResult,
- *   sslInfo?: { valid?: boolean, daysRemaining?: number },
+ *   sslInfo?: { valid?: boolean, daysRemaining?: number } | null,
  *   latencyMs?: number|null,
  *   techCount?: number,
  *   categoryLabel?: string

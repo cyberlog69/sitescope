@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
   HISTORY_LS_KEY,
+  HISTORY_CLIENT_KEY,
+  HISTORY_BUCKET,
+  getHistoryClientId,
+  historyCloudUrl,
   lsGetHistory,
   lsSaveHistory,
   mergeHistories,
@@ -33,6 +37,42 @@ describe('lsGetHistory / lsSaveHistory', () => {
   it('returns an empty array for corrupted JSON', () => {
     localStorage.setItem(HISTORY_LS_KEY, '{not json');
     expect(lsGetHistory()).toEqual([]);
+  });
+});
+
+describe('per-browser cloud namespace', () => {
+  it('generates a 32-char hex client id and reuses it', () => {
+    const id = getHistoryClientId();
+    expect(id).toMatch(/^[a-f0-9]{32}$/);
+    expect(localStorage.getItem(HISTORY_CLIENT_KEY)).toBe(id);
+    expect(getHistoryClientId()).toBe(id);
+  });
+
+  it('builds a namespaced kvdb URL', () => {
+    expect(historyCloudUrl('abc123')).toBe(
+      `https://kvdb.io/${HISTORY_BUCKET}/history_abc123`
+    );
+  });
+
+  it('fetches cloud history from the client-specific key', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, text: async () => '[]' });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchCloudHistory('deadbeef');
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `https://kvdb.io/${HISTORY_BUCKET}/history_deadbeef`
+    );
+  });
+
+  it('writes cloud history under the generated client id', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, text: async () => '[]' });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await saveHistoryEntry({ url: 'https://example.com', title: 'Example' });
+
+    const id = getHistoryClientId();
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes(`history_${id}`))).toBe(true);
   });
 });
 

@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [master, main]
   pull_request:
-    branches: [master]
+    branches: [master, main]
 
 permissions:
   contents: read
@@ -32,6 +32,12 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: CSP drift
+        run: npm run csp:check
+
+      - name: DOM map drift
+        run: npm run dom:check
 
       - name: Test
         run: npm test
